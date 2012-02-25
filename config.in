@@ -31,7 +31,8 @@ if [ "$ARCH_AVR" = "y" ]; then
 		 ATmega64     atmega64		\
 		 ATmega644    atmega644		\
 		 ATmega644p   atmega644p	\
-		 ATmega1284p   atmega1284p"	\
+		 ATmega1284p  atmega1284p	\
+		 AT90CAN128   at90can128"	\
 		'ATmega644' MCU
 
 	int "MCU frequency" FREQ 20000000
@@ -45,7 +46,7 @@ if [ "$ARCH_AVR" = "y" ]; then
 
 
 	# Set the Flash size to the cpu type
-	if [ "$atmega128" = "y" -o "$atmega1284p" = "y" ] ; then
+	if [ "$atmega128" = "y" -o "$atmega1284p" = "y" -o "$at90can128" = "y" ] ; then
 		FLASH_SIZE=131072	#	512/1024/2048/4096	0x1fc00/0x1f800/0x1f000/0x1e000
 	fi
 	if [ "$atmega64" = "y" -o "$atmega644" = "y" -o "$atmega644p" = "y" ] ; then
@@ -70,7 +71,7 @@ if [ "$ARCH_AVR" = "y" ]; then
 		if [ "$FLASH_SIZE" = 131072 ] ; then BOOTLOADER_WORDS=4096 ; fi
 	fi
 
-	if [ "$atmega64" = "y" -o "$atmega644" = "y" -o "$atmega644p" = "y" -o "$atmega1284p" = "y" -o "$atmega128" = "y" ] ; then
+	if [ "$atmega64" = "y" -o "$atmega644" = "y" -o "$atmega644p" = "y" -o "$atmega1284p" = "y" -o "$atmega128" = "y" -o "$at90can128" = "y" ] ; then
 		bool 'Build a bootloader' BOOTLOADER_SUPPORT
 	else
 		dep_bool 'Build a bootloader' BOOTLOADER_SUPPORT "n"

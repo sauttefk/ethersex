@@ -1078,6 +1078,7 @@ Select the default profile you wish to load. \
 			JeeLinkv2	  "Jeelabs JeeLinkv2 (FTDI-ZBUS, RFM12)"	0 \
 			hr20		  "Rondostat HR20/Thermotronic Basic/Thermy"	0 \
 			lome6		  "lome6 - lights out management for ethersex"	0 \
+			betelgeuze	  "sautter.com betelgeuze"	0 \
 			 2>MCdialog.out
 
 		exit_status=$?
