@@ -30,8 +30,8 @@ MCU=at90can128
 at90can128=y
 FREQ=16000000
 # Arduino_Duemilanove is not set
-HARDWARE=betelgeuze
-betelgeuze=y
+HARDWARE=beteigeuze
+beteigeuze=y
 # conrad_probot is not set
 # ehaserl is not set
 # etherrape is not set
@@ -151,7 +151,7 @@ VFS_INLINE_INLINESVG_SUPPORT=y
 #
 # Network
 #
-CONF_HOSTNAME="e6-betelgeuze"
+CONF_HOSTNAME="e6-beteigeuze"
 NET_MAX_FRAME_LENGTH=1500
 ENC28J60_SUPPORT=y
 CONF_ENC_MAC="ac:de:48:fd:0f:d0"
