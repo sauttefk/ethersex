@@ -222,6 +222,10 @@ template $HD44780_MULTIENSUPPORT << FNORD
     pin(HD44780_EN2, PA7)
 FNORD
 
+template $HD44780_BACKLIGHT_SUPPORT << FNORD
+    pin(HD44780_BL, PB1, OUTPUT)
+FNORD
+
 template $S1D13305_SUPPORT << FNORD
     /* port config for s1d13305 lcd */
     S1D13305_DATA_PORT(A)
@@ -275,6 +279,11 @@ template $IRMP_SUPPORT << FNORD
   #define IRMP_RX_LOW_ACTIVE
   #undef IRMP_RX_LED_LOW_ACTIVE
   pin(IRMP_TX, PD7) dnl OC2
+FNORD
+
+template $SER_RAM_23K256_SUPPORT << FNORD
+  /* 23K256 SRAM  Chip select */
+  pin(SPI_CS_23K256, PB1, OUTPUT)
 FNORD
 
 ### HARDWARE SPECIFIC TEMPLATES #############################################
