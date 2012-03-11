@@ -111,7 +111,8 @@ usart_init(void) \
     /*   and set URSEL, if present, */ \
     usart(UCSR,C) = _BV(usart(UCSZ,0)) | _BV(usart(UCSZ,1)) | _BV_URSEL; \
     /* Enable the RX interrupt and receiver and transmitter */ \
-    usart(UCSR,B) |= _BV(usart(TXEN)) | _BV(usart(RXEN)) | _BV(usart(RXCIE));\
+/*    usart(UCSR,B) |= _BV(usart(TXEN)) | _BV(usart(RXEN)) | _BV(usart(RXCIE)); */\
+    usart(UCSR,B) |= _BV(usart(TXEN));\
     /* Set or not set the 2x mode */ \
     USART_2X(); \
     /* Go! */ \
