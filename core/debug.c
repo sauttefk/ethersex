@@ -59,13 +59,6 @@ void soft_uart_putchar(uint8_t c);
 #define BAUD DEBUG_BAUDRATE
 #include "core/usart.h"
 
-#define STRING2(x) #x
-#define STRING(x) STRING2(x)
-
-#pragma message(STRING(USE_USART))
-#pragma message(STRING(HAVE_RS485TE_USART1))
-
-
 /* We generate our own usart init module, for our usart port */
 generate_usart_init()
 
@@ -76,8 +69,8 @@ debug_init_uart(void)
 #ifndef SOFT_UART_SUPPORT
   usart_init();
 
-  /* disable the receiver */
-  usart(UCSR, B) &= ~_BV(usart(RXCIE));
+  /* disable the receiver we just enabled */
+  usart(UCSR, B) &= ~(_BV(usart(RXCIE)) | _BV(usart(RXEN)));
 #endif
   /* open stdout/stderr */
   fdevopen(debug_uart_put, NULL);
