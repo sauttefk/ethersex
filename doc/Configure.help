@@ -2707,3 +2707,9 @@ Backlight support
 HD44780_BACKLIGHT_SUPPORT
 
   Backlight support for HD44780 LCD with direct connection.
+
+VSCP Support
+VSCP_SUPPORT
+  Depends on:
+
+  Very Simple Control Protocol http://www.vscp.org/ for Home Automation
