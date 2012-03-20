@@ -25,13 +25,14 @@
 #include "protocols/uip/uip.h"
 #include "protocols/vscp/vscp.h"
 
+#ifdef VSCP_SUPPORT
 void
 vscp_net_init(void)
 {
   uip_udp_conn_t *conn;
   uip_ipaddr_t ip;
   uip_ipaddr_copy(&ip, all_ones_addr);
-  if (!(conn = uip_udp_new(&ip, 0, vscp_net_main)))
+  if (!(conn = uip_udp_new(&ip, 0, vscp_net_udp)))
     return;                                         /* couldn't bind socket */
 
   uip_udp_bind(conn, HTONS(CONF_VSCP_PORT));
@@ -39,7 +40,7 @@ vscp_net_init(void)
 }
 
 void
-vscp_net_main(void)
+vscp_net_udp(void)
 {
   if (!uip_newdata())
     return;
@@ -74,7 +75,7 @@ vscp_net_main(void)
     printf_P(PSTR("%s%02x"), ((i > 0) ? ":" : ""), vscp->data[i]);
   }
   printf_P(PSTR("\n"));
-#endif /* DEBUG_VSCP */
+#endif /* !DEBUG_VSCP */
 
   if (ntohs(vscp->class) == 512)
   {
@@ -89,6 +90,19 @@ vscp_net_main(void)
   }
   else
   {
-    VSCP_DEBUG("unsupported class 0x%04x type 0x%04x\n", ntohs(vscp->class), ntohs(vscp->type));
+    VSCP_DEBUG("unsupported class 0x%04x type 0x%04x\n", ntohs(vscp->class),
+               ntohs(vscp->type));
   }
 }
+
+void
+vcsp_net_raw (void)
+{
+  VSCP_DEBUG("received %d bytes raw data\n", uip_len);
+}
+#endif /* !VSCP_SUPPORT */
+
+/*
+   -- Ethersex META --
+   net_init(vscp_net_init)
+ */

@@ -23,6 +23,7 @@
 #define _VSCP_NET_H
 
 /* constants */
+#define VSCP_ETHTYPE 9598
 #define VSCP_MAX_DATA (512 - 25)
 #define VSCP_UDP_POS_HEAD  0
 #define VSCP_UDP_POS_CLASS 1
@@ -47,7 +48,8 @@ struct vscp_event
 
 /* prototypes */
 void vscp_net_init(void);
-void vscp_net_main(void);
+void vscp_net_udp(void);
+void vscp_net_raw(void);
 
 #endif /* _VSCP_NET_H */
 

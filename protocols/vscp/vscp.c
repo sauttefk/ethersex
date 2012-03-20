@@ -40,22 +40,12 @@
 
 
 /* ----------------------------------------------------------------------------
- * initialization of network settings
- */
-void
-vscp_netInit(void)
-{
-  vscp_net_init();
-}
-
-
-/* ----------------------------------------------------------------------------
  * initialization of VSCP
  */
 void
 vscp_init(void)
 {
-  VSCP_DEBUG("Init\n");
+  VSCP_DEBUG("init\n");
 }
 
 
@@ -75,12 +65,12 @@ void
 vscp_get(void)
 {
 }
-#endif /* VSCP_SUPPORT */
+#endif /* !VSCP_SUPPORT */
 
 /*
    -- Ethersex META --
    header(protocols/vscp/vscp.h)
-   net_init(vscp_net_init)
+   init(vscp_init)
    mainloop(vscp_main)
    block(Miscelleanous)
  */

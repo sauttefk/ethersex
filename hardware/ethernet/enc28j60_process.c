@@ -28,6 +28,7 @@
 #include "config.h"
 #include "core/bit-macros.h"
 #include "protocols/uip/uip_router.h"
+#include "protocols/vscp/vscp_net.h"
 
 #include "core/debug.h"
 
@@ -242,6 +243,12 @@ void process_packet(void)
 
             break;
 #       endif /* !UIP_CONF_IPV6 */
+
+#ifdef VSCP_SUPPORT
+        case VSCP_ETHTYPE:
+          vcsp_net_raw();
+          break;
+#endif /* !VSCP_SUPPORT */
 
 #       if UIP_CONF_IPV6
         /* process ip packet */
