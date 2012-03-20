@@ -24,6 +24,7 @@
 
 /* constants */
 #define VSCP_ETHTYPE 9598
+#define VSCP_RAWH_LEN 14
 #define VSCP_MAX_DATA (512 - 25)
 #define VSCP_UDP_POS_HEAD  0
 #define VSCP_UDP_POS_CLASS 1
@@ -33,17 +34,40 @@
 #define VSCP_UDP_POS_DATA  23
 #define VSCP_UDP_POS_CRC uip_len − 2
 
+#ifndef htonl
+#define htonl(x) __builtin_bswap32(x)
+#endif /* !htonl */
+#ifndef ntohl
+#define ntohl htonl
+#endif /* !ntohl */
+
+
 /* structs */
-struct vscp_event
+struct vscp_udp_event
 {
-  uint8_t head;       // bit 765:  prioriy, Priority 0-7 where 0 is highest.
-                      // bit 4:    hardcoded, true for a hardcoded device.
+  uint8_t head;       // bit 765:  prioriy 0-7 where 0 is highest
+                      // bit 4:    hardcoded, true for a hardcoded device
                       // bit 3210: reserved
   uint16_t class;     // VSCP class
   uint16_t type;      // VSCP type
-  uint8_t  guid[16];  // Node address MSB(0) -> LSB(15)
-  uint16_t size;      // Number of valid data bytes
-  uint8_t  data[VSCP_MAX_DATA];  // Pointer to data. Max 487 (512- 25) bytes
+  uint8_t  guid[16];  // node address MSB(0) -> LSB(15)
+  uint16_t size;      // number of valid data bytes
+  uint8_t  data[VSCP_MAX_DATA];  // data; max 487 (512- 25) bytes
+};
+
+struct vscp_raw_event
+{
+  uint32_t head;      // bit 31-29: prioriy 0-7 where 0 is highest
+                      // bit 28-25: cryptographic algorithm
+                      // bit 24-00: reserved
+  uint16_t subsource; // subunit of an ethernet device
+                      // last two bytes of the GUID
+  uint32_t timestamp; // timestamp in microseconds
+  uint16_t class;     // VSCP class
+  uint16_t type;      // VSCP type
+  uint8_t  guid[16];  // node address MSB(0) -> LSB(15)
+  uint16_t size;      // number of valid data bytes
+  uint8_t  data[VSCP_MAX_DATA];  // data; max 487 (512- 25) bytes
 };
 
 /* prototypes */
