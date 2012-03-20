@@ -57,6 +57,7 @@ struct vscp_udp_event
 
 struct vscp_raw_event
 {
+  uint8_t version;    // version; currently 0
   uint32_t head;      // bit 31-29: prioriy 0-7 where 0 is highest
                       // bit 28-25: cryptographic algorithm
                       // bit 24-00: reserved

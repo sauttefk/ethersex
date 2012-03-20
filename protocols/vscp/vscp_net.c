@@ -99,15 +99,23 @@ void
 vcsp_net_raw (void)
 {
   VSCP_DEBUG("received %d bytes raw data\n", uip_len);
-  uip_len = 0;
   
   struct vscp_raw_event *vscp;
   vscp = (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
 
+  if (uip_len < 60 || uip_len > 512 
+      || uip_len - VSCP_RAWH_LEN - 33 < ntohs(vscp->size) ) {
+    VSCP_DEBUG("ethernet frame has wrong size\n");
+    uip_len = 0;
+    return;
+  }
+  uip_len = 0;
+
   #ifdef DEBUG_VSCP
-  VSCP_DEBUG("HEAD : 0x%08x\n", ntohl(vscp->head));
+  VSCP_DEBUG("VERS : 0x%02x\n", vscp->version);
+  VSCP_DEBUG("HEAD : 0x%08lx\n", ntohl(vscp->head));
   VSCP_DEBUG("SUB  : 0x%04x\n", ntohs(vscp->subsource));
-  VSCP_DEBUG("TIMES: 0x%08x\n", ntohl(vscp->timestamp));
+  VSCP_DEBUG("TIMES: 0x%08lx\n", ntohl(vscp->timestamp));
   VSCP_DEBUG("CLASS: 0x%04x\n", ntohs(vscp->class));
   VSCP_DEBUG("TYPE : 0x%04x\n", ntohs(vscp->type));
   VSCP_DEBUG("GUID : %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:" 
