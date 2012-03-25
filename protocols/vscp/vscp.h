@@ -40,7 +40,7 @@
 
 void vscp_init(void);
 void vscp_main(void);
-void vscp_get(void);
+void vscp_get(struct vscp_event *event);
 
 #endif /* _VSCP_H */
 #endif /* VSCP_SUPPORT */

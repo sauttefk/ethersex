@@ -33,7 +33,7 @@ vscp_net_init(void)
   uip_ipaddr_t ip;
   uip_ipaddr_copy(&ip, all_ones_addr);
   if (!(conn = uip_udp_new(&ip, 0, vscp_net_udp)))
-    return;                                         /* couldn't bind socket */
+    return;                     /* couldn't bind socket */
 
   uip_udp_bind(conn, HTONS(CONF_VSCP_PORT));
   VSCP_DEBUG("listening on UDP port %d\n", CONF_VSCP_PORT);
@@ -45,93 +45,49 @@ vscp_net_udp(void)
   if (!uip_newdata())
     return;
 
-  VSCP_DEBUG("received %d bytes data\n", uip_len);
-
   struct vscp_udp_event *vscp;
   vscp = (struct vscp_udp_event *) uip_appdata;
-  
-  if (uip_len < 24)
-    return;                                                    /* too short */
-  if (uip_len > 512)
-    return;                                                     /* too long */
-//  if (ntohs(vscp->size) > VSCP_MAX_DATA);
-//    return;                                                     /* too long */
 
+  VSCP_DEBUG("received %d bytes UDP data containing %d bytes VSCP data\n",
+             uip_len, ntohs(vscp->event.size));
 
-#ifdef DEBUG_VSCP
-  VSCP_DEBUG("HEAD : 0x%02x\n", vscp->head);
-  VSCP_DEBUG("CLASS: 0x%04x\n", ntohs(vscp->class));
-  VSCP_DEBUG("TYPE : 0x%04x\n", ntohs(vscp->type));
-  VSCP_DEBUG("GUID : %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:" 
-                    "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", 
-             vscp->guid[0], vscp->guid[1], vscp->guid[2], vscp->guid[3],
-             vscp->guid[4], vscp->guid[5], vscp->guid[6], vscp->guid[7],
-             vscp->guid[8], vscp->guid[9], vscp->guid[10], vscp->guid[11],
-             vscp->guid[12], vscp->guid[13], vscp->guid[14], vscp->guid[15]);
-  VSCP_DEBUG("DSIZE: %d\n", ntohs(vscp->size));
-  VSCP_DEBUG("DATA : ");
-  for (int i = 0; i < ntohs(vscp->size); i++)
+  if (uip_len > 512 ||
+      uip_len - VSCP_UDP_POS_DATA - VSCP_CRC_LEN < ntohs(vscp->event.size))
   {
-    printf_P(PSTR("%s%02x"), ((i > 0) ? ":" : ""), vscp->data[i]);
-  }
-  printf_P(PSTR("\n"));
-#endif /* !DEBUG_VSCP */
-
-  if (ntohs(vscp->class) == 512)
-  {
-    switch (ntohs(vscp->type))
-    {
-      case 9:
-        VSCP_DEBUG("0x09 read register 0x%02x\n", vscp->data[17]);
-        break;
-      default:
-        VSCP_DEBUG("unsupported type 0x%04x\n", ntohs(vscp->type));
-    }
-  }
-  else
-  {
-    VSCP_DEBUG("unsupported class 0x%04x type 0x%04x\n", ntohs(vscp->class),
-               ntohs(vscp->type));
-  }
-}
-
-void
-vcsp_net_raw (void)
-{
-  VSCP_DEBUG("received %d bytes raw data\n", uip_len);
-  
-  struct vscp_raw_event *vscp;
-  vscp = (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
-
-  if (uip_len < 60 || uip_len > 512 
-      || uip_len - VSCP_RAWH_LEN - 33 < ntohs(vscp->size) ) {
     VSCP_DEBUG("ethernet frame has wrong size\n");
     uip_len = 0;
     return;
   }
   uip_len = 0;
 
-  #ifdef DEBUG_VSCP
+  VSCP_DEBUG("HEAD : 0x%02x\n", vscp->head);
+  vscp_get((struct vscp_event *) &vscp->event);
+}
+
+void
+vcsp_net_raw(void)
+{
+  struct vscp_raw_event *vscp;
+  vscp = (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
+
+  VSCP_DEBUG("received %d bytes RAW data containing %d bytes VSCP data\n",
+             uip_len, ntohs(vscp->event.size));
+
+  if (uip_len < 60 ||
+      uip_len > 512 ||
+      uip_len - VSCP_RAWH_LEN - VSCP_RAW_POS_DATA < ntohs(vscp->event.size))
+  {
+    VSCP_DEBUG("ethernet frame has wrong size\n");
+    uip_len = 0;
+    return;
+  }
+  uip_len = 0;
+
   VSCP_DEBUG("VERS : 0x%02x\n", vscp->version);
   VSCP_DEBUG("HEAD : 0x%08lx\n", ntohl(vscp->head));
   VSCP_DEBUG("SUB  : 0x%04x\n", ntohs(vscp->subsource));
   VSCP_DEBUG("TIMES: 0x%08lx\n", ntohl(vscp->timestamp));
-  VSCP_DEBUG("CLASS: 0x%04x\n", ntohs(vscp->class));
-  VSCP_DEBUG("TYPE : 0x%04x\n", ntohs(vscp->type));
-  VSCP_DEBUG("GUID : %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:" 
-                    "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", 
-             vscp->guid[0], vscp->guid[1], vscp->guid[2], vscp->guid[3],
-             vscp->guid[4], vscp->guid[5], vscp->guid[6], vscp->guid[7],
-             vscp->guid[8], vscp->guid[9], vscp->guid[10], vscp->guid[11],
-             vscp->guid[12], vscp->guid[13], vscp->guid[14], vscp->guid[15]);
-  VSCP_DEBUG("DSIZE: %d\n", ntohs(vscp->size));
-  VSCP_DEBUG("DATA : ");
-  for (int i = 0; i < ntohs(vscp->size); i++)
-  {
-    printf_P(PSTR("%s%02x"), ((i > 0) ? ":" : ""), vscp->data[i]);
-  }
-  printf_P(PSTR("\n"));
-#endif /* !DEBUG_VSCP */
+  vscp_get((struct vscp_event *) &vscp->event);
 }
 #endif /* !VSCP_SUPPORT */
 

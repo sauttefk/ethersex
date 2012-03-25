@@ -62,8 +62,45 @@ vscp_send(uint16_t len)
 
 
 void
-vscp_get(void)
+vscp_get(struct vscp_event *event)
 {
+  VSCP_DEBUG("CLASS: 0x%04x\n", ntohs(event->class));
+  VSCP_DEBUG("TYPE : 0x%04x\n", ntohs(event->type));
+  VSCP_DEBUG("GUID : %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:" 
+                    "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", 
+             event->guid[0], event->guid[1], event->guid[2],
+             event->guid[3], event->guid[4], event->guid[5],
+             event->guid[6], event->guid[7], event->guid[8],
+             event->guid[9], event->guid[10], event->guid[11],
+             event->guid[12], event->guid[13], event->guid[14],
+             event->guid[15]);
+  VSCP_DEBUG("DSIZE: %d\n", ntohs(event->size));
+  VSCP_DEBUG("DATA : ");
+#ifdef DEBUG_VSCP
+  for (int i = 0; i < ntohs(event->size); i++)
+    printf_P(PSTR("%s%02x"), ((i > 0) ? ":" : ""),
+                  event->data[i]);
+
+  printf_P(PSTR("\n"));
+#endif /* !DEBUG_VSCP */
+
+  if (ntohs(event->class) == 512)
+  {
+    switch (ntohs(event->type))
+    {
+      case 9:
+        VSCP_DEBUG("0x09 read register 0x%02x\n", event->data[17]);
+        break;
+      default:
+        VSCP_DEBUG("unsupported type 0x%04x\n", ntohs(event->type));
+    }
+  }
+  else
+  {
+    VSCP_DEBUG("unsupported class 0x%04x type 0x%04x\n",
+               ntohs(event->class), ntohs(event->type));
+  }
+
 }
 #endif /* !VSCP_SUPPORT */
 
