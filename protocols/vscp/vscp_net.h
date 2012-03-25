@@ -62,6 +62,7 @@ struct vscp_event
   uint8_t  data[VSCP_MAX_DATA];  // data; max 487 (512- 25) bytes
 };
 
+
 struct vscp_udp_event
 {
   uint8_t  head;        // bit 765:  prioriy 0-7 where 0 is highest
@@ -69,6 +70,7 @@ struct vscp_udp_event
                         // bit 3210: reserved
   struct vscp_event event;
 };
+
 
 struct vscp_raw_event
 {

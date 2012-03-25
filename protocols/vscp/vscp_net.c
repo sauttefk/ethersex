@@ -25,6 +25,7 @@
 #include "protocols/uip/uip.h"
 #include "protocols/vscp/vscp.h"
 
+
 #ifdef VSCP_SUPPORT
 void
 vscp_net_init(void)
@@ -39,14 +40,14 @@ vscp_net_init(void)
   VSCP_DEBUG("listening on UDP port %d\n", CONF_VSCP_PORT);
 }
 
+
 void
 vscp_net_udp(void)
 {
   if (!uip_newdata())
     return;
 
-  struct vscp_udp_event *vscp;
-  vscp = (struct vscp_udp_event *) uip_appdata;
+  struct vscp_udp_event *vscp = (struct vscp_udp_event *) uip_appdata;
 
   VSCP_DEBUG("received %d bytes UDP data containing %d bytes VSCP data\n",
              uip_len, ntohs(vscp->event.size));
@@ -64,11 +65,12 @@ vscp_net_udp(void)
   vscp_get((struct vscp_event *) &vscp->event);
 }
 
+
 void
 vcsp_net_raw(void)
 {
-  struct vscp_raw_event *vscp;
-  vscp = (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
+  struct vscp_raw_event *vscp = 
+    (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
 
   VSCP_DEBUG("received %d bytes RAW data containing %d bytes VSCP data\n",
              uip_len, ntohs(vscp->event.size));
@@ -90,6 +92,7 @@ vcsp_net_raw(void)
   vscp_get((struct vscp_event *) &vscp->event);
 }
 #endif /* !VSCP_SUPPORT */
+
 
 /*
    -- Ethersex META --

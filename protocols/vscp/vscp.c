@@ -90,6 +90,26 @@ vscp_get(struct vscp_event *event)
     {
       case 9:
         VSCP_DEBUG("0x09 read register 0x%02x\n", event->data[17]);
+        struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
+        struct vscp_raw_event *vscp = 
+          (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
+        memset(packet->dest.addr, 0xff, 6);             // broadcast
+        memcpy(packet->src.addr, uip_ethaddr.addr, 6);  // our mac
+        packet->type = HTONS(VSCP_ETHTYPE);             // vscp raw packet
+        vscp->version = 0;
+        vscp->head = htonl(0xE0000000);
+        vscp->subsource = htons(0);
+        vscp->timestamp = htonl(clock_get_time() * 1000);
+        vscp->event.class = htons(0);
+        vscp->event.type = htons(10);
+        memset(&vscp->event.guid[0], 0xff, 7);
+        memset(&vscp->event.guid[7], 0xfe, 1);
+        memcpy(&vscp->event.guid[8], uip_ethaddr.addr, 6);
+        memset(&vscp->event.guid[14], 0x00, 2);
+        vscp->event.size = htons(2);
+        vscp->event.data[0] = event->data[17];
+        vscp->event.data[1] = 42;
+        uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA +2;
         break;
       default:
         VSCP_DEBUG("unsupported type 0x%04x\n", ntohs(event->type));
