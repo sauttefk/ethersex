@@ -28,6 +28,8 @@
 #include "core/bool.h"
 #include "core/bit-macros.h"
 #include "protocols/vscp/vscp.h"
+#include "protocols/vscp/vscp_class.h"
+#include "protocols/vscp/vscp_type.h"
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
 #include "protocols/ecmd/ecmd-base.h"
@@ -66,8 +68,8 @@ vscp_get(struct vscp_event *event)
 {
   VSCP_DEBUG("CLASS: 0x%04x\n", ntohs(event->class));
   VSCP_DEBUG("TYPE : 0x%04x\n", ntohs(event->type));
-  VSCP_DEBUG("GUID : %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:" 
-                    "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n", 
+  VSCP_DEBUG("GUID : %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:"
+             "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
              event->guid[0], event->guid[1], event->guid[2],
              event->guid[3], event->guid[4], event->guid[5],
              event->guid[6], event->guid[7], event->guid[8],
@@ -78,24 +80,32 @@ vscp_get(struct vscp_event *event)
   VSCP_DEBUG("DATA : ");
 #ifdef DEBUG_VSCP
   for (int i = 0; i < ntohs(event->size); i++)
-    printf_P(PSTR("%s%02x"), ((i > 0) ? ":" : ""),
-                  event->data[i]);
+    printf_P(PSTR("%s%02x"), ((i > 0) ? ":" : ""), event->data[i]);
 
   printf_P(PSTR("\n"));
 #endif /* !DEBUG_VSCP */
 
-  if (ntohs(event->class) == 512)
+  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
+  struct vscp_raw_event *vscp =
+    (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
+
+  if (event->class == HTONS(VSCP_CLASS1_PROTOCOL) ||
+      event->class == HTONS(VSCP_CLASS2_LEVEL1_PROTOCOL))
   {
-    switch (ntohs(event->type))
+    switch (event->type)
     {
-      case 9:
-        VSCP_DEBUG("0x09 read register 0x%02x\n", event->data[17]);
-        struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
-        struct vscp_raw_event *vscp = 
-          (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
-        memset(packet->dest.addr, 0xff, 6);             // broadcast
+      case HTONS(VSCP_TYPE_PROTOCOL_READ_REGISTER):
+        VSCP_DEBUG("0x%02x read register 0x%02x\n",
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, event->data[17]);
+
+        if (memcmp (&vscp->event.guid, &vscp->event.guid, 16))
+          return;
+        
+//       vscp_readRegister(pEvent, &outEvent);
+
+        memset(packet->dest.addr, 0xff, 6);     // broadcast
         memcpy(packet->src.addr, uip_ethaddr.addr, 6);  // our mac
-        packet->type = HTONS(VSCP_ETHTYPE);             // vscp raw packet
+        packet->type = HTONS(VSCP_ETHTYPE);     // vscp raw packet
         vscp->version = 0;
         vscp->head = htonl(0xE0000000);
         vscp->subsource = htons(0);
@@ -109,8 +119,73 @@ vscp_get(struct vscp_event *event)
         vscp->event.size = htons(2);
         vscp->event.data[0] = event->data[17];
         vscp->event.data[1] = 42;
-        uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA +2;
+        uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
         break;
+
+      case HTONS(VSCP_TYPE_PROTOCOL_WRITE_REGISTER):
+        VSCP_DEBUG("0x%02x write register 0x%02x\n",
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, event->data[17]);
+
+        if (memcmp (&vscp->event.guid, &vscp->event.guid, 16))
+          return;
+//        vscp_writeRegister(pEvent, &outEvent);
+        break;
+
+      case HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO):
+
+//        outEvent.head = (VSCP_PRIORITY_MEDIUM << 5);
+//        outEvent.sizeData = 23;
+//        outEvent.vscp_class = VSCP_CLASS1_PROTOCOL;
+//        outEvent.vscp_type = VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE;
+//        // GUID is filled in by the send routine automatically
+
+//        outEvent.data[16] = 16;   // 16 rows in matrix
+//        outEvent.data[17] = 16;   // Matrix offset
+//        outEvent.data[18] = 0;    // Page stat
+//        outEvent.data[19] = 0;
+//        outEvent.data[20] = 0;    // Page end
+//        outEvent.data[21] = 0;
+//        outEvent.data[22] = 0;    // Size of row for Level II
+
+//        vscp_sendEvent(&outEvent);
+        break;
+
+      default:
+        VSCP_DEBUG("unsupported type 0x%04x\n", ntohs(event->type));
+    }
+  }
+  else if (event->class == HTONS(VSCP_CLASS1_ALARM) ||
+           event->class == HTONS(VSCP_CLASS2_LEVEL1_ALARM))
+  {
+  }
+  else if (event->class == HTONS(VSCP_CLASS1_MEASUREMENT) ||
+           event->class == HTONS(VSCP_CLASS2_LEVEL1_MEASUREMENT))
+  {
+  }
+  else if (event->class == HTONS(VSCP_CLASS1_INFORMATION) ||
+           event->class == HTONS(VSCP_CLASS2_LEVEL1_INFORMATION))
+  {
+  }
+  else if (event->class == HTONS(VSCP_CLASS1_CONTROL) ||
+           event->class == HTONS(VSCP_CLASS2_LEVEL1_CONTROL))
+  {
+  }
+  else if (event->class == HTONS(VSCP_CLASS2_PROTOCOL))
+  {
+    switch (event->type)
+    {
+      case HTONS(VSCP2_TYPE_PROTOCOL_READ_REGISTER):
+        if (memcmp (&vscp->event.guid, &vscp->event.guid, 16))
+          return;
+        
+//        vscp_readRegister(pEvent, &outEvent);
+        break;
+
+      case HTONS(VSCP2_TYPE_PROTOCOL_WRITE_REGISTER):
+        if (memcmp (&vscp->event.guid, &vscp->event.guid, 16))
+          return;
+//        vscp_writeRegister( pEvent, &outEvent );
+
       default:
         VSCP_DEBUG("unsupported type 0x%04x\n", ntohs(event->type));
     }
@@ -121,8 +196,13 @@ vscp_get(struct vscp_event *event)
                ntohs(event->class), ntohs(event->type));
   }
 
+
+  // Feed Event into decision matrix
+//  vscp_feedDM(pEvent);
+
 }
 #endif /* !VSCP_SUPPORT */
+
 
 /*
    -- Ethersex META --
