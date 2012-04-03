@@ -23,11 +23,11 @@
 #define _VSCP_NET_H
 
 /* constants */
-#define VSCP_ETHTYPE 9598
-#define VSCP_UDPH_LEN 1      // size of upd header
-#define VSCP_RAWH_LEN 14     // size of raw ethernet header
-#define VSCP_CTGS_LEN 22     // size of class, type, guid and size
-#define VSCP_CRC_LEN 2       // size of crc
+#define VSCP_ETHTYPE 9598     // 0x257E
+#define VSCP_UDPH_LEN 1       // size of upd header
+#define VSCP_RAWH_LEN 14      // size of raw ethernet header
+#define VSCP_CTGS_LEN 22      // size of class, type, guid and size
+#define VSCP_CRC_LEN 2        // size of crc
 #define VSCP_MAX_DATA (512 - 25)
 
 #define VSCP_UDP_POS_HEAD  0
@@ -44,6 +44,10 @@
 #define VSCP_RAW_POS_SIZE  31
 #define VSCP_RAW_POS_DATA  33
 
+#define VSCP_RAW 1
+#define VSCP_UDP 2
+
+
 #ifndef htonl
 #define htonl(x) __builtin_bswap32(x)
 #endif /* !htonl */
@@ -54,7 +58,7 @@
 
 /* structs */
 struct vscp_event
-{  
+{
   uint16_t class;     // VSCP class
   uint16_t type;      // VSCP type
   uint8_t  guid[16];  // node address MSB(0) -> LSB(15)

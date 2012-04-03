@@ -40,7 +40,12 @@
 
 void vscp_init(void);
 void vscp_main(void);
-void vscp_get(struct vscp_event *event);
+void vscp_get(struct vscp_event *event, int8_t frameType);
+void vscp_createHead(struct vscp_event *event, int8_t frameType);
+void vscp_readRegister(struct vscp_event *event, int8_t frameType);
+void vscp_writeRegister(struct vscp_event *event, int8_t frameType);
+void vscp_getMatrixinfo(struct vscp_event *event, int8_t frameType);
+
 
 #endif /* _VSCP_H */
 #endif /* VSCP_SUPPORT */

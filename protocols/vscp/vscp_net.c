@@ -62,14 +62,14 @@ vscp_net_udp(void)
   uip_len = 0;
 
   VSCP_DEBUG("HEAD : 0x%02x\n", vscp->head);
-  vscp_get((struct vscp_event *) &vscp->event);
+  vscp_get((struct vscp_event *) &vscp->event, VSCP_UDP);
 }
 
 
 void
 vcsp_net_raw(void)
 {
-  struct vscp_raw_event *vscp = 
+  struct vscp_raw_event *vscp =
     (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
 
   VSCP_DEBUG("received %d bytes RAW data containing %d bytes VSCP data\n",
@@ -89,7 +89,7 @@ vcsp_net_raw(void)
   VSCP_DEBUG("HEAD : 0x%08lx\n", ntohl(vscp->head));
   VSCP_DEBUG("SUB  : 0x%04x\n", ntohs(vscp->subsource));
   VSCP_DEBUG("TIMES: 0x%08lx\n", ntohl(vscp->timestamp));
-  vscp_get((struct vscp_event *) &vscp->event);
+  vscp_get((struct vscp_event *) &vscp->event, VSCP_RAW);
 }
 #endif /* !VSCP_SUPPORT */
 
