@@ -37,6 +37,7 @@
 #define VSCP_DEBUG(...)    ((void) 0)
 #endif
 
+uint8_t guid[16];
 
 void vscp_init(void);
 void vscp_main(void);

@@ -48,6 +48,22 @@ void
 vscp_init(void)
 {
   VSCP_DEBUG("init\n");
+  guid[0]  = 0xff;
+  guid[1]  = 0xff;
+  guid[2]  = 0xff;
+  guid[3]  = 0xff;
+  guid[4]  = 0xff;
+  guid[5]  = 0xff;
+  guid[6]  = 0xff;
+  guid[7]  = 0xfe;
+  guid[8]  = uip_ethaddr.addr[0];
+  guid[9]  = uip_ethaddr.addr[1];
+  guid[10] = uip_ethaddr.addr[2];
+  guid[11] = uip_ethaddr.addr[3];
+  guid[12] = uip_ethaddr.addr[4];
+  guid[13] = uip_ethaddr.addr[5];
+  guid[14] = 0x00;
+  guid[15] = 0x00;
 }
 
 
@@ -92,7 +108,7 @@ vscp_get(struct vscp_event *event, int8_t frameType)
       case HTONS(VSCP_TYPE_PROTOCOL_READ_REGISTER):
         VSCP_DEBUG("0x%02x read register 0x%02x\n",
                    VSCP_TYPE_PROTOCOL_READ_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &event->guid, 16))
+        if (memcmp (&event->guid, &guid, 16))
           return;
         vscp_readRegister(event, frameType);
         break;
@@ -100,7 +116,7 @@ vscp_get(struct vscp_event *event, int8_t frameType)
       case HTONS(VSCP_TYPE_PROTOCOL_WRITE_REGISTER):
         VSCP_DEBUG("0x%02x write register 0x%02x\n",
                    VSCP_TYPE_PROTOCOL_WRITE_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &event->guid, 16))
+        if (memcmp (&event->guid, &guid, 16))
           return;
         vscp_writeRegister(event, frameType);
         break;
@@ -111,7 +127,11 @@ vscp_get(struct vscp_event *event, int8_t frameType)
         break;
 
       case HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO):
-//        vscp_sendEvent(&outEvent);
+        VSCP_DEBUG("0x%02x get matrix info 0x%02x\n",
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, event->data[17]);
+        if (memcmp (&event->guid, &guid, 16))
+          return;
+        vscp_getMatrixinfo(event, frameType);
         break;
 
       default:
@@ -141,7 +161,7 @@ vscp_get(struct vscp_event *event, int8_t frameType)
       case HTONS(VSCP2_TYPE_PROTOCOL_READ_REGISTER):
         VSCP_DEBUG("0x%02x read register 0x%02x\n",
                    VSCP_TYPE_PROTOCOL_READ_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &event->guid, 16))
+        if (memcmp (&event->guid, &guid, 16))
           return;
         vscp_readRegister(event, frameType);
         break;
@@ -149,7 +169,7 @@ vscp_get(struct vscp_event *event, int8_t frameType)
       case HTONS(VSCP2_TYPE_PROTOCOL_WRITE_REGISTER):
         VSCP_DEBUG("0x%02x write register 0x%02x\n",
                    VSCP_TYPE_PROTOCOL_WRITE_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &event->guid, 16))
+        if (memcmp (&event->guid, &guid, 16))
           return;
         vscp_writeRegister(event, frameType);
         break;
@@ -229,10 +249,7 @@ vscp_createHead(struct vscp_event *event, int8_t frameType)
   memset(packet->dest.addr, 0xff, 6);             // broadcast
   memcpy(packet->src.addr, uip_ethaddr.addr, 6);  // our mac
   packet->type = HTONS(VSCP_ETHTYPE);             // vscp raw packet
-  memset(&event->guid[0], 0xff, 7);
-  memset(&event->guid[7], 0xfe, 1);
-  memcpy(&event->guid[8], uip_ethaddr.addr, 6);
-  memset(&event->guid[14], 0x00, 2);
+  memcpy(&event->guid, guid, 16);
   event->size = htons(2);
   event->data[0] = event->data[17];
   event->data[1] = 42;
