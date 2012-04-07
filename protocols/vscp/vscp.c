@@ -80,113 +80,179 @@ vscp_send(uint16_t len)
 
 
 void
-vscp_get(struct vscp_event *event, int8_t frameType)
+vscp_get(struct vscp_raw_event *vscp)
 {
-  VSCP_DEBUG("CLASS: 0x%04x\n", ntohs(event->class));
-  VSCP_DEBUG("TYPE : 0x%04x\n", ntohs(event->type));
-  VSCP_DEBUG("GUID : %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:"
-             "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
-             event->guid[0], event->guid[1], event->guid[2],
-             event->guid[3], event->guid[4], event->guid[5],
-             event->guid[6], event->guid[7], event->guid[8],
-             event->guid[9], event->guid[10], event->guid[11],
-             event->guid[12], event->guid[13], event->guid[14],
-             event->guid[15]);
-  VSCP_DEBUG("DSIZE: %d\n", ntohs(event->size));
+  VSCP_DEBUG("VERS : 0x%02X\n", vscp->version);
+  VSCP_DEBUG("HEAD : 0x%08lX\n", ntohl(vscp->head));
+  VSCP_DEBUG("SUB  : 0x%04X\n", ntohs(vscp->subsource));
+  VSCP_DEBUG("TIMES: 0x%08lX\n", ntohl(vscp->timestamp));
+  VSCP_DEBUG("CLASS: 0x%04X\n", ntohs(vscp->class));
+  VSCP_DEBUG("TYPE : 0x%04X\n", ntohs(vscp->type));
+  VSCP_DEBUG("DSIZE: %d\n", ntohs(vscp->size));
   VSCP_DEBUG("DATA : ");
 #ifdef DEBUG_VSCP
-  for (int i = 0; i < ntohs(event->size); i++)
-    printf_P(PSTR("%s%02x"), ((i > 0) ? ":" : ""), event->data[i]);
+  for (int i = 0; i < ntohs(vscp->size); i++)
+    printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), vscp->data[i]);
   printf_P(PSTR("\n"));
 #endif /* !DEBUG_VSCP */
 
-  if (event->class == HTONS(VSCP_CLASS1_PROTOCOL) ||
-      event->class == HTONS(VSCP_CLASS2_LEVEL1_PROTOCOL))
+  uint8_t guidMismatch = memcmp (&vscp->data, &guid, 16);
+
+  if (vscp->class == HTONS(VSCP_CLASS1_PROTOCOL) ||
+      vscp->class == HTONS(VSCP_CLASS2_LEVEL1_PROTOCOL))
   {
-    switch (event->type)
+    switch (vscp->type)
     {
-      case HTONS(VSCP_TYPE_PROTOCOL_READ_REGISTER):
-        VSCP_DEBUG("0x%02x read register 0x%02x\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &guid, 16))
-          return;
-        vscp_readRegister(event, frameType);
+      case HTONS(VSCP_TYPE_PROTOCOL_SEGCTRL_HEARTBEAT):
+        VSCP_DEBUG("0x%02X SEGCTRL_HEARTBEAT\n",
+                   VSCP_TYPE_PROTOCOL_SEGCTRL_HEARTBEAT);
         break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_NEW_NODE_ONLINE):
+        VSCP_DEBUG("0x%02X NEW_NODE_ONLINE\n",
+                   VSCP_TYPE_PROTOCOL_NEW_NODE_ONLINE);
+        break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_PROBE_ACK):
+        VSCP_DEBUG("0x%02X PROBE_ACK\n",
+                   VSCP_TYPE_PROTOCOL_PROBE_ACK);
+        break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_SET_NICKNAME):
+        VSCP_DEBUG("0x%02X SET_NICKNAME\n",
+                   VSCP_TYPE_PROTOCOL_SET_NICKNAME);
+        break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_NICKNAME_ACCEPTED):
+        VSCP_DEBUG("0x%02X NICKNAME_ACCEPTED\n",
+                   VSCP_TYPE_PROTOCOL_NICKNAME_ACCEPTED);
+        break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_DROP_NICKNAME):
+        VSCP_DEBUG("0x%02X DROP_NICKNAME\n",
+                   VSCP_TYPE_PROTOCOL_DROP_NICKNAME);
+        break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_READ_REGISTER):
+        VSCP_DEBUG("0x%02X READ_REGISTER 0x%02X\n",
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, vscp->data[17]);
+        if (guidMismatch)
+          return;
+        vscp_readRegister(vscp);
+        break;
+
 
       case HTONS(VSCP_TYPE_PROTOCOL_WRITE_REGISTER):
-        VSCP_DEBUG("0x%02x write register 0x%02x\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &guid, 16))
+        VSCP_DEBUG("0x%02X WRITE_REGISTER 0x%02X\n",
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, vscp->data[17]);
+        if (guidMismatch)
           return;
-        vscp_writeRegister(event, frameType);
+        vscp_writeRegister(vscp);
         break;
+
 
       case HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE):
-        VSCP_DEBUG("0x%02x read/write response 0x%02x\n",
-                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, event->data[17]);
+        VSCP_DEBUG("0x%02X RW_RESPONSE 0x%02X\n",
+                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, vscp->data[17]);
         break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_WHO_IS_THERE):
+        VSCP_DEBUG("0x%02X WHO_IS_THERE\n",
+                   VSCP_TYPE_PROTOCOL_WHO_IS_THERE);
+        break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_WHO_IS_THERE_RESPONSE):
+        VSCP_DEBUG("0x%02X WHO_IS_THERE_RESPONSE\n",
+                   VSCP_TYPE_PROTOCOL_WHO_IS_THERE_RESPONSE);
+        break;
+
 
       case HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO):
-        VSCP_DEBUG("0x%02x get matrix info 0x%02x\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &guid, 16))
+        VSCP_DEBUG("0x%02X GET_MATRIX_INFO\n",
+                   VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO);
+        if (guidMismatch)
           return;
-        vscp_getMatrixinfo(event, frameType);
+        vscp_getMatrixinfo(vscp);
         break;
 
+
+      case HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE):
+        VSCP_DEBUG("0x%02X GET_MATRIX_INFO_RESPONSE\n",
+                   VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE);
+        break;
+
+
+      case HTONS(VSCP_TYPE_PROTOCOL_RESET_DEVICE):
+        VSCP_DEBUG("0x%02X RESET_DEVICE\n",
+                   VSCP_TYPE_PROTOCOL_RESET_DEVICE);
+        break;
+
+
       default:
-        VSCP_DEBUG("unsupported type 0x%04x\n", ntohs(event->type));
+        VSCP_DEBUG("unsupported type 0x%04X\n", ntohs(vscp->type));
     }
   }
-  else if (event->class == HTONS(VSCP_CLASS1_ALARM) ||
-           event->class == HTONS(VSCP_CLASS2_LEVEL1_ALARM))
+  else if (vscp->class == HTONS(VSCP_CLASS1_ALARM) ||
+           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_ALARM))
   {
   }
-  else if (event->class == HTONS(VSCP_CLASS1_MEASUREMENT) ||
-           event->class == HTONS(VSCP_CLASS2_LEVEL1_MEASUREMENT))
+  else if (vscp->class == HTONS(VSCP_CLASS1_MEASUREMENT) ||
+           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_MEASUREMENT))
   {
   }
-  else if (event->class == HTONS(VSCP_CLASS1_INFORMATION) ||
-           event->class == HTONS(VSCP_CLASS2_LEVEL1_INFORMATION))
+  else if (vscp->class == HTONS(VSCP_CLASS1_INFORMATION) ||
+           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_INFORMATION))
   {
   }
-  else if (event->class == HTONS(VSCP_CLASS1_CONTROL) ||
-           event->class == HTONS(VSCP_CLASS2_LEVEL1_CONTROL))
+  else if (vscp->class == HTONS(VSCP_CLASS1_CONTROL) ||
+           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_CONTROL))
   {
   }
-  else if (event->class == HTONS(VSCP_CLASS2_PROTOCOL))
+  else if (vscp->class == HTONS(VSCP_CLASS2_PROTOCOL))
   {
-    switch (event->type)
+    switch (vscp->type)
     {
       case HTONS(VSCP2_TYPE_PROTOCOL_READ_REGISTER):
-        VSCP_DEBUG("0x%02x read register 0x%02x\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &guid, 16))
+        VSCP_DEBUG("0x%02x read register 0x%02X\n",
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, vscp->data[17]);
+        if (guidMismatch)
           return;
-        vscp_readRegister(event, frameType);
+        vscp_readRegister(vscp);
         break;
+
 
       case HTONS(VSCP2_TYPE_PROTOCOL_WRITE_REGISTER):
-        VSCP_DEBUG("0x%02x write register 0x%02x\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, event->data[17]);
-        if (memcmp (&event->guid, &guid, 16))
+        VSCP_DEBUG("0x%02x write register 0x%02X\n",
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, vscp->data[17],
+                   vscp->data[18]);
+        if (guidMismatch)
           return;
-        vscp_writeRegister(event, frameType);
+        vscp_writeRegister(vscp);
         break;
+
 
       case HTONS(VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE):
-        VSCP_DEBUG("0x%02x read/write response 0x%02x\n",
-                   VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE, event->data[17]);
+        VSCP_DEBUG("0x%02x read/write response\n",
+                   VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE);
         break;
 
+
       default:
-        VSCP_DEBUG("unsupported type 0x%04x\n", ntohs(event->type));
+        VSCP_DEBUG("unsupported type 0x%04X\n", ntohs(vscp->type));
     }
   }
   else
   {
-    VSCP_DEBUG("unsupported class 0x%04x type 0x%04x\n",
-               ntohs(event->class), ntohs(event->type));
+    VSCP_DEBUG("unsupported class 0x%04X type 0x%04X\n",
+               ntohs(vscp->class), ntohs(vscp->type));
   }
 
 
@@ -197,81 +263,70 @@ vscp_get(struct vscp_event *event, int8_t frameType)
 
 
 void
-vscp_readRegister(struct vscp_event *event, int8_t frameType)
+vscp_readRegister(struct vscp_raw_event *vscp)
 {
-  vscp_createHead(event, frameType);
-  event->class = HTONS(VSCP_CLASS1_PROTOCOL);
-  event->type = HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE);
-  event->size = htons(2);
-  event->data[0] = event->data[17];
-  event->data[1] = 42;
+  vscp_createHead(vscp);
+  vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
+  vscp->type = HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE);
+  vscp->size = htons(2);
+  vscp->data[0] = vscp->data[17];
+  vscp->data[1] = 42;
   uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
 }
 
 
 void
-vscp_writeRegister(struct vscp_event *event, int8_t frameType)
+vscp_writeRegister(struct vscp_raw_event *vscp)
 {
-  vscp_createHead(event, frameType);
-  event->class = HTONS(VSCP_CLASS1_PROTOCOL);
-  event->type = HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE);
-  event->size = htons(2);
-  event->data[0] = event->data[17];
-  event->data[1] = 42;
+  vscp_createHead(vscp);
+  vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
+  vscp->type = HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE);
+  vscp->size = htons(2);
+  vscp->data[0] = vscp->data[17];
+  vscp->data[1] = 42;
   uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
 }
 
 
 void
-vscp_getMatrixinfo(struct vscp_event *event, int8_t frameType)
+vscp_getMatrixinfo(struct vscp_raw_event *vscp)
 {
-// vscp->head = (VSCP_PRIORITY_MEDIUM << 5);
+  vscp->head = HTONL(VSCP_LEVEL2_PRIORITY_MEDIUM);
 
-  event->class = HTONS(VSCP_CLASS1_PROTOCOL);
-  event->type = HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE);
-  event->size = htons(23);
-  event->data[16] = 16;   // 16 rows in matrix
-  event->data[17] = 16;   // Matrix offset
-  event->data[18] = 0;    // Page stat
-  event->data[19] = 0;
-  event->data[20] = 0;    // Page end
-  event->data[21] = 0;
-  event->data[22] = 0;    // Size of row for Level II
-  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 23;
+  vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
+  vscp->type = HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE);
+  vscp->size = htons(7);
+  vscp->data[0] = 16;   // 16 rows in matrix
+  vscp->data[1] = 16;   // matrix offset
+  vscp->data[2] = 0;    // page start
+  vscp->data[3] = 0;
+  vscp->data[4] = 0;    // page end
+  vscp->data[5] = 0;
+  vscp->data[6] = 0;    // size of row for level II
+  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 7;
 }
 
 
 void
-vscp_createHead(struct vscp_event *event, int8_t frameType)
+vscp_createHead(struct vscp_raw_event *vscp)
 {
   struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
 
   memset(packet->dest.addr, 0xff, 6);             // broadcast
   memcpy(packet->src.addr, uip_ethaddr.addr, 6);  // our mac
   packet->type = HTONS(VSCP_ETHTYPE);             // vscp raw packet
-  memcpy(&event->guid, guid, 16);
-  event->size = htons(2);
-  event->data[0] = event->data[17];
-  event->data[1] = 42;
-  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
 
-  switch (frameType)
-  {
-    case VSCP_RAW: ;
-      struct vscp_raw_event *vscp_raw =
-        (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
-      vscp_raw->version = 0;                              // version 0
-      vscp_raw->head = htonl(0xE0000000);
-      vscp_raw->subsource = htons(0);
-      vscp_raw->timestamp = htonl(clock_get_time() * 1000);
-      break;
+  vscp->version = 0;                          // version 0
+  vscp->head = htonl(0xE0000000);
+  vscp->subsource = htons(0x55AA);
+  vscp->timestamp = htonl(0);
 
-    case VSCP_UDP: ;
-      struct vscp_udp_event *vscp_udp =
-        (struct vscp_udp_event *) &uip_buf[VSCP_UDPH_LEN];
-      vscp_udp->head = 0xE0;
-      break;
-  }
+//  vscp->timestamp = htonl(clock_get_time() * 1000);
+//  vscp->size = htons(2);
+//  vscp->data[0] = event->data[17];
+//  vscp->data[1] = 42;
+//  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
+
   return;
 }
 

@@ -50,10 +50,10 @@ vscp_net_udp(void)
   struct vscp_udp_event *vscp = (struct vscp_udp_event *) uip_appdata;
 
   VSCP_DEBUG("received %d bytes UDP data containing %d bytes VSCP data\n",
-             uip_len, ntohs(vscp->event.size));
+             uip_len, ntohs(vscp->size));
 
   if (uip_len > 512 ||
-      uip_len - VSCP_UDP_POS_DATA - VSCP_CRC_LEN < ntohs(vscp->event.size))
+      uip_len - VSCP_UDP_POS_DATA - VSCP_CRC_LEN < ntohs(vscp->size))
   {
     VSCP_DEBUG("ethernet frame has wrong size\n");
     uip_len = 0;
@@ -61,8 +61,13 @@ vscp_net_udp(void)
   }
   uip_len = 0;
 
-  VSCP_DEBUG("HEAD : 0x%02x\n", vscp->head);
-  vscp_get((struct vscp_event *) &vscp->event, VSCP_UDP);
+  VSCP_DEBUG("HEAD : 0x%02X\n", vscp->head);
+  VSCP_DEBUG("OGUID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
+             "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+             vscp->guid[0], vscp->guid[1], vscp->guid[2], vscp->guid[3],
+             vscp->guid[4], vscp->guid[5], vscp->guid[6], vscp->guid[7],
+             vscp->guid[8], vscp->guid[9], vscp->guid[10], vscp->guid[11],
+             vscp->guid[12], vscp->guid[13], vscp->guid[14], vscp->guid[15]);
 }
 
 
@@ -73,11 +78,11 @@ vcsp_net_raw(void)
     (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
 
   VSCP_DEBUG("received %d bytes RAW data containing %d bytes VSCP data\n",
-             uip_len, ntohs(vscp->event.size));
+             uip_len, ntohs(vscp->size));
 
   if (uip_len < 60 ||
       uip_len > 512 ||
-      uip_len - VSCP_RAWH_LEN - VSCP_RAW_POS_DATA < ntohs(vscp->event.size))
+      uip_len - VSCP_RAWH_LEN - VSCP_RAW_POS_DATA < ntohs(vscp->size))
   {
     VSCP_DEBUG("ethernet frame has wrong size\n");
     uip_len = 0;
@@ -85,11 +90,7 @@ vcsp_net_raw(void)
   }
   uip_len = 0;
 
-  VSCP_DEBUG("VERS : 0x%02x\n", vscp->version);
-  VSCP_DEBUG("HEAD : 0x%08lx\n", ntohl(vscp->head));
-  VSCP_DEBUG("SUB  : 0x%04x\n", ntohs(vscp->subsource));
-  VSCP_DEBUG("TIMES: 0x%08lx\n", ntohl(vscp->timestamp));
-  vscp_get((struct vscp_event *) &vscp->event, VSCP_RAW);
+  vscp_get(vscp);
 }
 #endif /* !VSCP_SUPPORT */
 
