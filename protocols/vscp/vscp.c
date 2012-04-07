@@ -27,6 +27,7 @@
 #include "config.h"
 #include "core/bool.h"
 #include "core/bit-macros.h"
+#include "core/periodic.h"
 #include "protocols/vscp/vscp.h"
 #include "protocols/vscp/vscp_class.h"
 #include "protocols/vscp/vscp_type.h"
@@ -265,37 +266,34 @@ vscp_get(struct vscp_raw_event *vscp)
 void
 vscp_readRegister(struct vscp_raw_event *vscp)
 {
+  vscp->size = HTONS(2);
   vscp_createHead(vscp);
   vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
   vscp->type = HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE);
-  vscp->size = htons(2);
   vscp->data[0] = vscp->data[17];
   vscp->data[1] = 42;
-  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
 }
 
 
 void
 vscp_writeRegister(struct vscp_raw_event *vscp)
 {
+  vscp->size = HTONS(2);
   vscp_createHead(vscp);
   vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
   vscp->type = HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE);
-  vscp->size = htons(2);
   vscp->data[0] = vscp->data[17];
   vscp->data[1] = 42;
-  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
 }
 
 
 void
 vscp_getMatrixinfo(struct vscp_raw_event *vscp)
 {
-  vscp->head = HTONL(VSCP_LEVEL2_PRIORITY_MEDIUM);
-
+  vscp->size = HTONS(7);
+  vscp_createHead(vscp);
   vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
   vscp->type = HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE);
-  vscp->size = htons(7);
   vscp->data[0] = 16;   // 16 rows in matrix
   vscp->data[1] = 16;   // matrix offset
   vscp->data[2] = 0;    // page start
@@ -303,8 +301,79 @@ vscp_getMatrixinfo(struct vscp_raw_event *vscp)
   vscp->data[4] = 0;    // page end
   vscp->data[5] = 0;
   vscp->data[6] = 0;    // size of row for level II
-  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 7;
 }
+
+
+void
+vscp_periodic(void)
+{
+  static uint8_t vscp_heartbeatInterval = 3;
+  if (--vscp_heartbeatInterval == 0)
+  {
+    /* send a heartbeat packet every 60 seconds */
+    vscp_heartbeatInterval = 60;
+
+    struct vscp_raw_event *vscp =
+      (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
+
+    vscp_sendHeartBeat(vscp);
+    sendPeriodicOutputEvents(vscp);
+    sendPeriodicInputEvents(vscp);
+  }
+}
+
+
+
+void
+vscp_sendHeartBeat(struct vscp_raw_event *vscp)
+{
+  vscp->size = HTONS(3);
+  vscp_createHead(vscp);
+  vscp->class = HTONS(VSCP_CLASS1_INFORMATION);
+  vscp->type = HTONS(VSCP_TYPE_INFORMATION_NODE_HEARTBEAT);
+  vscp->data[0] = 0;        // no meaning
+  vscp->data[1] = 0x47;     // FIXME: zone
+  vscp->data[2] = 0x11;     // FIXME: subzone
+//  vscp->data[1] = appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_ZONE );         // Zone
+//  vscp->data[2] = ( appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_SUBZONE ) & 0xe0 );   // SubZone
+  transmit_packet();
+  VSCP_DEBUG("node heartbeat sent\n");
+}
+
+
+
+void
+sendPeriodicOutputEvents(struct vscp_raw_event *vscp)
+{
+  vscp->size = HTONS(3);
+  vscp_createHead(vscp);
+  vscp->class = HTONS(VSCP_CLASS1_DATA);
+  vscp->type = HTONS(VSCP_TYPE_DATA_IO);
+  vscp->data[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX0;
+  vscp->data[1] = 0xA5; // FIXME: output data
+  vscp->data[2] = 0xC3; // FIXME: output data
+//  vscp->data[1] = PORTB;
+  transmit_packet();
+  VSCP_DEBUG("node output data sent\n");
+}
+
+
+
+void
+sendPeriodicInputEvents(struct vscp_raw_event *vscp)
+{
+  vscp->size = HTONS(3);
+  vscp_createHead(vscp);
+  vscp->class = HTONS(VSCP_CLASS1_DATA);
+  vscp->type = HTONS(VSCP_TYPE_DATA_IO);
+  vscp->data[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX1;
+  vscp->data[1] = 0xA5; // FIXME: input data
+  vscp->data[2] = 0xC3; // FIXME: input data
+//  vscp->data[1] = getInputState();
+  transmit_packet();
+  VSCP_DEBUG("node input data sent\n");
+}
+
 
 
 void
@@ -316,19 +385,15 @@ vscp_createHead(struct vscp_raw_event *vscp)
   memcpy(packet->src.addr, uip_ethaddr.addr, 6);  // our mac
   packet->type = HTONS(VSCP_ETHTYPE);             // vscp raw packet
 
-  vscp->version = 0;                          // version 0
-  vscp->head = htonl(0xE0000000);
+  vscp->version = 0;                              // version 0
+  vscp->head = HTONL(VSCP_LEVEL2_PRIORITY_MEDIUM);
   vscp->subsource = htons(0x55AA);
   vscp->timestamp = htonl(0);
-
 //  vscp->timestamp = htonl(clock_get_time() * 1000);
-//  vscp->size = htons(2);
-//  vscp->data[0] = event->data[17];
-//  vscp->data[1] = 42;
-//  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + 2;
-
-  return;
+  uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + ntohs(vscp->size);
 }
+
+
 
 #endif /* !VSCP_SUPPORT */
 
@@ -338,5 +403,6 @@ vscp_createHead(struct vscp_raw_event *vscp)
    header(protocols/vscp/vscp.h)
    init(vscp_init)
    mainloop(vscp_main)
+   timer(50, vscp_periodic())
    block(Miscelleanous)
  */

@@ -72,7 +72,7 @@ vscp_net_udp(void)
 
 
 void
-vcsp_net_raw(void)
+vscp_net_raw(void)
 {
   struct vscp_raw_event *vscp =
     (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];

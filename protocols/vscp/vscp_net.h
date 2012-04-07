@@ -29,41 +29,108 @@
 #define VSCP_CTGS_LEN  22           // size of class, type, guid and size
 #define VSCP_CRC_LEN   2            // size of crc
 
-#define VSCP_UDP_POS_HEAD           0
-#define VSCP_UDP_POS_CLASS          1
-#define VSCP_UDP_POS_TYPE           3
-#define VSCP_UDP_POS_GUID           5
-#define VSCP_UDP_POS_SIZE           21
-#define VSCP_UDP_POS_DATA           23
+#define VSCP_UDP_POS_HEAD               0
+#define VSCP_UDP_POS_CLASS              1
+#define VSCP_UDP_POS_TYPE               3
+#define VSCP_UDP_POS_GUID               5
+#define VSCP_UDP_POS_SIZE               21
+#define VSCP_UDP_POS_DATA               23
 
-#define VSCP_RAW_POS_VERSION        0
-#define VSCP_RAW_POS_HEAD           1
-#define VSCP_RAW_POS_SUBSOURCE      5
-#define VSCP_RAW_POS_TIMESTAMP      7
-#define VSCP_RAW_POS_OBID           11
-#define VSCP_RAW_POS_CLASS          15
-#define VSCP_RAW_POS_TYPE           17
-#define VSCP_RAW_POS_SIZE           19
-#define VSCP_RAW_POS_DATA           21
+#define VSCP_RAW_POS_VERSION            0
+#define VSCP_RAW_POS_HEAD               1
+#define VSCP_RAW_POS_SUBSOURCE          5
+#define VSCP_RAW_POS_TIMESTAMP          7
+#define VSCP_RAW_POS_OBID               11
+#define VSCP_RAW_POS_CLASS              15
+#define VSCP_RAW_POS_TYPE               17
+#define VSCP_RAW_POS_SIZE               19
+#define VSCP_RAW_POS_DATA               21
 
-#define VSCP_LEVEL2_PRIORITY_0      0x00000000
-#define VSCP_LEVEL2_PRIORITY_1      0x20000000
-#define VSCP_LEVEL2_PRIORITY_2      0x40000000
-#define VSCP_LEVEL2_PRIORITY_3      0x60000000
-#define VSCP_LEVEL2_PRIORITY_4      0x80000000
-#define VSCP_LEVEL2_PRIORITY_5      0xA0000000
-#define VSCP_LEVEL2_PRIORITY_6      0xC0000000
-#define VSCP_LEVEL2_PRIORITY_7      0xE0000000
+#define VSCP_LEVEL2_PRIORITY_0          0x00000000
+#define VSCP_LEVEL2_PRIORITY_1          0x20000000
+#define VSCP_LEVEL2_PRIORITY_2          0x40000000
+#define VSCP_LEVEL2_PRIORITY_3          0x60000000
+#define VSCP_LEVEL2_PRIORITY_4          0x80000000
+#define VSCP_LEVEL2_PRIORITY_5          0xA0000000
+#define VSCP_LEVEL2_PRIORITY_6          0xC0000000
+#define VSCP_LEVEL2_PRIORITY_7          0xE0000000
 
-#define VSCP_LEVEL2_PRIORITY_HIGH   VSCP_LEVEL2_PRIORITY_0
-#define VSCP_LEVEL2_PRIORITY_MEDIUM VSCP_LEVEL2_PRIORITY_4
-#define VSCP_LEVEL2_PRIORITY_LOW    VSCP_LEVEL2_PRIORITY_7
+#define VSCP_LEVEL2_PRIORITY_HIGH       VSCP_LEVEL2_PRIORITY_0
+#define VSCP_LEVEL2_PRIORITY_MEDIUM     VSCP_LEVEL2_PRIORITY_4
+#define VSCP_LEVEL2_PRIORITY_LOW        VSCP_LEVEL2_PRIORITY_7
 
-#define VSCP_LEVEL2_MASK_PRIORITY   0xE0000000
-#define VSCP_LEVEL2_MASK_CRYPTO     0x1E000000
+#define VSCP_LEVEL2_MASK_PRIORITY       0xE0000000
+#define VSCP_LEVEL2_MASK_CRYPTO         0x1E000000
 
-#define VSCP_LEVEL1_MAXDATA         8
-#define VSCP_LEVEL2_MAXDATA         (512 - 25)
+#define VSCP_LEVEL1_MAXDATA             8
+#define VSCP_LEVEL2_MAXDATA             (512 - 25)
+
+
+//* * * Data Coding for VSCP packets * * *
+
+// data format masks
+#define VSCP_MASK_DATACODING_TYPE       0xE0
+#define VSCP_MASK_DATACODING_UNIT       0x18
+#define VSCP_MASK_DATACODING_INDEX      0x03
+
+// data coding types
+#define VSCP_DATACODING_BIT             0x00
+#define VSCP_DATACODING_BYTE            0x20
+#define VSCP_DATACODING_STRING          0x40
+#define VSCP_DATACODING_INTEGER         0x60
+#define VSCP_DATACODING_NORMALIZED      0x80
+#define VSCP_DATACODING_SINGLE          0xA0
+#define VSCP_DATACODING_RESERVED1       0xC0
+#define VSCP_DATACODING_RESERVED2       0xE0
+
+// data coding types
+#define VSCP_DATACODING_INDEX0          0x00
+#define VSCP_DATACODING_INDEX1          0x01
+#define VSCP_DATACODING_INDEX2          0x02
+#define VSCP_DATACODING_INDEX3          0x03
+#define VSCP_DATACODING_INDEX4          0x04
+#define VSCP_DATACODING_INDEX5          0x05
+#define VSCP_DATACODING_INDEX6          0x06
+#define VSCP_DATACODING_INDEX7          0x07
+
+
+// * * * Standard VSCP registers * * *
+
+// register defines above 0x7f
+#define VSCP_STD_REGISTER_ALARM_STATUS          0x80
+
+#define VSCP_STD_REGISTER_MAJOR_VERSION         0x81
+#define VSCP_STD_REGISTER_MINOR_VERSION         0x82
+#define VSCP_STD_REGISTER_SUB_VERSION           0x83
+
+// 0x84 - 0x88
+#define VSCP_STD_REGISTER_USER_ID               0x84
+
+// 0x89 - 0x8C
+#define VSCP_STD_REGISTER_USER_MANDEV_ID        0x89
+
+// 0x8D -0x90
+#define VSCP_STD_REGISTER_USER_MANSUBDEV_ID     0x8D
+
+#define VSCP_STD_REGISTER_NICKNAME_ID           0x91
+
+#define VSCP_STD_REGISTER_PAGE_SELECT_MSB       0x92
+#define VSCP_STD_REGISTER_PAGE_SELECT_LSB       0x93
+
+#define VSCP_STD_REGISTER_FIRMWARE_MAJOR        0x94
+#define VSCP_STD_REGISTER_FIRMWARE_MINOR        0x95
+#define VSCP_STD_REGISTER_FIRMWARE_SUBMINOR     0x96
+
+#define VSCP_STD_REGISTER_BOOT_LOADER           0x97
+#define VSCP_STD_REGISTER_BUFFER_SIZE           0x98
+#define VSCP_STD_REGISTER_PAGES_COUNT           0x99
+
+// 0xc0 - 0xcf
+#define VSCP_STD_REGISTER_GUID                  0xC0
+
+// 0xe0 - 0xff
+#define VSCP_STD_REGISTER_DEVICE_URL            0xE0
+
 
 
 #ifndef htonl

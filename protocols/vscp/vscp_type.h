@@ -160,6 +160,7 @@
 #define VSCP_TYPE_DATA_SIGNAL_LEVEL                         5
 #define VSCP_TYPE_DATA_SIGNAL_QUALITY                       6
 
+
 // class 20 (0x14) -- INFORMATION
 #define VSCP_TYPE_INFORMATION_GENERAL                       0
 #define VSCP_TYPE_INFORMATION_BUTTON                        1
@@ -213,6 +214,7 @@
 #define VSCP_TYPE_INFORMATION_DETECT                        49
 #define VSCP_TYPE_INFORMATION_OVERFLOW                      50
 
+
 // class 30 (0x1E) -- CONTROL
 #define VSCP_TYPE_CONTROL_GENERAL                           0
 #define VSCP_TYPE_CONTROL_MUTE                              1
@@ -244,6 +246,7 @@
 #define VSCP_TYPE_CONTROL_TIMED_PULE_ON                     30
 #define VSCP_TYPE_CONTROL_TIMED_PULSE_OFF                   31
 #define VSCP_TYPE_CONTROL_SET_COUNTRY_LANGUAGE              32
+
 
 // class 40 (0x28) -- MULTIMEDIA
 #define VSCP_TYPE_MULTIMEDIA_GENERAL                        0
@@ -283,6 +286,7 @@
 #define VSCP_TYPE_MULTIMEDIA_CONTROL                        60
 #define VSCP_TYPE_MULTIMEDIA_CONTROL_RESPONSE               61
 
+
 // class 50 (0x32) -- AOL
 #define VSCP_TYPE_AOL_GENERAL                               0
 #define VSCP_TYPE_AOL_UNPLUGGED_POWER                       1
@@ -302,6 +306,7 @@
 #define VSCP_TYPE_AOL_UPDATE_BIOS_IMAGE                     15
 #define VSCP_TYPE_AOL_UPDATE_DIAGNOSTIC_PROCEDURE           16
 
+
 // class 100 (0x64) -- PHONE
 #define VSCP_TYPE_PHONE_GENERAL                             0
 #define VSCP_TYPE_PHONE_INCOMING_CALL                       1
@@ -312,6 +317,7 @@
 #define VSCP_TYPE_PHONE_GIVEUP                              6
 #define VSCP_TYPE_PHONE_TRANSFER                            7
 #define VSCP_TYPE_PHONE_DATABASE_INFO                       8
+
 
 // class 102 (0x66) -- DISPLAY
 #define VSCP_TYPE_DISPLAY_GENERAL                           0
@@ -325,12 +331,14 @@
 #define VSCP_TYPE_DISPLAY_SHOW_LED                          48
 #define VSCP_TYPE_DISPLAY_SHOW_LED_COLOR                    49
 
+
 // class 110 (0x6E) -- REMOTE
 #define VSCP_TYPE_REMOTE_GENERAL                            0
 #define VSCP_TYPE_REMOTE_RC5                                1
 #define VSCP_TYPE_REMOTE_SONY12                             2
 #define VSCP_TYPE_REMOTE_LIRC                               32
 #define VSCP_TYPE_REMOTE_VSCP                               48
+
 
 // class 200 (0xC8) -- 1-WIRE
 #define VSCP_TYPE_1WIRE_GENERAL                             0
@@ -347,6 +355,7 @@
 #define VSCP_TYPE_1WIRE_OVERDRIVE_READ_MEMORY               11
 #define VSCP_TYPE_1WIRE_OVERDRIVE_WRITE_MEMORY              12
 
+
 // class 201 (0xC9) -- X10
 #define VSCP_TYPE_X10_GENERAL                               0
 #define VSCP_TYPE_X10_STANDARD_MESSAGE_RECEIVE              1
@@ -359,23 +368,29 @@
 // class 202 (0xCA) -- LON
 #define VSCP_TYPE_LON_GENERAL                               0
 
+
 // class 203 (0xCB) -- KNX/EIB
 #define VSCP_TYPE_EIB_GENERAL                               0
+
 
 // class 204 (0xCC) -- SNAP
 #define VSCP_TYPE_SNAP_GENERAL                              0
 
+
 // class 205 (0xCD) -- CBUS
 #define VSCP_TYPE_CBUS_GENERAL                              0
+
 
 // class 206 (0xCE) -- GPS
 #define VSCP_TYPE_GPS_GENERAL                               0
 #define VSCP_TYPE_GPS_POSITION                              1
 #define VSCP_TYPE_GPS_SATELLITES                            2
 
+
 // class 212 (0xD4) -- WIRELESS
 #define VSCP_TYPE_WIRELESS_GENERAL                          0
 #define VSCP_TYPE_WIRELESS_GSM_CELL                         1
+
 
 // class 509 (0x1FD) -- LOG
 #define VSCP_TYPE_LOG_GENERAL                               0
@@ -384,8 +399,10 @@
 #define VSCP_TYPE_LOG_STOP                                  3
 #define VSCP_TYPE_LOG_LEVEL                                 4
 
+
 // class 510 (0x1FE) -- LABORATORY
 #define VSCP_TYPE_LABORATORY_GENERAL                        0
+
 
 // class 511 (0x1FF) -- LOCAL
 #define VSCP_TYPE_LOCAL_GENERAL                             0
@@ -407,22 +424,28 @@
 #define VSCP2_TYPE_PROTOCOL_CONFIG_PARAM_REQUEST            9
 #define VSCP2_TYPE_PROTOCOL_CONFIG_PARAM_RESPONSE           10
 
+
 // Level II Control functionality Class=1025 (0x401)
 #define VSCP2_TYPE_CONTROL_GENERAL                          0
+
 
 // Level II Information functionality Class=1026 (0x402)
 #define VSCP2_TYPE_INFORMATION_GENERAL                      0
 #define VSCP2_TYPE_INFORMATION_TOKEN_ACTIVITY               1
 
+
 // Level II Text to speech functionality Class=1028 (0x404)
 #define VSCP2_TYPE_TEXT2SPEECH_GENERAL                      0
 #define VSCP2_TYPE_TEXT2SPEECH_TALK                         1
 
+
 // Level II Custom functionality Class=1029 (0x405)
 #define VSCP2_TYPE_CUSTOM_GENERAL                           0
 
+
 // Level II Display functionality Class=1030 (0x406)
 #define VSCP2_TYPE_DISPLAY_GENERAL                          0
+
 
 // Level II VSCPD daemon functionality Class=65535 (0xFFFF)
 #define VSCP2_TYPE_VSCPD_GENERAL                            0

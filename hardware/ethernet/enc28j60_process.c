@@ -259,7 +259,7 @@ process_packet(void)
 
 #ifdef VSCP_SUPPORT
       case VSCP_ETHTYPE:
-        vcsp_net_raw();
+        vscp_net_raw();
 
         /* if there is a packet to send, send it now */
         if (uip_len > 0)
