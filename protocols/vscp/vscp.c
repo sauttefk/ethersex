@@ -32,9 +32,9 @@
 #include "protocols/vscp/vscp.h"
 #include "protocols/vscp/vscp_class.h"
 #include "protocols/vscp/vscp_type.h"
+#include "protocols/vscp/vscp_firmware_level2.h"
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
-#include "protocols/ecmd/ecmd-base.h"
 #ifdef VSCP_SUPPORT
 
 
@@ -146,7 +146,7 @@ vscp_get(struct vscp_raw_event *vscp)
                    VSCP_TYPE_PROTOCOL_READ_REGISTER, vscp->data[17]);
         if (guidMismatch)
           return;
-        vscp_readRegister(vscp);
+//        vscp_readRegister(vscp);
         break;
 
 
@@ -155,7 +155,7 @@ vscp_get(struct vscp_raw_event *vscp)
                    VSCP_TYPE_PROTOCOL_WRITE_REGISTER, vscp->data[17]);
         if (guidMismatch)
           return;
-        vscp_writeRegister(vscp);
+//        vscp_writeRegister(vscp);
         break;
 
 
@@ -181,7 +181,7 @@ vscp_get(struct vscp_raw_event *vscp)
                    VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO);
         if (guidMismatch)
           return;
-        vscp_getMatrixinfo(vscp);
+//        vscp_getMatrixinfo(vscp);
         break;
 
 
@@ -225,7 +225,7 @@ vscp_get(struct vscp_raw_event *vscp)
                    VSCP_TYPE_PROTOCOL_READ_REGISTER, vscp->data[17]);
         if (guidMismatch)
           return;
-        vscp_readRegister(vscp);
+//        vscp_readRegister(vscp);
         break;
 
 
@@ -235,7 +235,7 @@ vscp_get(struct vscp_raw_event *vscp)
                    vscp->data[18]);
         if (guidMismatch)
           return;
-        vscp_writeRegister(vscp);
+//        vscp_writeRegister(vscp);
         break;
 
 
@@ -261,7 +261,7 @@ vscp_get(struct vscp_raw_event *vscp)
 
 }
 
-
+/*
 void
 vscp_readRegister(struct vscp_raw_event *vscp)
 {
@@ -301,7 +301,7 @@ vscp_getMatrixinfo(struct vscp_raw_event *vscp)
   vscp->data[5] = 0;
   vscp->data[6] = 0;            // size of row for level II
 }
-
+*/
 
 void
 vscp_periodic(void)

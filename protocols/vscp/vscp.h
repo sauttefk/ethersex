@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012 by Frank Sautter <ethersix@sautter.com>
  *
- * This program is free software; you can redistribute it and/or modify it
+ * This program is free software; you can redistsribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 2 of the License, or (at your option)
  * any later version.
@@ -47,8 +47,8 @@ void sendPeriodicOutputEvents(struct vscp_raw_event *vscp);
 void sendPeriodicInputEvents(struct vscp_raw_event *vscp);
 
 void vscp_createHead(struct vscp_raw_event *vscp);
-void vscp_readRegister(struct vscp_raw_event *vscp);
-void vscp_writeRegister(struct vscp_raw_event *vscp);
+//void vscp_readRegister(struct vscp_raw_event *vscp);
+//void vscp_writeRegister(struct vscp_raw_event *vscp);
 void vscp_getMatrixinfo(struct vscp_raw_event *vscp);
 
 

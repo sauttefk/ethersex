@@ -33,11 +33,6 @@
 #define VSCP_FIRMWARE_MINOR_VERSION             0x00
 #define VSCP_FIRMWARE_SUB_MINOR_VERSION         0x01
 
-// Bootloaders
-#define VSCP_BOOTLOADER_VSCP                    0x00
-#define VSCP_BOOTLOADER_PIC1                    0x01
-#define VSCP_BOOTLOADER_LPC1                    0x10
-#define VSCP_BOOTLOADER_NONE                    0xFF
 
 // State machine states
 #define VSCP_STATE_STARTUP                      0x00  // Cold/warm reset
@@ -119,65 +114,6 @@
 #define VSCP_DATACODING_INDEX5                  0x05
 #define VSCP_DATACODING_INDEX6                  0x06
 #define VSCP_DATACODING_INDEX7                  0x07
-
-
-// * * * Standard VSCP registers * * *
-#define  VSCP_LEVEL2_COMMON_REGISTER_START      0xFFFFFF80
-
-#define VSCP_REG_ALARMSTATUS                    0xFFFFFF80
-#define VSCP_REG_VSCP_MAJOR_VERSION             0xFFFFFF81
-#define VSCP_REG_VSCP_MINOR_VERSION             0xFFFFFF82
-
-#define VSCP_REG_NODE_CONTROL                   0xFFFFFF83
-
-#define VSCP_REG_USERID0                        0xFFFFFF84
-#define VSCP_REG_USERID1                        0xFFFFFF85
-#define VSCP_REG_USERID2                        0xFFFFFF86
-#define VSCP_REG_USERID3                        0xFFFFFF87
-#define VSCP_REG_USERID4                        0xFFFFFF88
-
-#define VSCP_REG_MANUFACTUR_ID0                 0xFFFFFF89
-#define VSCP_REG_MANUFACTUR_ID1                 0xFFFFFF8A
-#define VSCP_REG_MANUFACTUR_ID2                 0xFFFFFF8B
-#define VSCP_REG_MANUFACTUR_ID3                 0xFFFFFF8C
-
-#define VSCP_REG_MANUFACTUR_SUBID0              0xFFFFFF8D
-#define VSCP_REG_MANUFACTUR_SUBID1              0xFFFFFF8E
-#define VSCP_REG_MANUFACTUR_SUBID2              0xFFFFFF8F
-#define VSCP_REG_MANUFACTUR_SUBID3              0xFFFFFF90
-
-#define VSCP_REG_NICKNAME_ID                    0xFFFFFF91
-
-#define VSCP_REG_PAGE_SELECT_MSB                0xFFFFFF92
-#define VSCP_REG_PAGE_SELECT_LSB                0xFFFFFF93
-
-#define VSCP_REG_FIRMWARE_MAJOR_VERSION         0xFFFFFF94
-#define VSCP_REG_FIRMWARE_MINOR_VERSION         0xFFFFFF95
-#define VSCP_REG_FIRMWARE_SUB_MINOR_VERSION     0xFFFFFF96
-
-#define VSCP_REG_BOOT_LOADER_ALGORITHM          0xFFFFFF97
-
-#define VSCP_REG_BUFFER_SIZE                    0xFFFFFF98
-
-#define VSCP_REG_GUID                           0xFFFFFFD0
-#define VSCP_REG_GUID0                          0xFFFFFFD0
-#define VSCP_REG_GUID1                          0xFFFFFFD1
-#define VSCP_REG_GUID2                          0xFFFFFFD2
-#define VSCP_REG_GUID3                          0xFFFFFFD3
-#define VSCP_REG_GUID4                          0xFFFFFFD4
-#define VSCP_REG_GUID5                          0xFFFFFFD5
-#define VSCP_REG_GUID6                          0xFFFFFFD6
-#define VSCP_REG_GUID7                          0xFFFFFFD7
-#define VSCP_REG_GUID8                          0xFFFFFFD8
-#define VSCP_REG_GUID9                          0xFFFFFFD9
-#define VSCP_REG_GUID10                         0xFFFFFFDA
-#define VSCP_REG_GUID11                         0xFFFFFFDB
-#define VSCP_REG_GUID12                         0xFFFFFFDC
-#define VSCP_REG_GUID13                         0xFFFFFFDD
-#define VSCP_REG_GUID14                         0xFFFFFFDE
-#define VSCP_REG_GUID15                         0xFFFFFFDF
-
-#define VSCP_REG_DEVICE_URL                     0xFFFFFFE0
 
 
 #ifndef htonl
