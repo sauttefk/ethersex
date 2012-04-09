@@ -119,6 +119,11 @@ struct eeprom_config_t
 #ifdef DMX_FXSLOT_SUPPORT
   struct fxslot_struct_stripped dmx_fxslots[DMX_FXSLOT_AMOUNT];
 #endif
+
+#ifdef VSCP_SUPPORT
+  uint16_t vscp_subsource;
+#endif
+
   uint8_t crc;
 };
 

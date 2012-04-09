@@ -30,6 +30,7 @@
 
 #define VSCP_TYPE_UNDEFINED                                 0
 
+
 // VSCP Protocol Functionality
 #define VSCP_TYPE_PROTOCOL_SEGCTRL_HEARTBEAT                1
 #define VSCP_TYPE_PROTOCOL_NEW_NODE_ONLINE                  2
@@ -75,6 +76,7 @@
 #define VSCP_TYPE_PROTOCOL_START_BLOCK_ACK                  50
 #define VSCP_TYPE_PROTOCOL_START_BLOCK_NACK                 51
 
+
 // Class 1 (0x01) -- ALARM
 #define VSCP_TYPE_ALARM_GENERAL                             0
 #define VSCP_TYPE_ALARM_WARNING                             1
@@ -87,9 +89,11 @@
 #define VSCP_TYPE_ALARM_EMERGENCY_RESET                     8
 #define VSCP_TYPE_ALARM_EMERGENCY_RESUME                    9
 
+
 // Class 2 (0x02) -- SECURITY
 #define VSCP_TYPE_SECURITY_GENERAL                          0
 #define VSCP_TYPE_SECURITY_MOTION                           1
+
 
 // Class 10 (0x0a) -- MEASUREMENT
 #define VSCP_TYPE_MEASUREMENT_GENERAL                       0

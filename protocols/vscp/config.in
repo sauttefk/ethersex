@@ -1,12 +1,9 @@
-if [ "$NET_MAX_FRAME_LENGTH" -gt 571 ]; then
-  define_bool NET_MAX_FRAME_LENGTH_GT_571 y
-else
-  define_bool NET_MAX_FRAME_LENGTH_GT_571 n
-fi
-
-dep_bool_menu "VSCP Node" VSCP_SUPPORT $NET_MAX_FRAME_LENGTH_GT_571 $UDP_SUPPORT
-  int "UDP Port" CONF_VSCP_PORT 9598
-  comment "Universe Settings"
-  comment  "Debugging Flags"
+dep_bool_menu "VSCP Node" VSCP_SUPPORT
+  int "Sub Source ID (lower 2 bytes of GUID)" CONF_VSCP_SUBSOURCE 0x55AA
+  bool "Raw Ethernet" VSCP_RAW_SUPPORT
+  dep_bool_menu "VSCP over UDP" VSCP_UDP_SUPPORT $UDP_SUPPORT
+    int "UDP Port" CONF_VSCP_PORT 9598
+  endmenu
+  comment "Debugging Flags"
   dep_bool 'VSCP' DEBUG_VSCP $DEBUG
 endmenu

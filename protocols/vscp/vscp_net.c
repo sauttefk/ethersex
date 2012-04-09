@@ -27,6 +27,7 @@
 
 
 #ifdef VSCP_SUPPORT
+#ifdef VSCP_UDP_SUPPORT
 void
 vscp_net_init(void)
 {
@@ -69,8 +70,10 @@ vscp_net_udp(void)
              vscp->guid[8], vscp->guid[9], vscp->guid[10], vscp->guid[11],
              vscp->guid[12], vscp->guid[13], vscp->guid[14], vscp->guid[15]);
 }
+#endif /* !VSCP_UDP_SUPPORT */
 
 
+#ifdef VSCP_RAW_SUPPORT
 void
 vscp_net_raw(void)
 {
@@ -92,10 +95,11 @@ vscp_net_raw(void)
 
   vscp_get(vscp);
 }
+#endif /* !VSCP_RAW_SUPPORT */
 #endif /* !VSCP_SUPPORT */
 
 
 /*
    -- Ethersex META --
-   net_init(vscp_net_init)
+   ifdef(`conf_VSCP_UDP_SUPPORT',`net_init(vscp_net_init)')
  */
