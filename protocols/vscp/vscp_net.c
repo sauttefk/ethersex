@@ -23,6 +23,8 @@
 #include <string.h>
 
 #include "protocols/uip/uip.h"
+#include "protocols/uip/uip_router.h"
+
 #include "protocols/vscp/vscp.h"
 
 
@@ -77,6 +79,7 @@ vscp_net_udp(void)
 void
 vscp_net_raw(void)
 {
+  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
   struct vscp_raw_event *vscp =
     (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
 
@@ -93,7 +96,21 @@ vscp_net_raw(void)
   }
   uip_len = 0;
 
-  vscp_get(vscp);
+  VSCP_DEBUG("VERS : 0x%02X\n", vscp->version);
+  VSCP_DEBUG("HEAD : 0x%08lX\n", ntohl(vscp->head));
+  VSCP_DEBUG("TIMES: 0x%08lX\n", ntohl(vscp->timestamp));
+
+  uint8_t oguid[16];                        // fumble originator guid together
+  memset(&oguid[0], 0xff, 7);               // raw ethernet first 8 bytes
+  oguid[7] = 0xFE;                          // = 0xFFFFFFFFFFFFFFFE
+  memcpy(&oguid[8], &packet->src.addr, 6);  // sending mac addres
+  memcpy(&oguid[14], &vscp->subsource, 2);  // subsource = lower 2 bytes GUID
+
+  uint16_t class = ntohs(vscp->class);
+  uint16_t type = ntohs(vscp->type);
+  uint16_t size = ntohs(vscp->size);
+
+  vscp_get(class, type, size, &oguid, vscp->data);
 }
 #endif /* !VSCP_RAW_SUPPORT */
 #endif /* !VSCP_SUPPORT */

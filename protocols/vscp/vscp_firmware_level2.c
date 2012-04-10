@@ -23,7 +23,7 @@
  *  This file is part of VSCP - Very Simple Control Protocol
  *  http://www.vscp.org
  *
- * This module defined general functions for a Level II low resource module.
+ * This module defines general functions for a level II low resource module.
  * Many methods must be implemented by the user application to make a full
  * implemention.
  *

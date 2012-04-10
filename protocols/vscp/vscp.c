@@ -24,6 +24,7 @@
 #include <string.h>
 #include <avr/interrupt.h>
 
+#include "vscp.h"
 #include "config.h"
 #include "core/bool.h"
 #include "core/bit-macros.h"
@@ -84,99 +85,101 @@ vscp_main(void)
 
 
 void
-vscp_get(struct vscp_raw_event *vscp)
+vscp_get(uint16_t class, uint16_t type, uint16_t size, uint8_t *oguid,
+         uint8_t *data)
 {
-  VSCP_DEBUG("VERS : 0x%02X\n", vscp->version);
-  VSCP_DEBUG("HEAD : 0x%08lX\n", ntohl(vscp->head));
-  VSCP_DEBUG("SUB  : 0x%04X\n", ntohs(vscp->subsource));
-  VSCP_DEBUG("TIMES: 0x%08lX\n", ntohl(vscp->timestamp));
-  VSCP_DEBUG("CLASS: 0x%04X\n", ntohs(vscp->class));
-  VSCP_DEBUG("TYPE : 0x%04X\n", ntohs(vscp->type));
-  VSCP_DEBUG("DSIZE: %d\n", ntohs(vscp->size));
+  VSCP_DEBUG("OGUID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
+             "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+             oguid[0], oguid[1], oguid[2], oguid[3], oguid[4], oguid[5],
+             oguid[6], oguid[7], oguid[8], oguid[9], oguid[10], oguid[11],
+             oguid[12], oguid[13], oguid[14], oguid[15]);
+  VSCP_DEBUG("CLASS: 0x%04X\n", class);
+  VSCP_DEBUG("TYPE : 0x%04X\n", type);
+  VSCP_DEBUG("DSIZE: %d\n", size);
   VSCP_DEBUG("DATA : ");
 #ifdef DEBUG_VSCP
-  for (int i = 0; i < ntohs(vscp->size); i++)
-    printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), vscp->data[i]);
+  for (int i = 0; i < size; i++)
+    printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), data[i]);
   printf_P(PSTR("\n"));
 #endif /* !DEBUG_VSCP */
 
-  uint8_t guidMismatch = memcmp(&vscp->data, &guid, 16);
+  uint8_t guidMismatch = memcmp(data, guid, 16);
 
-  if (vscp->class == HTONS(VSCP_CLASS1_PROTOCOL) ||
-      vscp->class == HTONS(VSCP_CLASS2_LEVEL1_PROTOCOL))
+  if (class == VSCP_CLASS1_PROTOCOL ||
+      class == VSCP_CLASS2_LEVEL1_PROTOCOL)
   {
-    switch (vscp->type)
+    switch (type)
     {
-      case HTONS(VSCP_TYPE_PROTOCOL_SEGCTRL_HEARTBEAT):
+      case VSCP_TYPE_PROTOCOL_SEGCTRL_HEARTBEAT:
         VSCP_DEBUG("0x%02X SEGCTRL_HEARTBEAT\n",
                    VSCP_TYPE_PROTOCOL_SEGCTRL_HEARTBEAT);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_NEW_NODE_ONLINE):
+      case VSCP_TYPE_PROTOCOL_NEW_NODE_ONLINE:
         VSCP_DEBUG("0x%02X NEW_NODE_ONLINE\n",
                    VSCP_TYPE_PROTOCOL_NEW_NODE_ONLINE);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_PROBE_ACK):
+      case VSCP_TYPE_PROTOCOL_PROBE_ACK:
         VSCP_DEBUG("0x%02X PROBE_ACK\n", VSCP_TYPE_PROTOCOL_PROBE_ACK);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_SET_NICKNAME):
+      case VSCP_TYPE_PROTOCOL_SET_NICKNAME:
         VSCP_DEBUG("0x%02X SET_NICKNAME\n", VSCP_TYPE_PROTOCOL_SET_NICKNAME);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_NICKNAME_ACCEPTED):
+      case VSCP_TYPE_PROTOCOL_NICKNAME_ACCEPTED:
         VSCP_DEBUG("0x%02X NICKNAME_ACCEPTED\n",
                    VSCP_TYPE_PROTOCOL_NICKNAME_ACCEPTED);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_DROP_NICKNAME):
+      case VSCP_TYPE_PROTOCOL_DROP_NICKNAME:
         VSCP_DEBUG("0x%02X DROP_NICKNAME\n",
                    VSCP_TYPE_PROTOCOL_DROP_NICKNAME);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_READ_REGISTER):
+      case VSCP_TYPE_PROTOCOL_READ_REGISTER:
         VSCP_DEBUG("0x%02X READ_REGISTER 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, vscp->data[17]);
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[17]);
         if (guidMismatch)
           return;
 //        vscp_readRegister(vscp);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_WRITE_REGISTER):
+      case VSCP_TYPE_PROTOCOL_WRITE_REGISTER:
         VSCP_DEBUG("0x%02X WRITE_REGISTER 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, vscp->data[17]);
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[17]);
         if (guidMismatch)
           return;
 //        vscp_writeRegister(vscp);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE):
+      case VSCP_TYPE_PROTOCOL_RW_RESPONSE:
         VSCP_DEBUG("0x%02X RW_RESPONSE 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, vscp->data[17]);
+                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, data[17]);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_WHO_IS_THERE):
+      case VSCP_TYPE_PROTOCOL_WHO_IS_THERE:
         VSCP_DEBUG("0x%02X WHO_IS_THERE\n", VSCP_TYPE_PROTOCOL_WHO_IS_THERE);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_WHO_IS_THERE_RESPONSE):
+      case VSCP_TYPE_PROTOCOL_WHO_IS_THERE_RESPONSE:
         VSCP_DEBUG("0x%02X WHO_IS_THERE_RESPONSE\n",
                    VSCP_TYPE_PROTOCOL_WHO_IS_THERE_RESPONSE);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO):
+      case VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO:
         VSCP_DEBUG("0x%02X GET_MATRIX_INFO\n",
                    VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO);
         if (guidMismatch)
@@ -185,74 +188,72 @@ vscp_get(struct vscp_raw_event *vscp)
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE):
+      case VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE:
         VSCP_DEBUG("0x%02X GET_MATRIX_INFO_RESPONSE\n",
                    VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE);
         break;
 
 
-      case HTONS(VSCP_TYPE_PROTOCOL_RESET_DEVICE):
+      case VSCP_TYPE_PROTOCOL_RESET_DEVICE:
         VSCP_DEBUG("0x%02X RESET_DEVICE\n", VSCP_TYPE_PROTOCOL_RESET_DEVICE);
         break;
 
 
       default:
-        VSCP_DEBUG("unsupported type 0x%04X\n", ntohs(vscp->type));
+        VSCP_DEBUG("unsupported type 0x%04X\n", type);
     }
   }
-  else if (vscp->class == HTONS(VSCP_CLASS1_ALARM) ||
-           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_ALARM))
+  else if (class == VSCP_CLASS1_ALARM ||
+           class == VSCP_CLASS2_LEVEL1_ALARM)
   {
   }
-  else if (vscp->class == HTONS(VSCP_CLASS1_MEASUREMENT) ||
-           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_MEASUREMENT))
+  else if (class == VSCP_CLASS1_MEASUREMENT ||
+           class == VSCP_CLASS2_LEVEL1_MEASUREMENT)
   {
   }
-  else if (vscp->class == HTONS(VSCP_CLASS1_INFORMATION) ||
-           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_INFORMATION))
+  else if (class == VSCP_CLASS1_INFORMATION ||
+           class == VSCP_CLASS2_LEVEL1_INFORMATION)
   {
   }
-  else if (vscp->class == HTONS(VSCP_CLASS1_CONTROL) ||
-           vscp->class == HTONS(VSCP_CLASS2_LEVEL1_CONTROL))
+  else if (class == VSCP_CLASS1_CONTROL ||
+           class == VSCP_CLASS2_LEVEL1_CONTROL)
   {
   }
-  else if (vscp->class == HTONS(VSCP_CLASS2_PROTOCOL))
+  else if (class == VSCP_CLASS2_PROTOCOL)
   {
-    switch (vscp->type)
+    switch (type)
     {
-      case HTONS(VSCP2_TYPE_PROTOCOL_READ_REGISTER):
+      case VSCP2_TYPE_PROTOCOL_READ_REGISTER:
         VSCP_DEBUG("0x%02x read register 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, vscp->data[17]);
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[17]);
         if (guidMismatch)
           return;
 //        vscp_readRegister(vscp);
         break;
 
 
-      case HTONS(VSCP2_TYPE_PROTOCOL_WRITE_REGISTER):
+      case VSCP2_TYPE_PROTOCOL_WRITE_REGISTER:
         VSCP_DEBUG("0x%02x write register 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, vscp->data[17],
-                   vscp->data[18]);
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[17], data[18]);
         if (guidMismatch)
           return;
 //        vscp_writeRegister(vscp);
         break;
 
 
-      case HTONS(VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE):
+      case VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE:
         VSCP_DEBUG("0x%02x read/write response\n",
                    VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE);
         break;
 
 
       default:
-        VSCP_DEBUG("unsupported type 0x%04X\n", ntohs(vscp->type));
+        VSCP_DEBUG("unsupported type 0x%04X\n", type);
     }
   }
   else
   {
-    VSCP_DEBUG("unsupported class 0x%04X type 0x%04X\n",
-               ntohs(vscp->class), ntohs(vscp->type));
+    VSCP_DEBUG("unsupported class 0x%04X type 0x%04X\n", class, type);
   }
 
 

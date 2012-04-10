@@ -41,7 +41,9 @@ uint8_t guid[16];
 
 void vscp_init(void);
 void vscp_main(void);
-void vscp_get(struct vscp_raw_event *vscp);
+void vscp_get(uint16_t class, uint16_t type, uint16_t size, uint8_t *guid,
+              uint8_t *data);
+
 void vscp_sendHeartBeat(struct vscp_raw_event *vscp);
 void sendPeriodicOutputEvents(struct vscp_raw_event *vscp);
 void sendPeriodicInputEvents(struct vscp_raw_event *vscp);
