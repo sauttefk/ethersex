@@ -23,6 +23,14 @@
 #define _VSCP_NET_H
 
 /* constants */
+#define VSCP_MODE_CAN                           0
+#define VSCP_MODE_RS232                         1
+#define VSCP_MODE_RS485                         2
+#define VSCP_MODE_RAWETHERNET                   3
+#define VSCP_MODE_TCP                           4
+#define VSCP_MODE_UDP                           5
+#define VSCP_MODE_MIWI                          6
+
 
 #define VSCP_DM_MATRIX_BASE                     0x200 //FIXME: use top of eeprom pointer
 

@@ -19,16 +19,16 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-#include <stdint.h>
-#include <avr/io.h>
-#include <avr/pgmspace.h>
 #include "config.h"
-#include "protocols/vscp/vscp_net.h"
+#include "vscp_net.h"
+#include "vscp_class.h"
+#include "vscp_type.h"
+#include "vscp_firmware_level2.h"
+
 #ifndef _VSCP_H
 #define _VSCP_H
 
 #ifdef VSCP_SUPPORT
-
 
 #ifdef DEBUG_VSCP
 #include "core/debug.h"
@@ -41,8 +41,8 @@ uint8_t guid[16];
 
 void vscp_init(void);
 void vscp_main(void);
-void vscp_get(uint16_t class, uint16_t type, uint16_t size, uint8_t *guid,
-              uint8_t *data);
+void vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
+              uint8_t *guid, uint8_t *data);
 
 void vscp_sendHeartBeat(struct vscp_raw_event *vscp);
 void sendPeriodicOutputEvents(struct vscp_raw_event *vscp);

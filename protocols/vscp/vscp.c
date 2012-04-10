@@ -21,19 +21,11 @@
 
 
 #include <stdio.h>
-#include <string.h>
-#include <avr/interrupt.h>
 
 #include "vscp.h"
-#include "config.h"
-#include "core/bool.h"
 #include "core/bit-macros.h"
 #include "core/periodic.h"
 #include "core/eeprom.h"
-#include "protocols/vscp/vscp.h"
-#include "protocols/vscp/vscp_class.h"
-#include "protocols/vscp/vscp_type.h"
-#include "protocols/vscp/vscp_firmware_level2.h"
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
 #ifdef VSCP_SUPPORT
@@ -85,8 +77,8 @@ vscp_main(void)
 
 
 void
-vscp_get(uint16_t class, uint16_t type, uint16_t size, uint8_t *oguid,
-         uint8_t *data)
+vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
+         uint8_t *oguid, uint8_t *data)
 {
   VSCP_DEBUG("OGUID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
              "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",

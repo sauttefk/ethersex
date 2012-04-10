@@ -65,17 +65,18 @@ vscp_net_udp(void)
   uip_len = 0;
 
   VSCP_DEBUG("HEAD : 0x%02X\n", vscp->head);
-  VSCP_DEBUG("OGUID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
-             "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
-             vscp->guid[0], vscp->guid[1], vscp->guid[2], vscp->guid[3],
-             vscp->guid[4], vscp->guid[5], vscp->guid[6], vscp->guid[7],
-             vscp->guid[8], vscp->guid[9], vscp->guid[10], vscp->guid[11],
-             vscp->guid[12], vscp->guid[13], vscp->guid[14], vscp->guid[15]);
+
+  uint16_t class = ntohs(vscp->class);
+  uint16_t type = ntohs(vscp->type);
+  uint16_t size = ntohs(vscp->size);
+
+  vscp_get(VSCP_MODE_UDP, class, type, size, vscp->guid, vscp->data);
 }
 #endif /* !VSCP_UDP_SUPPORT */
 
 
-#ifdef VSCP_RAW_SUPPORT
+
+#ifdef VSCP_RAWETHERNET_SUPPORT
 void
 vscp_net_raw(void)
 {
@@ -110,13 +111,13 @@ vscp_net_raw(void)
   uint16_t type = ntohs(vscp->type);
   uint16_t size = ntohs(vscp->size);
 
-  vscp_get(class, type, size, &oguid, vscp->data);
+  vscp_get(VSCP_MODE_RAWETHERNET, class, type, size, &oguid, vscp->data);
 }
-#endif /* !VSCP_RAW_SUPPORT */
+#endif /* !VSCP_RAWETHERNET_SUPPORT */
 #endif /* !VSCP_SUPPORT */
 
 
 /*
-   -- Ethersex META --
-   ifdef(`conf_VSCP_UDP_SUPPORT',`net_init(vscp_net_init)')
+  -- Ethersex META --
+  ifdef(`conf_VSCP', `net_init(vscp_net_init)')
  */
