@@ -258,6 +258,7 @@ process_packet(void)
 #endif /* !UIP_CONF_IPV6 */
 
 #ifdef VSCP_SUPPORT
+#ifdef VSCP_RAWETHERNET_SUPPORT
       case VSCP_ETHTYPE:
         vscp_net_raw();
 
@@ -266,6 +267,7 @@ process_packet(void)
           transmit_packet();
 
         break;
+#endif /* !VSCP_RAWETHERNET_SUPPORT */
 #endif /* !VSCP_SUPPORT */
 
 #if UIP_CONF_IPV6
