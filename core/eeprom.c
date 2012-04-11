@@ -167,11 +167,12 @@ eeprom_init (void)
 #ifdef CRON_EEPROM_SUPPORT
   uint8_t count = 0;
   eeprom_save_offset(crontab, 0, &count, sizeof(count));
+#endif
 
 #ifdef VSCP_SUPPORT
   eeprom_save_int (vscp_subsource, HTONS(CONF_VSCP_SUBSOURCE));
-
 #endif
+
   eeprom_update_chksum ();
 }
 
