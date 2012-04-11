@@ -257,7 +257,7 @@ process_packet(void)
         break;
 #endif /* !UIP_CONF_IPV6 */
 
-#ifdef VSCP_SUPPORT
+#ifdef VSCP_RAWETHERNET_SUPPORT
       case VSCP_ETHTYPE:
         vscp_net_raw();
 
