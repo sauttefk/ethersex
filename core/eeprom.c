@@ -164,8 +164,13 @@ eeprom_init (void)
   eeprom_save_P (motd_text, PSTR (CONF_MOTD_DEFAULT), MOTD_VALUESIZE);
 #endif
 
+#ifdef CRON_EEPROM_SUPPORT
+  uint8_t count = 0;
+  eeprom_save_offset(crontab, 0, &count, sizeof(count));
+
 #ifdef VSCP_SUPPORT
   eeprom_save_int (vscp_subsource, HTONS(CONF_VSCP_SUBSOURCE));
+
 #endif
   eeprom_update_chksum ();
 }
