@@ -32,7 +32,7 @@
 #define VSCP_PROJDEFS_H
 
 // Undefine to use raw ethernet
-#define VSCP_USE_RAW_ETHERNET
+//#define VSCP_USE_RAW_ETHERNET
 
 // Undefine if VSCP UDP functionality should be used
 //#define VSCP_USE_UDP

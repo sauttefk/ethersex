@@ -22,25 +22,30 @@
 #include <avr/io.h>
 #include <string.h>
 
+#include "core/bool.h"
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
 
-#include "protocols/vscp/vscp.h"
+#include "vscp.h"
 
 
 #ifdef VSCP_SUPPORT
-#ifdef VSCP_UDP_SUPPORT
-void
-vscp_net_init(void)
+#ifdef VSCP_USE_UDP
+int8_t
+vscp_udpinit(void)
 {
   uip_udp_conn_t *conn;
   uip_ipaddr_t ip;
   uip_ipaddr_copy(&ip, all_ones_addr);
   if (!(conn = uip_udp_new(&ip, 0, vscp_net_udp)))
-    return;                     /* couldn't bind socket */
+  {
+    VSCP_DEBUG("couldn't bind to UDP port %d\n", CONF_VSCP_PORT);
+    return(FALSE);                     /* couldn't bind socket */
+  }
 
   uip_udp_bind(conn, HTONS(CONF_VSCP_PORT));
   VSCP_DEBUG("listening on UDP port %d\n", CONF_VSCP_PORT);
+  return(TRUE);
 }
 
 
@@ -71,12 +76,16 @@ vscp_net_udp(void)
   uint16_t size = ntohs(vscp->size);
 
   vscp_get(VSCP_MODE_UDP, class, type, size, vscp->guid, vscp->data);
+
+  /* if there is a packet to send, send it now */
+  if (uip_len > 0)
+    transmit_packet();
 }
-#endif /* !VSCP_UDP_SUPPORT */
+#endif /* !VSCP_USE_UDP */
 
 
 
-#ifdef VSCP_RAWETHERNET_SUPPORT
+#ifdef VSCP_USE_RAW_ETHERNET
 void
 vscp_net_raw(void)
 {
@@ -111,13 +120,12 @@ vscp_net_raw(void)
   uint16_t type = ntohs(vscp->type);
   uint16_t size = ntohs(vscp->size);
 
-  vscp_get(VSCP_MODE_RAWETHERNET, class, type, size, &oguid, vscp->data);
+  vscp_get(VSCP_MODE_RAWETHERNET, class, type, size, (uint8_t *) &oguid,
+           vscp->data);
+
+  /* if there is a packet to send, send it now */
+  if (uip_len > 0)
+    transmit_packet();
 }
-#endif /* !VSCP_RAWETHERNET_SUPPORT */
+#endif /* !VSCP_USE_RAW_ETHERNET */
 #endif /* !VSCP_SUPPORT */
-
-
-/*
-  -- Ethersex META --
-  ifdef(`conf_VSCP', `net_init(vscp_net_init)')
- */

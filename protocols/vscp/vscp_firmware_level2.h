@@ -33,8 +33,7 @@
 #define VSCP_FIRMWARE_LEVEL2_H
 
 
-#include "protocols/vscp/vscp_compiler.h"
-#include "protocols/vscp/vscp_projdefs.h"
+#include "vscp_projdefs.h"
 
 // * * * Constants * * *
 
@@ -81,14 +80,35 @@
 #define VSCP_SUBSTATE_NONE            0x00    // No state
 
 
+#define VSCP_PRIORITY_0               0x00
+#define VSCP_PRIORITY_1               0x20
+#define VSCP_PRIORITY_2               0x40
+#define VSCP_PRIORITY_3               0x60
+#define VSCP_PRIORITY_4               0x80
+#define VSCP_PRIORITY_5               0xA0
+#define VSCP_PRIORITY_6               0xC0
+#define VSCP_PRIORITY_7               0xE0
+
+#define VSCP_PRIORITY_HIGH            VSCP_PRIORITY_0
+#define VSCP_PRIORITY_MEDIUM          VSCP_PRIORITY_4
+#define VSCP_PRIORITY_LOW             VSCP_PRIORITY_7
+
+#define VSCP_MASK_PRIORITY            0xE0
+#define VSCP_MASK_HARDCODED           0x10
+#define VSCP_MASK_NOCRCCALC           0x08
+
+#define VSCP_LEVEL1_MAXDATA           8
+#define VSCP_LEVEL2_MAXDATA           (512 - 25)
+
+
+
 // VSCP message
 
 // This structure is for VSCP Level II
-  typedef struct _vscpEvent
+typedef struct _vscpEvent
 {
-
-// CRC should be calculated from
-// here to end + datablock
+  // CRC should be calculated from
+  // here to end + datablock
   uint8_t head;                 // bit 765 prioriy, Priority 0-7 where 0 is highest.
   // bit 4 = hardcoded, true for a hardcoded device.
   // bit 3 = Dont calculate CRC, false for CRC usage.
@@ -97,50 +117,21 @@
   uint8_t GUID[16];             // Node address MSB -> LSB
   uint16_t sizeData;            // Number of valid data bytes
 
-    // Pointer to data. Normally Max 487 (512- 25) bytes
-    // but can be restrictedto 8 bytes. This means that
-    // that all Level II events will not be handled
-    // on a low-end Level II device.
+  // Pointer to data. Normally Max 487 (512- 25) bytes
+  // but can be restrictedto 8 bytes. This means that
+  // that all Level II events will not be handled
+  // on a low-end Level II device.
 #ifdef VSCP_LEVEL2_LIMITED_DEVICE
-    uint8_t data[LIMITED_DEVICE_DATASIZE];
+  uint8_t data[LIMITED_DEVICE_DATASIZE];
+#else   /* */
+  uint8_t data[VSCP_LEVEL2_MAXDATA];
+#endif  /* */
 
-#else   /*
- */
-    uint8_t data[512 - 25];
-
-#endif  /*
- */
-
-uint16_t crc;               // crc checksum
-
+  uint16_t crc;               // crc checksum
 } vscpEvent;
 
 
-
 typedef vscpEvent *PVSCPEVENT;
-
-
-
-#define VSCP_PRIORITY_0           0x00
-#define VSCP_PRIORITY_1           0x20
-#define VSCP_PRIORITY_2           0x40
-#define VSCP_PRIORITY_3           0x60
-#define VSCP_PRIORITY_4           0x80
-#define VSCP_PRIORITY_5           0xA0
-#define VSCP_PRIORITY_6           0xC0
-#define VSCP_PRIORITY_7           0xE0
-
-#define VSCP_PRIORITY_HIGH        0x00
-#define VSCP_PRIORITY_MEDIUM      0x80
-#define VSCP_PRIORITY_LOW         0xE0
-
-#define VSCP_MASK_PRIORITY        0xE0
-#define VSCP_MASK_HARDCODED       0x10
-#define VSCP_MASK_NOCRCCALC       0x08
-
-#define VSCP_LEVEL1_MAXDATA       8
-#define VSCP_LEVEL2_MAXDATA       (512 - 25)
-
 
 //
 // Descision Matrix row
@@ -298,7 +289,7 @@ void sendHighEndServerProbe(void);
  */
 
 // Prototypes
-void vscp_readRegister(vscpEvent * pEvent, vscpEvent * pOutEvent);
+//void vscp_readRegister(vscpEvent * pEvent, vscpEvent * pOutEvent);
 
 void vscp_writeRegister(vscpEvent * pEvent, vscpEvent * pOutEvent);
 

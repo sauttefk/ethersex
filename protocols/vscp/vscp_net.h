@@ -41,6 +41,7 @@
 #define VSCP_FIRMWARE_MINOR_VERSION             0x00
 #define VSCP_FIRMWARE_SUB_MINOR_VERSION         0x01
 
+#define VSCP_RAWETHERNET_VERSION                0
 
 // State machine states
 #define VSCP_STATE_STARTUP                      0x00  // Cold/warm reset

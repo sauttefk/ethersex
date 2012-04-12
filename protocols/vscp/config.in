@@ -1,9 +1,10 @@
 dep_bool_menu "VSCP Node" VSCP_SUPPORT
   int "Sub Source ID (lower 2 bytes of GUID)" CONF_VSCP_SUBSOURCE 0x55AA
-  dep_bool "Raw Ethernet" VSCP_RAWETHERNET_SUPPORT $VSCP_SUPPORT
-  dep_bool_menu "VSCP over UDP" VSCP_UDP_SUPPORT $VSCP_SUPPORT $UDP_SUPPORT $BROADCAST_SUPPORT
+  dep_bool "Raw Ethernet" VSCP_USE_RAW_ETHERNET $VSCP_SUPPORT
+  dep_bool_menu "VSCP over UDP" VSCP_USE_UDP $VSCP_SUPPORT $UDP_SUPPORT $BROADCAST_SUPPORT
     int "UDP Port" CONF_VSCP_PORT 9598
   endmenu
+  dep_bool "VSCP over TCP" VSCP_USE_TCP $VSCP_SUPPORT
   comment "Debugging Flags"
   dep_bool 'VSCP' DEBUG_VSCP $VSCP_SUPPORT $DEBUG
 endmenu
