@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 by Frank Sautter <ethersix@sautter.com>
+ * (c) 2012 by Frank Sautter <ethersix@sautter.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -76,10 +76,6 @@ vscp_net_udp(void)
   uint16_t size = ntohs(vscp->size);
 
   vscp_get(VSCP_MODE_UDP, class, type, size, vscp->guid, vscp->data);
-
-  /* if there is a packet to send, send it now */
-  if (uip_len > 0)
-    transmit_packet();
 }
 #endif /* !VSCP_USE_UDP */
 
@@ -122,10 +118,30 @@ vscp_net_raw(void)
 
   vscp_get(VSCP_MODE_RAWETHERNET, class, type, size, (uint8_t *) &oguid,
            vscp->data);
-
-  /* if there is a packet to send, send it now */
-  if (uip_len > 0)
-    transmit_packet();
 }
 #endif /* !VSCP_USE_RAW_ETHERNET */
+
+
+void
+vscp_transmit(uint8_t mode, uint16_t size)
+{
+  struct vscp_raw_event *vscp_raw =
+    (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
+  struct vscp_udp_event *vscp_udp = (struct vscp_udp_event *) uip_appdata;
+
+  switch (mode)
+  {
+    case VSCP_MODE_RAWETHERNET:
+      vscp_raw->size = htons(size);
+      uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + size;
+      break;
+    case VSCP_MODE_UDP:
+      vscp_udp->size = htons(size);
+      uip_len = VSCP_UDP_POS_DATA - VSCP_CRC_LEN + size;
+      break;
+    default:
+      uip_len = 0;
+  }
+  transmit_packet();
+}
 #endif /* !VSCP_SUPPORT */

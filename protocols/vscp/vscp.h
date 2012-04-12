@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 by Frank Sautter <ethersix@sautter.com>
+ * (c) 2012 Frank Sautter <ethersix@sautter.com>
  *
  * This program is free software; you can redistsribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -49,7 +49,7 @@ void sendPeriodicOutputEvents(void);
 void sendPeriodicInputEvents(void);
 
 uint8_t* vscp_createHead(uint8_t mode, uint16_t class, uint16_t type,
-                         uint16_t size);
+                         uint8_t priority);
 void vscp_readRegister(uint8_t mode);
 //void vscp_writeRegister(struct vscp_raw_event *vscp);
 void vscp_getMatrixinfo(struct vscp_raw_event *vscp);

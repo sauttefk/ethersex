@@ -1,9 +1,8 @@
 /*
- * VSCP (Very Simple Control Protocol)
+ * This file is originally a part of VSCP (Very Simple Control Protocol)
  * http://www.vscp.org
  *
- * Copyright (C) 1995-2011 Ake Hedman,
- * eurosource, <akhe@eurosource.se>
+ * Copyright (C) 1995-2011 Ake Hedman, eurosource, <akhe@eurosource.se>
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -21,8 +20,8 @@
  *    misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  *
- * This file is part of VSCP - Very Simple Control Protocol
- * http://www.vscp.org
+ * This is an altered version
+ * (c) 2012 Frank Sautter <ethersix@sautter.com>
  */
 
 #ifndef VSCP_CLASS_H
@@ -63,7 +62,8 @@
 #define VSCP_CLASS2_LEVEL1_CONTROL                          (512 + 30)
 #define VSCP_CLASS2_LEVEL1_MULTIMEDIA                       (512 + 40)
 #define VSCP_CLASS2_LEVEL1_AOL                              (512 + 50)
-#define VSCP_CLASS2_LEVEL1_PHONE                            (512 + 10)
+#define VSCP_CLASS2_LEVEL1_MEASUREMENT64                    (512 + 60)
+#define VSCP_CLASS2_LEVEL1_PHONE                            (512 + 100)
 #define VSCP_CLASS2_LEVEL1_LIN                              (512 + 101)
 #define VSCP_CLASS2_LEVEL1_RC5                              (512 + 110)
 #define VSCP_CLASS2_LEVEL1_ONEWIRE                          (512 + 200)
@@ -77,12 +77,12 @@
 #define VSCP_CLASS2_LEVEL1_LOCAL                            (512 + 511)
 
 // Level II classes
-#define VSCP_CLASS2_PROTOCOL                                (1024)
-#define VSCP_CLASS2_CONTROL                                 (1025)
-#define VSCP_CLASS2_INFORMATION                             (1026)
-#define VSCP_CLASS2_TEXT2SPEECH                             (1028)
-#define VSCP_CLASS2_CUSTOM                                  (1029)
-#define VSCP_CLASS2_DISPLAY                                 (1030)
-#define VSCP_CLASS2_VSCPD                                   (65535
+#define VSCP_CLASS2_PROTOCOL                                1024
+#define VSCP_CLASS2_CONTROL                                 1025
+#define VSCP_CLASS2_INFORMATION                             1026
+#define VSCP_CLASS2_TEXT2SPEECH                             1028
+#define VSCP_CLASS2_CUSTOM                                  1029
+#define VSCP_CLASS2_DISPLAY                                 1030
+#define VSCP_CLASS2_VSCPD                                   65535
 
 #endif

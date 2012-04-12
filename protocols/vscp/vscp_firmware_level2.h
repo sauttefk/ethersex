@@ -1,11 +1,8 @@
-/*****************************************************************************
- *  VSCP (Very Simple Control Protocol)
- *  http://www.vscp.org
+/*
+ * This file is originally a part of VSCP (Very Simple Control Protocol)
+ * http://www.vscp.org
  *
- *  Version 0.02 2008-11-15
- *  akhe@eurosource.se
- *
- *  Copyright (C) 1995-2011 Ake Hedman, eurosource
+ * Copyright (C) 1995-2011 Ake Hedman, eurosource, <akhe@eurosource.se>
  *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
@@ -23,10 +20,8 @@
  *    misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  *
- *  This file is part of VSCP - Very Simple Control Protocol
- *  http://www.vscp.org
- *
- * ***************************************************************************
+ * This is an altered version
+ * (c) 2012 Frank Sautter <ethersix@sautter.com>
  */
 
 #ifndef VSCP_FIRMWARE_LEVEL2_H
@@ -34,6 +29,7 @@
 
 
 #include "vscp_projdefs.h"
+#include "vscp.h"
 
 // * * * Constants * * *
 
@@ -289,9 +285,9 @@ void sendHighEndServerProbe(void);
  */
 
 // Prototypes
-//void vscp_readRegister(vscpEvent * pEvent, vscpEvent * pOutEvent);
+void vscp_readRegisterL2(uint8_t mode);
 
-void vscp_writeRegister(vscpEvent * pEvent, vscpEvent * pOutEvent);
+void vscp_writeRegisterL2(uint8_t mode, uint16_t sizeData);
 
 uint8_t vscp_readStdReg(uint32_t reg);
 
@@ -333,7 +329,7 @@ void fillGUID(vscpEvent * pEvent);
 
 // UDP event functionality - Don't use directly
 #ifdef VSCP_USE_UDP
-  int8_t vscp_udpinit(void);
+int8_t vscp_udpinit(void);
 
 int8_t vscp_sendUDPEvent(vscpEvent * pEvent);
 
