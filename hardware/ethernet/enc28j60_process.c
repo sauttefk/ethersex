@@ -257,16 +257,12 @@ process_packet(void)
         break;
 #endif /* !UIP_CONF_IPV6 */
 
-#ifdef VSCP_RAWETHERNET_SUPPORT
+#if defined(VSCP_SUPPORT) && defined(VSCP_USE_RAW_ETHERNET)
       case VSCP_ETHTYPE:
         vscp_net_raw();
 
-        /* if there is a packet to send, send it now */
-        if (uip_len > 0)
-          transmit_packet();
-
         break;
-#endif /* !VSCP_SUPPORT */
+#endif /* !VSCP_SUPPORT && VSCP_USE_RAW_ETHERNET */
 
 #if UIP_CONF_IPV6
         /* process ip packet */

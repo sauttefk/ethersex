@@ -39,17 +39,18 @@
 
 uint8_t guid[16];
 
-void vscp_init(void);
+void vscp_setup(void);
 void vscp_main(void);
 void vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
               uint8_t *guid, uint8_t *data);
 
-void vscp_sendHeartBeat(struct vscp_raw_event *vscp);
-void sendPeriodicOutputEvents(struct vscp_raw_event *vscp);
-void sendPeriodicInputEvents(struct vscp_raw_event *vscp);
+void vscp_sendHeartBeat(void);
+void sendPeriodicOutputEvents(void);
+void sendPeriodicInputEvents(void);
 
-void vscp_createHead(struct vscp_raw_event *vscp);
-//void vscp_readRegister(struct vscp_raw_event *vscp);
+uint8_t* vscp_createHead(uint8_t mode, uint16_t class, uint16_t type,
+                         uint16_t size);
+void vscp_readRegister(uint8_t mode);
 //void vscp_writeRegister(struct vscp_raw_event *vscp);
 void vscp_getMatrixinfo(struct vscp_raw_event *vscp);
 
