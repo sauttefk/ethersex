@@ -181,7 +181,7 @@ uint8_t action_params[VSCP_ACTION_PARAM_SIZE];      // Action parameter
 //      VSCP Register
 // ******************************************************************************
 
-#define  VSCP_LEVEL2_COMMON_REGISTER_START  0xffffff80
+#define VSCP_LEVEL2_COMMON_REGISTER_START   0xffffff80
 
 #define VSCP_REG_ALARMSTATUS                0xffffff80
 #define VSCP_REG_VSCP_MAJOR_VERSION         0xffffff81

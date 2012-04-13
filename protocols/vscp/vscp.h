@@ -54,6 +54,9 @@ void vscp_readRegister(uint8_t mode);
 //void vscp_writeRegister(struct vscp_raw_event *vscp);
 void vscp_getMatrixinfo(struct vscp_raw_event *vscp);
 
+#define FIRMWARE_MAJOR_VERSION        0x00
+#define FIRMWARE_MINOR_VERSION        0x00
+#define FIRMWARE_SUB_MINOR_VERSION    0x01
 
-#endif /* _VSCP_H */
 #endif /* VSCP_SUPPORT */
+#endif /* _VSCP_H */

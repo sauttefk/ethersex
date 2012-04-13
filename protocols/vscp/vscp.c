@@ -33,6 +33,25 @@
 /* ----------------------------------------------------------------------------
  *global variables
  */
+
+#ifndef VSCP_USE_EEPROM_FOR_MANUFACTURERE_ID
+// Manufacturer IDs
+// offset 0 - Manufacturer device id 0
+// offset 1 - Manufacturer device id 1
+// offset 2 - Manufacturer device id 2
+// offset 3 - Manufacturer device id 3
+// offset 4 - Manufacturer subdevice id 0
+// offset 5 - Manufacturer subdevice id 1
+// offset 6 - Manufacturer subdevice id 2
+// offset 7 - Manufacturer subdevice id 3
+const uint8_t vscp_manufacturer_id[8] = {
+  0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88
+};
+#endif
+
+// The device URL (max 32 characters including null termination)
+const char vscp_deviceURL[32] = "sautter.com/beteigeuze.xml";
+
 uint8_t vscp_alarmstatus;
 uint16_t vscp_page_select;
 
@@ -100,7 +119,8 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   if (class == VSCP_CLASS1_PROTOCOL ||
       class == VSCP_CLASS2_LEVEL1_PROTOCOL)
   {
-    uint8_t guidMismatch = memcmp(data[0], guid, 16);
+    uint8_t guidMismatch = memcmp(&data[0], guid, 16);
+
     switch (type)
     {
       case VSCP_TYPE_PROTOCOL_SEGCTRL_HEARTBEAT:
@@ -222,7 +242,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
                    VSCP_TYPE_PROTOCOL_READ_REGISTER, data[17]);
         if (guidMismatch)
           return;
-//        vscp_readRegisterL2(mode);
+        vscp_readRegisterL2(mode);
         break;
 
 
@@ -262,7 +282,13 @@ vscp_readRegister(uint8_t mode)
     vscp_createHead(mode, VSCP_CLASS1_PROTOCOL,
                     VSCP_TYPE_PROTOCOL_RW_RESPONSE, VSCP_PRIORITY_MEDIUM);
   data[0] = data[17];
-  data[1] = 42;
+
+  if ((data[17]) >= 0x80)
+      data[1] = vscp_readStdReg(0xFFFFFF00 | data[17]);
+  else
+//    data[1] = vscp_readAppReg(data[17]);
+#warning FIXME
+    data[1] = 42;
   vscp_transmit(mode, 2);
 }
 
@@ -287,7 +313,9 @@ vscp_readRegisterL2(uint8_t mode)
       data[8 + i] =
         vscp_readStdReg(idx - VSCP_LEVEL2_COMMON_REGISTER_START + 0x80 + i);
     else
-      data[8 + i] = vscp_readAppReg(idx + i);
+//      data[8 + i] = vscp_readAppReg(idx + i);
+#warning FIXME
+      data[8 + i] = 0;
   }
 
   data[4] = 0;
@@ -460,6 +488,166 @@ vscp_createHead(uint8_t mode, uint16_t class, uint16_t type, uint8_t priority)
       VSCP_DEBUG("unsupported mode\n");
   }
   return (&uip_buf[VSCP_RAWH_LEN]);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// getVSCPMajorVersion
+//
+
+uint8_t vscp_getFirmwareMajorVersion( void )
+{
+  return FIRMWARE_MAJOR_VERSION;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// getVSCPMinorVersion
+//
+
+uint8_t vscp_getFirmwareMinorVersion( void )
+{
+  return FIRMWARE_MINOR_VERSION;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// getVSCPSubMinorVersion
+//
+
+uint8_t vscp_getFirmwareSubMinorVersion( void )
+{
+  return FIRMWARE_SUB_MINOR_VERSION;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// getVSCPBootloaderCode
+//
+
+uint8_t getVSCPBootloaderCode( void )
+{
+#if defined(VSCP_ENABLE_BOOTLOADER)
+  return 0;
+#else
+  return 0xff;  // No bootloader support
+#endif
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// getVSCP_DeviceURL
+//
+
+uint8_t getVSCP_DeviceURL( uint8_t idx )
+{
+  if ( idx < 16 )
+    return vscp_deviceURL[ idx ];
+
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  getVSCPControlByte
+//
+
+uint8_t vscp_getControlByte( void )
+{
+//  return appcfgGetc( APPCFG_VSCP_EEPROM_CONTROL );
+#warning FIXME
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  setVSCPControlByte
+//
+
+void vscp_setControlByte( uint8_t ctrl )
+{
+//  appcfgPutc( APPCFG_VSCP_EEPROM_CONTROL, ctrl );
+#warning FIXME
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Get Manufacturer id and subid from EEPROM
+//
+
+uint8_t vscp_getUserID( uint8_t idx )
+{
+//  return appcfgGetc( APPCFG_VSCP_EEPROM_REG_USERID + idx );
+#warning FIXME
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  setVSCPUserID
+//
+
+void vscp_setUserID( uint8_t idx, uint8_t data )
+{
+//  appcfgPutc( APPCFG_VSCP_EEPROM_REG_USERID + idx, data );
+#warning FIXME
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// getVSCPManufacturerId
+//
+// Get Manufacturer id and subid from EEPROM
+//
+
+uint8_t vscp_getManufacturerId( uint8_t idx )
+{
+#if defined(VSCP_USE_EEPROM_FOR_MANUFACTURERE_ID)
+//  return appcfgGetc( APPCFG_VSCP_EEPROM_REG_MANUFACTUR_ID0 + idx );
+#warning FIXME
+#else
+  return vscp_manufacturer_id[ idx ];
+#endif
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vscp_setManufacturerId
+//
+// Get Manufacturer id and subid from EEPROM
+//
+
+void vscp_setManufacturerId( uint8_t idx, uint8_t data )
+{
+//  appcfgPutc( APPCFG_VSCP_EEPROM_REG_MANUFACTUR_ID0 + idx, data );
+#warning FIXME
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// vscp_getGUID
+//
+
+uint8_t vscp_getGUID( uint8_t idx )
+{
+  return guid[idx];
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Get the bootloader algorithm code
+//
+
+uint8_t vscp_getBootLoaderAlgorithm( void )
+{
+  return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Get the buffer size
+//
+
+uint8_t vscp_getBufferSize( void )
+{
+  return LIMITED_DEVICE_DATASIZE;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// getDeviceURL
+//
+// Get device URL from EEPROM
+//
+
+uint8_t vscp_getMDF_URL( uint8_t idx )
+{
+  return vscp_deviceURL[ idx ];
 }
 #endif /* !VSCP_SUPPORT */
 
