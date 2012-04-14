@@ -77,7 +77,7 @@ vscp_net_udp(void)
 
   vscp_get(VSCP_MODE_UDP, class, type, size, vscp->guid, vscp->data);
 }
-#endif /* !VSCP_USE_UDP */
+#endif /* VSCP_USE_UDP */
 
 
 
@@ -119,7 +119,7 @@ vscp_net_raw(void)
   vscp_get(VSCP_MODE_RAWETHERNET, class, type, size, (uint8_t *) &oguid,
            vscp->data);
 }
-#endif /* !VSCP_USE_RAW_ETHERNET */
+#endif /* VSCP_USE_RAW_ETHERNET */
 
 
 void
@@ -144,4 +144,4 @@ vscp_transmit(uint8_t mode, uint16_t size)
   }
   transmit_packet();
 }
-#endif /* !VSCP_SUPPORT */
+#endif /* VSCP_SUPPORT */

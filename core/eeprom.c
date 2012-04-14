@@ -170,8 +170,19 @@ eeprom_init (void)
 #endif
 
 #ifdef VSCP_SUPPORT
-  eeprom_save_int (vscp_subsource, HTONS(CONF_VSCP_SUBSOURCE));
-#endif
+  eeprom_save_int(vscp_subsource, HTONS(CONF_VSCP_SUBSOURCE));
+  eeprom_save_char(vscp_user_id[0], CONF_VSCP_USERID0);
+  eeprom_save_char(vscp_user_id[1], CONF_VSCP_USERID1);
+  eeprom_save_char(vscp_user_id[2], CONF_VSCP_USERID2);
+  eeprom_save_char(vscp_user_id[3], CONF_VSCP_USERID3);
+  eeprom_save_char(vscp_user_id[4], CONF_VSCP_USERID4);
+#ifdef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
+  eeprom_save_long(vscp_manufacturer_id[0],
+    HTONL(CONF_VSCP_MANUFACTURER_ID));
+  eeprom_save_long(vscp_manufacturer_id[1],
+    HTONL(CONF_VSCP_MANUFACTURER_SUBID));
+#endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
+#endif /* VSCP_SUPPORT */
 
   eeprom_update_chksum ();
 }

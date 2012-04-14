@@ -55,7 +55,7 @@
 // VSCP_LEVEL2_LIMITED_DEVICE should be define in vscp_projdefs.h for
 // it to be used
 
-#define VSCP_BOOT_FLAG                0xff
+#define VSCP_BOOT_FLAG                0xFF
 // Boot flag is stored in persistent storage and if it is there the bootloader
 // will be activated.
 
@@ -63,7 +63,7 @@
 #define VSCP_BOOTLOADER_VSCP          0x00    // VSCP bootloader algorithm
 #define VSCP_BOOTLOADER_PIC1          0x01    // PIC
 #define VSCP_BOOTLOADER_LPC1          0x10    // NXP LPC algortithm
-#define VSCP_BOOTLOADER_NONE          0xff
+#define VSCP_BOOTLOADER_NONE          0xFF
 
 // State machine states
 #define VSCP_STATE_STARTUP            0x00    // Cold/warm reset
@@ -181,62 +181,62 @@ uint8_t action_params[VSCP_ACTION_PARAM_SIZE];      // Action parameter
 //      VSCP Register
 // ******************************************************************************
 
-#define VSCP_LEVEL2_COMMON_REGISTER_START   0xffffff80
+#define VSCP_LEVEL2_COMMON_REGISTER_START   0xFFFFFF80
 
-#define VSCP_REG_ALARMSTATUS                0xffffff80
-#define VSCP_REG_VSCP_MAJOR_VERSION         0xffffff81
-#define VSCP_REG_VSCP_MINOR_VERSION         0xffffff82
+#define VSCP_REG_ALARMSTATUS                0xFFFFFF80
+#define VSCP_REG_VSCP_MAJOR_VERSION         0xFFFFFF81
+#define VSCP_REG_VSCP_MINOR_VERSION         0xFFFFFF82
 
-#define VSCP_REG_NODE_CONTROL               0xffffff83
+#define VSCP_REG_NODE_CONTROL               0xFFFFFF83
 
-#define VSCP_REG_USERID0                    0xffffff84
-#define VSCP_REG_USERID1                    0xffffff85
-#define VSCP_REG_USERID2                    0xffffff86
-#define VSCP_REG_USERID3                    0xffffff87
-#define VSCP_REG_USERID4                    0xffffff88
+#define VSCP_REG_USERID0                    0xFFFFFF84
+#define VSCP_REG_USERID1                    0xFFFFFF85
+#define VSCP_REG_USERID2                    0xFFFFFF86
+#define VSCP_REG_USERID3                    0xFFFFFF87
+#define VSCP_REG_USERID4                    0xFFFFFF88
 
-#define VSCP_REG_MANUFACTUR_ID0             0xffffff89
-#define VSCP_REG_MANUFACTUR_ID1             0xffffff8A
-#define VSCP_REG_MANUFACTUR_ID2             0xffffff8B
-#define VSCP_REG_MANUFACTUR_ID3             0xffffff8C
+#define VSCP_REG_MANUFACTUR_ID0             0xFFFFFF89
+#define VSCP_REG_MANUFACTUR_ID1             0xFFFFFF8A
+#define VSCP_REG_MANUFACTUR_ID2             0xFFFFFF8B
+#define VSCP_REG_MANUFACTUR_ID3             0xFFFFFF8C
 
-#define VSCP_REG_MANUFACTUR_SUBID0          0xffffff8D
-#define VSCP_REG_MANUFACTUR_SUBID1          0xffffff8E
-#define VSCP_REG_MANUFACTUR_SUBID2          0xffffff8F
-#define VSCP_REG_MANUFACTUR_SUBID3          0xffffff90
+#define VSCP_REG_MANUFACTUR_SUBID0          0xFFFFFF8D
+#define VSCP_REG_MANUFACTUR_SUBID1          0xFFFFFF8E
+#define VSCP_REG_MANUFACTUR_SUBID2          0xFFFFFF8F
+#define VSCP_REG_MANUFACTUR_SUBID3          0xFFFFFF90
 
-#define VSCP_REG_NICKNAME_ID                0xffffff91
+#define VSCP_REG_NICKNAME_ID                0xFFFFFF91
 
-#define VSCP_REG_PAGE_SELECT_MSB            0xffffff92
-#define VSCP_REG_PAGE_SELECT_LSB            0xffffff93
+#define VSCP_REG_PAGE_SELECT_MSB            0xFFFFFF92
+#define VSCP_REG_PAGE_SELECT_LSB            0xFFFFFF93
 
-#define VSCP_REG_FIRMWARE_MAJOR_VERSION     0xffffff94
-#define VSCP_REG_FIRMWARE_MINOR_VERSION     0xffffff95
-#define VSCP_REG_FIRMWARE_SUB_MINOR_VERSION 0xffffff96
+#define VSCP_REG_FIRMWARE_MAJOR_VERSION     0xFFFFFF94
+#define VSCP_REG_FIRMWARE_MINOR_VERSION     0xFFFFFF95
+#define VSCP_REG_FIRMWARE_SUB_MINOR_VERSION 0xFFFFFF96
 
-#define VSCP_REG_BOOT_LOADER_ALGORITHM      0xffffff97
+#define VSCP_REG_BOOT_LOADER_ALGORITHM      0xFFFFFF97
 
-#define VSCP_REG_BUFFER_SIZE                0xffffff98
+#define VSCP_REG_BUFFER_SIZE                0xFFFFFF98
 
-#define VSCP_REG_GUID                       0xffffffD0
-#define VSCP_REG_GUID0                      0xffffffD0
-#define VSCP_REG_GUID1                      0xffffffD1
-#define VSCP_REG_GUID2                      0xffffffD2
-#define VSCP_REG_GUID3                      0xffffffD3
-#define VSCP_REG_GUID4                      0xffffffD4
-#define VSCP_REG_GUID5                      0xffffffD5
-#define VSCP_REG_GUID6                      0xffffffD6
-#define VSCP_REG_GUID7                      0xffffffD7
-#define VSCP_REG_GUID8                      0xffffffD8
-#define VSCP_REG_GUID9                      0xffffffD9
-#define VSCP_REG_GUID10                     0xffffffDA
-#define VSCP_REG_GUID11                     0xffffffDB
-#define VSCP_REG_GUID12                     0xffffffDC
-#define VSCP_REG_GUID13                     0xffffffDD
-#define VSCP_REG_GUID14                     0xffffffDE
-#define VSCP_REG_GUID15                     0xffffffDF
+#define VSCP_REG_GUID                       0xFFFFFFD0
+#define VSCP_REG_GUID0                      0xFFFFFFD0
+#define VSCP_REG_GUID1                      0xFFFFFFD1
+#define VSCP_REG_GUID2                      0xFFFFFFD2
+#define VSCP_REG_GUID3                      0xFFFFFFD3
+#define VSCP_REG_GUID4                      0xFFFFFFD4
+#define VSCP_REG_GUID5                      0xFFFFFFD5
+#define VSCP_REG_GUID6                      0xFFFFFFD6
+#define VSCP_REG_GUID7                      0xFFFFFFD7
+#define VSCP_REG_GUID8                      0xFFFFFFD8
+#define VSCP_REG_GUID9                      0xFFFFFFD9
+#define VSCP_REG_GUID10                     0xFFFFFFDA
+#define VSCP_REG_GUID11                     0xFFFFFFDB
+#define VSCP_REG_GUID12                     0xFFFFFFDC
+#define VSCP_REG_GUID13                     0xFFFFFFDD
+#define VSCP_REG_GUID14                     0xFFFFFFDE
+#define VSCP_REG_GUID15                     0xFFFFFFDF
 
-#define VSCP_REG_DEVICE_URL                 0xffffffE0
+#define VSCP_REG_DEVICE_URL                 0xFFFFFFE0
 
 // VSCP function flags
 #define VSCP_FUNCTION_USE_TCP           0x01    // Use TCP or UDP

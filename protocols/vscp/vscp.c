@@ -34,23 +34,20 @@
  *global variables
  */
 
-#ifndef VSCP_USE_EEPROM_FOR_MANUFACTURERE_ID
-// Manufacturer IDs
-// offset 0 - Manufacturer device id 0
-// offset 1 - Manufacturer device id 1
-// offset 2 - Manufacturer device id 2
-// offset 3 - Manufacturer device id 3
-// offset 4 - Manufacturer subdevice id 0
-// offset 5 - Manufacturer subdevice id 1
-// offset 6 - Manufacturer subdevice id 2
-// offset 7 - Manufacturer subdevice id 3
-const uint8_t vscp_manufacturer_id[8] = {
-  0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88
+#ifndef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
+const uint8_t vscp_manufacturer_id[8] = {          // PROGMEM doesn't work?!?
+  (uint8_t)(CONF_VSCP_MANUFACTURER_ID >> 24),
+  (uint8_t)(CONF_VSCP_MANUFACTURER_ID >> 16),
+  (uint8_t)(CONF_VSCP_MANUFACTURER_ID >> 8),
+  (uint8_t)(CONF_VSCP_MANUFACTURER_ID),
+  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID >> 24),
+  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID >> 16),
+  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID >> 8),
+  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID)
 };
-#endif
-
+#endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 // The device URL (max 32 characters including null termination)
-const char vscp_deviceURL[32] = "sautter.com/beteigeuze.xml";
+const uint8_t vscp_deviceURL[32] = CONF_VSCP_DEVICEURL; // PROGMEM doesn't work?!?
 
 uint8_t vscp_alarmstatus;
 uint16_t vscp_page_select;
@@ -64,14 +61,14 @@ void
 vscp_setup(void)
 {
   VSCP_DEBUG("init\n");
-  guid[0] = 0xff;
-  guid[1] = 0xff;
-  guid[2] = 0xff;
-  guid[3] = 0xff;
-  guid[4] = 0xff;
-  guid[5] = 0xff;
-  guid[6] = 0xff;
-  guid[7] = 0xfe;
+  guid[0] = 0xFF;
+  guid[1] = 0xFF;
+  guid[2] = 0xFF;
+  guid[3] = 0xFF;
+  guid[4] = 0xFF;
+  guid[5] = 0xFF;
+  guid[6] = 0xFF;
+  guid[7] = 0xFE;
   guid[8] = uip_ethaddr.addr[0];
   guid[9] = uip_ethaddr.addr[1];
   guid[10] = uip_ethaddr.addr[2];
@@ -113,7 +110,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   for (int i = 0; i < size; i++)
     printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), data[i]);
   printf_P(PSTR("\n"));
-#endif /* !DEBUG_VSCP */
+#endif /* DEBUG_VSCP */
 
 
   if (class == VSCP_CLASS1_PROTOCOL ||
@@ -234,7 +231,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   }
   else if (class == VSCP_CLASS2_PROTOCOL)
   {
-    uint8_t guidMismatch = memcmp(data[8], guid, 16);
+    uint8_t guidMismatch = memcmp(&data[8], guid, 16);
     switch (type)
     {
       case VSCP2_TYPE_PROTOCOL_READ_REGISTER:
@@ -286,10 +283,10 @@ vscp_readRegister(uint8_t mode)
   if ((data[17]) >= 0x80)
       data[1] = vscp_readStdReg(0xFFFFFF00 | data[17]);
   else
-//    data[1] = vscp_readAppReg(data[17]);
-#warning FIXME
+#warning FIXME: data[1] = vscp_readAppReg(data[17]);
     data[1] = 42;
   vscp_transmit(mode, 2);
+  VSCP_DEBUG("read result0x%02X\n", data[1]);
 }
 
 
@@ -313,8 +310,7 @@ vscp_readRegisterL2(uint8_t mode)
       data[8 + i] =
         vscp_readStdReg(idx - VSCP_LEVEL2_COMMON_REGISTER_START + 0x80 + i);
     else
-//      data[8 + i] = vscp_readAppReg(idx + i);
-#warning FIXME
+#warning FIXME: data[8 + i] = vscp_readAppReg(idx + i);
       data[8 + i] = 0;
   }
 
@@ -357,7 +353,7 @@ vscp_writeRegisterL2(uint8_t mode, uint16_t sizeData)
   for (uint16_t i = 0; i < cnt; i++)
   {
     if ((idx + i) > VSCP_LEVEL2_COMMON_REGISTER_START)
-      data[8 + i] = vscp_writeStdReg((idx & 0xff) + i, data[24 + i]);
+      data[8 + i] = vscp_writeStdReg((idx & 0xFF) + i, data[24 + i]);
     else
       data[8 + i] = vscp_writeAppReg(idx + i, data[24 + i]);
   }
@@ -415,6 +411,7 @@ vscp_sendHeartBeat(void)
   uint8_t *data =
     vscp_createHead(VSCP_MODE_RAWETHERNET, VSCP_CLASS1_INFORMATION,
                     VSCP_TYPE_INFORMATION_NODE_HEARTBEAT, VSCP_PRIORITY_LOW);
+#warning FIXME
   data[0] = 0;            // no meaning
   data[1] = 0x47;         // FIXME: zone
   data[2] = 0x11;         // FIXME: subzone
@@ -464,7 +461,7 @@ vscp_createHead(uint8_t mode, uint16_t class, uint16_t type, uint8_t priority)
     (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
   struct vscp_udp_event *vscp_udp = (struct vscp_udp_event *) uip_appdata;
 
-  memset(packet->dest.addr, 0xff, 6);                   // broadcast
+  memset(packet->dest.addr, 0xFF, 6);                   // broadcast
   memcpy(packet->src.addr, uip_ethaddr.addr, 6);        // our mac
   switch (mode)
   {
@@ -527,7 +524,7 @@ uint8_t getVSCPBootloaderCode( void )
 #if defined(VSCP_ENABLE_BOOTLOADER)
   return 0;
 #else
-  return 0xff;  // No bootloader support
+  return 0xFF;  // No bootloader support
 #endif
 }
 
@@ -538,7 +535,8 @@ uint8_t getVSCPBootloaderCode( void )
 uint8_t getVSCP_DeviceURL( uint8_t idx )
 {
   if ( idx < 16 )
-    return vscp_deviceURL[ idx ];
+#warning FIXME: return pgm_read_byte(&vscp_deviceURL[idx]);
+    return vscp_deviceURL[idx];
 
   return 0;
 }
@@ -569,8 +567,9 @@ void vscp_setControlByte( uint8_t ctrl )
 
 uint8_t vscp_getUserID( uint8_t idx )
 {
-//  return appcfgGetc( APPCFG_VSCP_EEPROM_REG_USERID + idx );
-#warning FIXME
+  uint8_t rv;
+  eeprom_restore_offset(vscp_user_id, idx, &rv, sizeof(uint8_t));
+  return (rv);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -591,12 +590,13 @@ void vscp_setUserID( uint8_t idx, uint8_t data )
 
 uint8_t vscp_getManufacturerId( uint8_t idx )
 {
-#if defined(VSCP_USE_EEPROM_FOR_MANUFACTURERE_ID)
-//  return appcfgGetc( APPCFG_VSCP_EEPROM_REG_MANUFACTUR_ID0 + idx );
-#warning FIXME
-#else
-  return vscp_manufacturer_id[ idx ];
-#endif
+#if defined(VSCP_USE_EEPROM_FOR_MANUFACTURER_ID)
+  uint8_t rv;
+  eeprom_restore_offset(vscp_manufacturer_id, idx, &rv, sizeof(uint8_t));
+  return (rv);
+#else /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
+  return (vscp_manufacturer_id[idx]);
+#endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -607,8 +607,11 @@ uint8_t vscp_getManufacturerId( uint8_t idx )
 
 void vscp_setManufacturerId( uint8_t idx, uint8_t data )
 {
+#if defined(VSCP_USE_EEPROM_FOR_MANUFACTURER_ID)
 //  appcfgPutc( APPCFG_VSCP_EEPROM_REG_MANUFACTUR_ID0 + idx, data );
 #warning FIXME
+#else
+#endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -649,7 +652,7 @@ uint8_t vscp_getMDF_URL( uint8_t idx )
 {
   return vscp_deviceURL[ idx ];
 }
-#endif /* !VSCP_SUPPORT */
+#endif /* VSCP_SUPPORT */
 
 
 /*

@@ -138,7 +138,11 @@ struct eeprom_config_t
 
 #ifdef VSCP_SUPPORT
   uint16_t vscp_subsource;
-#endif
+  uint8_t vscp_user_id[5];
+#ifdef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
+  uint32_t vscp_manufacturer_id[2];
+#endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
+#endif /* VSCP_SUPPORT */
 
   uint8_t crc;
 };
@@ -173,6 +177,9 @@ uint8_t eeprom_get_chksum (void);
 
 #define eeprom_save_int(dst, data) \
     do { uint16_t _t = data; eeprom_save(dst, &_t, 2); } while(0)
+
+#define eeprom_save_long(dst, data) \
+    do { uint32_t _t = data; eeprom_save(dst, &_t, 4); } while(0)
 
 /* Reads len byte from eeprom at dst into mem */
 #define eeprom_restore(dst, mem, len) \

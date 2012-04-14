@@ -111,10 +111,10 @@
 
 #ifndef htonl
 #define htonl(x) __builtin_bswap32(x)
-#endif /* !htonl */
+#endif /* htonl */
 #ifndef ntohl
 #define ntohl htonl
-#endif /* !ntohl */
+#endif /* ntohl */
 
 
 /* structs */
