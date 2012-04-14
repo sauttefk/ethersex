@@ -547,8 +547,9 @@ uint8_t getVSCP_DeviceURL( uint8_t idx )
 
 uint8_t vscp_getControlByte( void )
 {
-//  return appcfgGetc( APPCFG_VSCP_EEPROM_CONTROL );
-#warning FIXME
+  uint8_t rv;
+  eeprom_restore_char(vscp_control_byte, &rv);
+  return (rv);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -557,8 +558,7 @@ uint8_t vscp_getControlByte( void )
 
 void vscp_setControlByte( uint8_t ctrl )
 {
-//  appcfgPutc( APPCFG_VSCP_EEPROM_CONTROL, ctrl );
-#warning FIXME
+  eeprom_save_char(vscp_control_byte, ctrl);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -608,9 +608,7 @@ uint8_t vscp_getManufacturerId( uint8_t idx )
 void vscp_setManufacturerId( uint8_t idx, uint8_t data )
 {
 #if defined(VSCP_USE_EEPROM_FOR_MANUFACTURER_ID)
-//  appcfgPutc( APPCFG_VSCP_EEPROM_REG_MANUFACTUR_ID0 + idx, data );
-#warning FIXME
-#else
+  eeprom_save_offset(vscp_manufacturer_id, idx, &data, sizeof(uint8_t));
 #endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 }
 
@@ -630,7 +628,7 @@ uint8_t vscp_getGUID( uint8_t idx )
 
 uint8_t vscp_getBootLoaderAlgorithm( void )
 {
-  return 0;
+  return VSCP_BOOTLOADER_NONE;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
