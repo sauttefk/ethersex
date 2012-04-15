@@ -42,7 +42,7 @@
 // ******************************************************************************
 
 #define VSCP_MAJOR_VERSION            1
-#define VSCP_MINOR_VERSION            5
+#define VSCP_MINOR_VERSION            7
 
 #define VSCP_LEVEL2_UDP_PORT          9598
 #define VSCP_LEVEL2_TCP_PORT          9598

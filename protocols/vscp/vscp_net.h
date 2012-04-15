@@ -34,9 +34,6 @@
 
 #define VSCP_DM_MATRIX_BASE                     0x200 //FIXME: use top of eeprom pointer
 
-#define VSCP_MAJOR_VERSION                      1
-#define VSCP_MINOR_VERSION                      5
-
 #define VSCP_FIRMWARE_MAJOR_VERSION             0x00
 #define VSCP_FIRMWARE_MINOR_VERSION             0x00
 #define VSCP_FIRMWARE_SUB_MINOR_VERSION         0x01

@@ -37,8 +37,6 @@
 #define VSCP_DEBUG(...)    ((void) 0)
 #endif
 
-uint8_t guid[16];
-
 void vscp_setup(void);
 void vscp_main(void);
 void vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
@@ -51,8 +49,8 @@ void sendPeriodicInputEvents(void);
 uint8_t* vscp_createHead(uint8_t mode, uint16_t class, uint16_t type,
                          uint8_t priority);
 void vscp_readRegister(uint8_t mode);
-//void vscp_writeRegister(struct vscp_raw_event *vscp);
-void vscp_getMatrixinfo(struct vscp_raw_event *vscp);
+void vscp_writeRegister(uint8_t mode);
+void vscp_getMatrixinfo(uint8_t mode);
 
 #define FIRMWARE_MAJOR_VERSION        0x00
 #define FIRMWARE_MINOR_VERSION        0x00

@@ -46,9 +46,11 @@ const uint8_t vscp_manufacturer_id[8] = {          // PROGMEM doesn't work?!?
   (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID)
 };
 #endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
-// The device URL (max 32 characters including null termination)
-const uint8_t vscp_deviceURL[32] = CONF_VSCP_DEVICEURL; // PROGMEM doesn't work?!?
 
+const uint8_t vscp_deviceURL[VSCP_SIZE_DEVURL] = CONF_VSCP_DEVICEURL;
+  // PROGMEM doesn't work?!?
+
+uint8_t guid[VSCP_SIZE_GUID];
 uint8_t vscp_alarmstatus;
 uint16_t vscp_page_select;
 
@@ -116,7 +118,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   if (class == VSCP_CLASS1_PROTOCOL ||
       class == VSCP_CLASS2_LEVEL1_PROTOCOL)
   {
-    uint8_t guidMismatch = memcmp(&data[0], guid, 16);
+    uint8_t guidMismatch = memcmp(&data[0], guid, VSCP_SIZE_GUID);
 
     switch (type)
     {
@@ -156,7 +158,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
 
       case VSCP_TYPE_PROTOCOL_READ_REGISTER:
         VSCP_DEBUG("0x%02X READ_REGISTER 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[17]);
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[16]);
         if (guidMismatch)
           return;
         vscp_readRegister(mode);
@@ -165,10 +167,10 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
 
       case VSCP_TYPE_PROTOCOL_WRITE_REGISTER:
         VSCP_DEBUG("0x%02X WRITE_REGISTER 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[17]);
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[16]);
         if (guidMismatch)
           return;
-//        vscp_writeRegister(vscp);
+        vscp_writeRegister(mode);
         break;
 
 
@@ -194,7 +196,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
                    VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO);
         if (guidMismatch)
           return;
-//        vscp_getMatrixinfo(vscp);
+        vscp_getMatrixinfo(mode);
         break;
 
 
@@ -231,12 +233,12 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   }
   else if (class == VSCP_CLASS2_PROTOCOL)
   {
-    uint8_t guidMismatch = memcmp(&data[8], guid, 16);
+    uint8_t guidMismatch = memcmp(&data[8], guid, VSCP_SIZE_GUID);
     switch (type)
     {
       case VSCP2_TYPE_PROTOCOL_READ_REGISTER:
         VSCP_DEBUG("0x%02x read register 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[17]);
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[16]);
         if (guidMismatch)
           return;
         vscp_readRegisterL2(mode);
@@ -245,10 +247,10 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
 
       case VSCP2_TYPE_PROTOCOL_WRITE_REGISTER:
         VSCP_DEBUG("0x%02x write register 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[17], data[18]);
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[16], data[17]);
         if (guidMismatch)
           return;
-//        vscp_writeRegisterL2(mode, size);
+        vscp_writeRegisterL2(mode, size);
         break;
 
 
@@ -278,15 +280,15 @@ vscp_readRegister(uint8_t mode)
   uint8_t *data =
     vscp_createHead(mode, VSCP_CLASS1_PROTOCOL,
                     VSCP_TYPE_PROTOCOL_RW_RESPONSE, VSCP_PRIORITY_MEDIUM);
-  data[0] = data[17];
+  data[0] = data[16];
 
-  if ((data[17]) >= 0x80)
-      data[1] = vscp_readStdReg(0xFFFFFF00 | data[17]);
+  if ((data[16]) >= 0x80)
+      data[1] = vscp_readStdReg(0xFFFFFF00 | data[16]);
   else
-#warning FIXME: data[1] = vscp_readAppReg(data[17]);
+#warning FIXME: data[1] = vscp_readAppReg(data[16]);
     data[1] = 42;
   vscp_transmit(mode, 2);
-  VSCP_DEBUG("read result0x%02X\n", data[1]);
+  VSCP_DEBUG("read result 0x%02X\n", data[1]);
 }
 
 
@@ -313,7 +315,6 @@ vscp_readRegisterL2(uint8_t mode)
 #warning FIXME: data[8 + i] = vscp_readAppReg(idx + i);
       data[8 + i] = 0;
   }
-
   data[4] = 0;
   data[5] = 0;
   data[6] = 0;
@@ -323,18 +324,25 @@ vscp_readRegisterL2(uint8_t mode)
 }
 
 
-/*
+
 void
-vscp_writeRegister(struct vscp_raw_event *vscp)
+vscp_writeRegister(uint8_t mode)
 {
-  vscp->size = HTONS(2);
-  vscp_createHead(vscp);
-  vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
-  vscp->type = HTONS(VSCP_TYPE_PROTOCOL_RW_RESPONSE);
-  vscp->data[0] = vscp->data[17];
-  vscp->data[1] = 42;
+  uint8_t *data = vscp_createHead(mode, VSCP_CLASS1_PROTOCOL,
+    VSCP_TYPE_PROTOCOL_RW_RESPONSE, VSCP_PRIORITY_HIGH);
+
+  data[0] = data[16];
+
+  if ((data[16]) >= 0x80)
+    data[1] = vscp_writeStdReg(0xFFFFFF00 | data[16], data[17]);
+  else
+#warning FIXME: data[1] = vscp_writeAppReg(data[16], data[17]);
+   data[1] = data[17];
+
+  vscp_transmit(mode, 2);
+  VSCP_DEBUG("write result 0x%02X\n", data[1]);
 }
-*/
+
 
 
 void
@@ -355,9 +363,9 @@ vscp_writeRegisterL2(uint8_t mode, uint16_t sizeData)
     if ((idx + i) > VSCP_LEVEL2_COMMON_REGISTER_START)
       data[8 + i] = vscp_writeStdReg((idx & 0xFF) + i, data[24 + i]);
     else
-      data[8 + i] = vscp_writeAppReg(idx + i, data[24 + i]);
+#warning FIXME: data[8 + i] = vscp_writeAppReg(idx + i, data[24 + i]);
+     data[8 + i] = data[24 + i];
   }
-
   data[4] = 0;
   data[5] = 0;
   data[6] = 0;
@@ -367,26 +375,23 @@ vscp_writeRegisterL2(uint8_t mode, uint16_t sizeData)
 }
 
 
-
-
-
-/*
 void
-vscp_getMatrixinfo(struct vscp_raw_event *vscp)
+vscp_getMatrixinfo(uint8_t mode)
 {
-  vscp->size = HTONS(7);
-  vscp_createHead(vscp);
-  vscp->class = HTONS(VSCP_CLASS1_PROTOCOL);
-  vscp->type = HTONS(VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE);
-  vscp->data[0] = 16;           // 16 rows in matrix
-  vscp->data[1] = 16;           // matrix offset
-  vscp->data[2] = 0;            // page start
-  vscp->data[3] = 0;
-  vscp->data[4] = 0;            // page end
-  vscp->data[5] = 0;
-  vscp->data[6] = 0;            // size of row for level II
+  uint8_t *data = vscp_createHead(mode, VSCP_CLASS1_PROTOCOL,
+    VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE, VSCP_PRIORITY_HIGH);
+
+  data[0] = 16;           // 16 rows in matrix
+  data[1] = 16;           // matrix offset
+  data[2] = 0;            // page start
+  data[3] = 0;
+  data[4] = 0;            // page end
+  data[5] = 0;
+  data[6] = 0;            // size of row for level II
+
+  vscp_transmit(mode, 7);
 }
-*/
+
 
 void
 vscp_periodic(void)
@@ -488,49 +493,27 @@ vscp_createHead(uint8_t mode, uint16_t class, uint16_t type, uint8_t priority)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// getVSCPMajorVersion
-//
 
 uint8_t vscp_getFirmwareMajorVersion( void )
 {
   return FIRMWARE_MAJOR_VERSION;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// getVSCPMinorVersion
-//
+
 
 uint8_t vscp_getFirmwareMinorVersion( void )
 {
   return FIRMWARE_MINOR_VERSION;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// getVSCPSubMinorVersion
-//
+
 
 uint8_t vscp_getFirmwareSubMinorVersion( void )
 {
   return FIRMWARE_SUB_MINOR_VERSION;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// getVSCPBootloaderCode
-//
 
-uint8_t getVSCPBootloaderCode( void )
-{
-#if defined(VSCP_ENABLE_BOOTLOADER)
-  return 0;
-#else
-  return 0xFF;  // No bootloader support
-#endif
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// getVSCP_DeviceURL
-//
 
 uint8_t getVSCP_DeviceURL( uint8_t idx )
 {
@@ -541,9 +524,7 @@ uint8_t getVSCP_DeviceURL( uint8_t idx )
   return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//  getVSCPControlByte
-//
+
 
 uint8_t vscp_getControlByte( void )
 {
@@ -552,18 +533,15 @@ uint8_t vscp_getControlByte( void )
   return (rv);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//  setVSCPControlByte
-//
+
 
 void vscp_setControlByte( uint8_t ctrl )
 {
   eeprom_save_char(vscp_control_byte, ctrl);
+  eeprom_update_chksum();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Get Manufacturer id and subid from EEPROM
-//
+
 
 uint8_t vscp_getUserID( uint8_t idx )
 {
@@ -572,21 +550,15 @@ uint8_t vscp_getUserID( uint8_t idx )
   return (rv);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//  setVSCPUserID
-//
+
 
 void vscp_setUserID( uint8_t idx, uint8_t data )
 {
-//  appcfgPutc( APPCFG_VSCP_EEPROM_REG_USERID + idx, data );
-#warning FIXME
+  eeprom_save_offset(vscp_user_id, idx, &data, sizeof(uint8_t));
+  eeprom_update_chksum();
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// getVSCPManufacturerId
-//
-// Get Manufacturer id and subid from EEPROM
-//
+
 
 uint8_t vscp_getManufacturerId( uint8_t idx )
 {
@@ -599,22 +571,17 @@ uint8_t vscp_getManufacturerId( uint8_t idx )
 #endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// vscp_setManufacturerId
-//
-// Get Manufacturer id and subid from EEPROM
-//
+
 
 void vscp_setManufacturerId( uint8_t idx, uint8_t data )
 {
 #if defined(VSCP_USE_EEPROM_FOR_MANUFACTURER_ID)
   eeprom_save_offset(vscp_manufacturer_id, idx, &data, sizeof(uint8_t));
+  eeprom_update_chksum();
 #endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// vscp_getGUID
-//
+
 
 uint8_t vscp_getGUID( uint8_t idx )
 {
@@ -622,29 +589,21 @@ uint8_t vscp_getGUID( uint8_t idx )
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Get the bootloader algorithm code
-//
 
 uint8_t vscp_getBootLoaderAlgorithm( void )
 {
   return VSCP_BOOTLOADER_NONE;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Get the buffer size
-//
+
 
 uint8_t vscp_getBufferSize( void )
 {
   return LIMITED_DEVICE_DATASIZE;
+#warning FIXME: nochmal anschauen
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// getDeviceURL
-//
-// Get device URL from EEPROM
-//
+
 
 uint8_t vscp_getMDF_URL( uint8_t idx )
 {

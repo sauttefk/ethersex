@@ -184,7 +184,7 @@ eeprom_init (void)
 #endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 #endif /* VSCP_SUPPORT */
 
-  eeprom_update_chksum ();
+  eeprom_update_chksum();
 }
 
 
