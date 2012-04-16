@@ -248,7 +248,7 @@ uint8_t action_params[VSCP_ACTION_PARAM_SIZE];      // Action parameter
 #define VSCP_FUNCTION_HARDCODED_IPADDR  0x08    // Use a hard TCP/IP address for the
   // VSCP TCP server.
 #define VSCP_FUNCTION_PROBE_SENT        0x10    // High end server probe sent
-#define VSCP_FUNCTION_RXOBJ_IN_USE      0x40    // TCP has receibed a frame
+#define VSCP_FUNCTION_RXOBJ_IN_USE      0x40    // TCP has received a frame
 #define VSCP_FUNCTION_TXOBJ_IN_USE      0x80    // Set to initiate TCP TX
 
 // FAST mode frame types

@@ -176,7 +176,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
 
       case VSCP_TYPE_PROTOCOL_RW_RESPONSE:
         VSCP_DEBUG("0x%02X RW_RESPONSE 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, data[17]);
+                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, data[16]);
         break;
 
 
@@ -244,7 +244,6 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
         vscp_readRegisterL2(mode);
         break;
 
-
       case VSCP2_TYPE_PROTOCOL_WRITE_REGISTER:
         VSCP_DEBUG("0x%02x write register 0x%02X\n",
                    VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[16], data[17]);
@@ -253,21 +252,17 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
         vscp_writeRegisterL2(mode, size);
         break;
 
-
       case VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE:
         VSCP_DEBUG("0x%02x read/write response\n",
                    VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE);
         break;
-
 
       default:
         VSCP_DEBUG("unsupported type 0x%04X\n", type);
     }
   }
   else
-  {
     VSCP_DEBUG("unsupported class 0x%04X type 0x%04X\n", class, type);
-  }
 
   // Feed Event into decision matrix
 //  vscp_feedDM(pEvent);

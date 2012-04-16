@@ -134,14 +134,18 @@ vscp_transmit(uint8_t mode, uint16_t size)
     case VSCP_MODE_RAWETHERNET:
       vscp_raw->size = htons(size);
       uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + size;
+      transmit_packet();
       break;
+
     case VSCP_MODE_UDP:
       vscp_udp->size = htons(size);
-      uip_len = VSCP_UDP_POS_DATA - VSCP_CRC_LEN + size;
+      uip_udp_conn->rport = HTONS(CONF_VSCP_PORT);
+      uip_slen = VSCP_UDP_POS_DATA - VSCP_CRC_LEN + size;
+      uip_process(UIP_UDP_SEND_CONN);
       break;
+
     default:
       uip_len = 0;
   }
-  transmit_packet();
 }
 #endif /* VSCP_SUPPORT */
