@@ -19,17 +19,16 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-#include <avr/io.h>
-#include <string.h>
-
-#include "core/bool.h"
-#include "protocols/uip/uip.h"
-#include "protocols/uip/uip_router.h"
+#include <stdio.h>
 
 #include "vscp.h"
+#include "core/bool.h"
+#include "protocols/uip/uip_router.h"
 
 
 #ifdef VSCP_SUPPORT
+extern uint8_t guid[VSCP_SIZE_GUID];
+
 #ifdef VSCP_USE_UDP
 int8_t
 vscp_udpinit(void)
@@ -71,11 +70,8 @@ vscp_net_udp(void)
 
   VSCP_DEBUG("HEAD : 0x%02X\n", vscp->head);
 
-  uint16_t class = ntohs(vscp->class);
-  uint16_t type = ntohs(vscp->type);
-  uint16_t size = ntohs(vscp->size);
-
-  vscp_get(VSCP_MODE_UDP, class, type, size, vscp->guid, vscp->data);
+  vscp_get(VSCP_MODE_UDP, ntohs(vscp->class), ntohs(vscp->type),
+           ntohs(vscp->size), vscp->guid, vscp->data);
 }
 #endif /* VSCP_USE_UDP */
 
@@ -107,37 +103,50 @@ vscp_net_raw(void)
   VSCP_DEBUG("TIMES: 0x%08lX\n", ntohl(vscp->timestamp));
 
   uint8_t oguid[16];                        // fumble originator guid together
-  memset(&oguid[0], 0xff, 7);               // raw ethernet first 8 bytes
+  memset(&oguid[0], 0xFF, 7);               // raw ethernet first 8 bytes
   oguid[7] = 0xFE;                          // = 0xFFFFFFFFFFFFFFFE
   memcpy(&oguid[8], &packet->src.addr, 6);  // sending mac addres
   memcpy(&oguid[14], &vscp->subsource, 2);  // subsource = lower 2 bytes GUID
 
-  uint16_t class = ntohs(vscp->class);
-  uint16_t type = ntohs(vscp->type);
-  uint16_t size = ntohs(vscp->size);
-
-  vscp_get(VSCP_MODE_RAWETHERNET, class, type, size, (uint8_t *) &oguid,
-           vscp->data);
+  vscp_get(VSCP_MODE_RAWETHERNET, ntohs(vscp->class), ntohs(vscp->type),
+           ntohs(vscp->size), (uint8_t *) &oguid, vscp->data);
 }
 #endif /* VSCP_USE_RAW_ETHERNET */
 
 
 void
-vscp_transmit(uint8_t mode, uint16_t size)
+vscp_transmit(uint8_t mode, uint16_t size, uint16_t class, uint16_t type,
+              uint8_t priority)
 {
+  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
   struct vscp_raw_event *vscp_raw =
     (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
   struct vscp_udp_event *vscp_udp = (struct vscp_udp_event *) uip_appdata;
 
+  memset(packet->dest.addr, 0xFF, 6);                   // broadcast
+  memcpy(packet->src.addr, uip_ethaddr.addr, 6);        // our mac
+
   switch (mode)
   {
     case VSCP_MODE_RAWETHERNET:
+      packet->type = HTONS(VSCP_ETHTYPE);
+      vscp_raw->version = VSCP_RAWETHERNET_VERSION;
+      vscp_raw->head = htonl((uint32_t) priority << 24);
+      vscp_raw->subsource = htons(guid[14] << 8 | guid[15]);
+      vscp_raw->timestamp = htonl(0);
+      //  vscp->timestamp = htonl(clock_get_time() * 1000);
+      vscp_raw->class = htons(class);
+      vscp_raw->type = htons(type);
       vscp_raw->size = htons(size);
       uip_len = VSCP_RAWH_LEN + VSCP_RAW_POS_DATA + size;
       transmit_packet();
       break;
 
     case VSCP_MODE_UDP:
+      packet->type = HTONS(UIP_ETHTYPE_IP);
+      vscp_udp->head = priority;
+      vscp_udp->class = htons(class);
+      vscp_udp->type = htons(type);
       vscp_udp->size = htons(size);
       uip_udp_conn->rport = HTONS(CONF_VSCP_PORT);
       uip_slen = VSCP_UDP_POS_DATA - VSCP_CRC_LEN + size;

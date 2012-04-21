@@ -285,9 +285,9 @@ void sendHighEndServerProbe(void);
  */
 
 // Prototypes
-void vscp_readRegisterL2(uint8_t mode);
+void vscp_readRegisterL2(uint8_t mode, uint8_t * payload);
 
-void vscp_writeRegisterL2(uint8_t mode, uint16_t sizeData);
+void vscp_writeRegisterL2(uint8_t mode, uint8_t * payload, uint16_t sizeData);
 
 uint8_t vscp_readStdReg(uint32_t reg);
 

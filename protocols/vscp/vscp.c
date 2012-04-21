@@ -51,8 +51,9 @@ const uint8_t vscp_deviceURL[VSCP_SIZE_DEVURL] = CONF_VSCP_DEVICEURL;
   // PROGMEM doesn't work?!?
 
 uint8_t guid[VSCP_SIZE_GUID];
-uint8_t vscp_alarmstatus;
-uint16_t vscp_page_select;
+uint8_t mode = 0;
+uint8_t vscp_alarmstatus = 0;
+uint16_t vscp_page_select = 0;
 
 
 
@@ -63,21 +64,11 @@ void
 vscp_setup(void)
 {
   VSCP_DEBUG("init\n");
-  guid[0] = 0xFF;
-  guid[1] = 0xFF;
-  guid[2] = 0xFF;
-  guid[3] = 0xFF;
-  guid[4] = 0xFF;
-  guid[5] = 0xFF;
-  guid[6] = 0xFF;
-  guid[7] = 0xFE;
-  guid[8] = uip_ethaddr.addr[0];
-  guid[9] = uip_ethaddr.addr[1];
-  guid[10] = uip_ethaddr.addr[2];
-  guid[11] = uip_ethaddr.addr[3];
-  guid[12] = uip_ethaddr.addr[4];
-  guid[13] = uip_ethaddr.addr[5];
-  eeprom_restore(vscp_subsource, &guid[14], 2);
+
+  memset(&guid[0], 0xFF, 7);                     // raw ethernet first 8 bytes
+  guid[7] = 0xFE;                                // = 0xFFFFFFFFFFFFFFFE
+  memcpy(&guid[8], &uip_ethaddr.addr, 6);        // mac address
+  eeprom_restore(vscp_subsource, &guid[14], 2);  // lower 16 bits of GUID
 
   VSCP_DEBUG("GUID : %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
              "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -97,7 +88,7 @@ vscp_main(void)
 
 void
 vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
-         uint8_t *oguid, uint8_t *data)
+         uint8_t *oguid, uint8_t *payload)
 {
   VSCP_DEBUG("OGUID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
              "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -110,7 +101,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   VSCP_DEBUG("DATA : ");
 #ifdef DEBUG_VSCP
   for (int i = 0; i < size; i++)
-    printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), data[i]);
+    printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), payload[i]);
   printf_P(PSTR("\n"));
 #endif /* DEBUG_VSCP */
 
@@ -118,7 +109,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   if (class == VSCP_CLASS1_PROTOCOL ||
       class == VSCP_CLASS2_LEVEL1_PROTOCOL)
   {
-    uint8_t guidMismatch = memcmp(&data[0], guid, VSCP_SIZE_GUID);
+    uint8_t guidMismatch = memcmp(&payload[0], guid, VSCP_SIZE_GUID);
 
     switch (type)
     {
@@ -158,25 +149,25 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
 
       case VSCP_TYPE_PROTOCOL_READ_REGISTER:
         VSCP_DEBUG("0x%02X READ_REGISTER 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[16]);
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, payload[16]);
         if (guidMismatch)
           return;
-        vscp_readRegister(mode);
+        vscp_readRegister(mode, payload);
         break;
 
 
       case VSCP_TYPE_PROTOCOL_WRITE_REGISTER:
         VSCP_DEBUG("0x%02X WRITE_REGISTER 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[16]);
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, payload[16]);
         if (guidMismatch)
           return;
-        vscp_writeRegister(mode);
+        vscp_writeRegister(mode, payload);
         break;
 
 
       case VSCP_TYPE_PROTOCOL_RW_RESPONSE:
-        VSCP_DEBUG("0x%02X RW_RESPONSE 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, data[16]);
+        VSCP_DEBUG("0x%02X RW_RESPONSE register 0x%02X data 0x%02X\n",
+                   VSCP_TYPE_PROTOCOL_RW_RESPONSE, payload[16], payload[17]);
         break;
 
 
@@ -196,7 +187,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
                    VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO);
         if (guidMismatch)
           return;
-        vscp_getMatrixinfo(mode);
+        vscp_getMatrixinfo(mode, payload);
         break;
 
 
@@ -233,23 +224,24 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   }
   else if (class == VSCP_CLASS2_PROTOCOL)
   {
-    uint8_t guidMismatch = memcmp(&data[8], guid, VSCP_SIZE_GUID);
+    uint8_t guidMismatch = memcmp(&payload[8], guid, VSCP_SIZE_GUID);
     switch (type)
     {
       case VSCP2_TYPE_PROTOCOL_READ_REGISTER:
         VSCP_DEBUG("0x%02x read register 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_READ_REGISTER, data[16]);
+                   VSCP_TYPE_PROTOCOL_READ_REGISTER, payload[16]);
         if (guidMismatch)
           return;
-        vscp_readRegisterL2(mode);
+        vscp_readRegisterL2(mode, payload);
         break;
 
       case VSCP2_TYPE_PROTOCOL_WRITE_REGISTER:
         VSCP_DEBUG("0x%02x write register 0x%02X\n",
-                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER, data[16], data[17]);
+                   VSCP_TYPE_PROTOCOL_WRITE_REGISTER,
+                   payload[16], payload[17]);
         if (guidMismatch)
           return;
-        vscp_writeRegisterL2(mode, size);
+        vscp_writeRegisterL2(mode, payload, size);
         break;
 
       case VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE:
@@ -270,33 +262,31 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
 }
 
 void
-vscp_readRegister(uint8_t mode)
+vscp_readRegister(uint8_t mode, uint8_t * payload)
 {
-  uint8_t *data =
-    vscp_createHead(mode, VSCP_CLASS1_PROTOCOL,
-                    VSCP_TYPE_PROTOCOL_RW_RESPONSE, VSCP_PRIORITY_MEDIUM);
-  data[0] = data[16];
+  payload[0] = payload[16];
 
-  if ((data[16]) >= 0x80)
-      data[1] = vscp_readStdReg(0xFFFFFF00 | data[16]);
+  if ((payload[16]) >= 0x80)
+       payload[1] = vscp_readStdReg(0xFFFFFF00 | payload[16]);
   else
-#warning FIXME: data[1] = vscp_readAppReg(data[16]);
-    data[1] = 42;
-  vscp_transmit(mode, 2);
-  VSCP_DEBUG("read result 0x%02X\n", data[1]);
+#warning FIXME: payload[1] = vscp_readAppReg(payload[16]);
+    payload[1] = 42;
+  vscp_transmit(mode, 2, VSCP_CLASS1_PROTOCOL, VSCP_TYPE_PROTOCOL_RW_RESPONSE,
+                VSCP_PRIORITY_MEDIUM);
+  VSCP_DEBUG("read result 0x%02X\n", payload[1]);
 }
 
 
 void
-vscp_readRegisterL2(uint8_t mode)
+vscp_readRegisterL2(uint8_t mode, uint8_t * payload)
 {
-  uint8_t *data = vscp_createHead(mode, VSCP_CLASS2_PROTOCOL,
-    VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE, VSCP_PRIORITY_HIGH);
+  uint32_t idx = ((uint32_t) payload[0] << 24) +
+                 ((uint32_t) payload[1] << 16) +
+                 ((uint32_t) payload[2] << 8)  +
+                  (uint32_t) payload[3];
 
-  uint32_t idx = ((uint32_t) data[0] << 24) + ((uint32_t) data[1] << 16) +
-                 ((uint32_t) data[2] << 8)  +  (uint32_t) data[3];
-
-  uint16_t cnt = ((uint16_t) data[4] << 8) + (uint16_t) data[5];
+  uint16_t cnt = ((uint16_t) payload[4] << 8) +
+                  (uint16_t) payload[5];
 
   if (cnt > (LIMITED_DEVICE_DATASIZE - 8))
     cnt = (LIMITED_DEVICE_DATASIZE - 8);
@@ -304,50 +294,48 @@ vscp_readRegisterL2(uint8_t mode)
   for (uint16_t i = 0; i < cnt; i++)
   {
     if ((idx + i) > VSCP_LEVEL2_COMMON_REGISTER_START)
-      data[8 + i] =
+      payload[8 + i] =
         vscp_readStdReg(idx - VSCP_LEVEL2_COMMON_REGISTER_START + 0x80 + i);
     else
-#warning FIXME: data[8 + i] = vscp_readAppReg(idx + i);
-      data[8 + i] = 0;
+#warning FIXME: payload[8 + i] = vscp_readAppReg(idx + i);
+      payload[8 + i] = 0;
   }
-  data[4] = 0;
-  data[5] = 0;
-  data[6] = 0;
-  data[7] = 0;
+  payload[4] = 0;
+  payload[5] = 0;
+  payload[6] = 0;
+  payload[7] = 0;
 
-  vscp_transmit(mode, 8 + cnt);
+  vscp_transmit(mode, 8 + cnt, VSCP_CLASS2_PROTOCOL,
+                VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE, VSCP_PRIORITY_HIGH);
 }
 
 
 
 void
-vscp_writeRegister(uint8_t mode)
+vscp_writeRegister(uint8_t mode, uint8_t * payload)
 {
-  uint8_t *data = vscp_createHead(mode, VSCP_CLASS1_PROTOCOL,
-    VSCP_TYPE_PROTOCOL_RW_RESPONSE, VSCP_PRIORITY_HIGH);
+  payload[0] = payload[16];
 
-  data[0] = data[16];
-
-  if ((data[16]) >= 0x80)
-    data[1] = vscp_writeStdReg(0xFFFFFF00 | data[16], data[17]);
+  if ((payload[16]) >= 0x80)
+    payload[1] = vscp_writeStdReg(0xFFFFFF00 | payload[16], payload[17]);
   else
-#warning FIXME: data[1] = vscp_writeAppReg(data[16], data[17]);
-   data[1] = data[17];
+#warning FIXME: payload[1] = vscp_writeAppReg(payload[16], payload[17]);
+   payload[1] = payload[17];
 
-  vscp_transmit(mode, 2);
-  VSCP_DEBUG("write result 0x%02X\n", data[1]);
+  vscp_transmit(mode, 2, VSCP_CLASS1_PROTOCOL, VSCP_TYPE_PROTOCOL_RW_RESPONSE,
+                VSCP_PRIORITY_HIGH);
+  VSCP_DEBUG("write result 0x%02X\n", payload[1]);
 }
 
 
 
 void
-vscp_writeRegisterL2(uint8_t mode, uint16_t sizeData)
+vscp_writeRegisterL2(uint8_t mode, uint8_t * payload, uint16_t sizeData)
 {
-  uint8_t *data = vscp_createHead(mode, VSCP_CLASS2_PROTOCOL,
-    VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE, VSCP_PRIORITY_HIGH);
-
-  uint32_t idx = ((uint32_t) data[0] << 24) + ((uint32_t) data[1] << 16) +
-                 ((uint32_t) data[2] << 8)  +  (uint32_t) data[3];
+  uint32_t idx = ((uint32_t) payload[0] << 24) +
+                 ((uint32_t) payload[1] << 16) +
+                 ((uint32_t) payload[2] << 8)  +
+                  (uint32_t) payload[3];
 
   uint16_t cnt = sizeData - 16 - 4 - 4;    // reduce by GUID + addr + reserved
   if (cnt > (LIMITED_DEVICE_DATASIZE - 24))
@@ -356,35 +344,35 @@ vscp_writeRegisterL2(uint8_t mode, uint16_t sizeData)
   for (uint16_t i = 0; i < cnt; i++)
   {
     if ((idx + i) > VSCP_LEVEL2_COMMON_REGISTER_START)
-      data[8 + i] = vscp_writeStdReg((idx & 0xFF) + i, data[24 + i]);
+      payload[8 + i] = vscp_writeStdReg((idx & 0xFF) + i, payload[24 + i]);
     else
-#warning FIXME: data[8 + i] = vscp_writeAppReg(idx + i, data[24 + i]);
-     data[8 + i] = data[24 + i];
+#warning FIXME: payload[8 + i] = vscp_writeAppReg(idx + i, payload[24 + i]);
+     payload[8 + i] = payload[24 + i];
   }
-  data[4] = 0;
-  data[5] = 0;
-  data[6] = 0;
-  data[7] = 0;
+  payload[4] = 0;
+  payload[5] = 0;
+  payload[6] = 0;
+  payload[7] = 0;
 
-  vscp_transmit(mode, 8 + cnt);
+  vscp_transmit(mode, 8 + cnt, VSCP_CLASS2_PROTOCOL,
+                VSCP2_TYPE_PROTOCOL_READ_WRITE_RESPONSE, VSCP_PRIORITY_HIGH);
 }
 
 
 void
-vscp_getMatrixinfo(uint8_t mode)
+vscp_getMatrixinfo(uint8_t mode, uint8_t * payload)
 {
-  uint8_t *data = vscp_createHead(mode, VSCP_CLASS1_PROTOCOL,
-    VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE, VSCP_PRIORITY_HIGH);
+  payload[0] = 16;           // 16 rows in matrix
+  payload[1] = 16;           // matrix offset
+  payload[2] = 0;            // page start
+  payload[3] = 0;
+  payload[4] = 0;            // page end
+  payload[5] = 0;
+  payload[6] = 0;            // size of row for level II
 
-  data[0] = 16;           // 16 rows in matrix
-  data[1] = 16;           // matrix offset
-  data[2] = 0;            // page start
-  data[3] = 0;
-  data[4] = 0;            // page end
-  data[5] = 0;
-  data[6] = 0;            // size of row for level II
-
-  vscp_transmit(mode, 7);
+  vscp_transmit(mode, 7, VSCP_CLASS1_PROTOCOL,
+                VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE,
+                VSCP_PRIORITY_HIGH);
 }
 
 
@@ -408,16 +396,15 @@ vscp_periodic(void)
 void
 vscp_sendHeartBeat(void)
 {
-  uint8_t *data =
-    vscp_createHead(VSCP_MODE_RAWETHERNET, VSCP_CLASS1_INFORMATION,
-                    VSCP_TYPE_INFORMATION_NODE_HEARTBEAT, VSCP_PRIORITY_LOW);
+  uint8_t *payload = vscp_createHead(VSCP_MODE_RAWETHERNET);
 #warning FIXME
-  data[0] = 0;            // no meaning
-  data[1] = 0x47;         // FIXME: zone
-  data[2] = 0x11;         // FIXME: subzone
-//  data[1] = appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_ZONE );         // Zone
-//  data[2] = ( appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_SUBZONE ) & 0xe0 );   // SubZone
-  vscp_transmit(VSCP_MODE_RAWETHERNET, 3);
+  payload[0] = 0;            // no meaning
+  payload[1] = 0x47;         // FIXME: zone
+  payload[2] = 0x11;         // FIXME: subzone
+//  payload[1] = appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_ZONE );         // Zone
+//  payload[2] = ( appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_SUBZONE ) & 0xe0 );   // SubZone
+  vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_INFORMATION,
+                VSCP_TYPE_INFORMATION_NODE_HEARTBEAT, VSCP_PRIORITY_LOW);
   VSCP_DEBUG("node heartbeat sent\n");
 }
 
@@ -426,13 +413,13 @@ vscp_sendHeartBeat(void)
 void
 sendPeriodicOutputEvents(void)
 {
-  uint8_t *data = vscp_createHead(VSCP_MODE_RAWETHERNET, VSCP_CLASS1_DATA,
-                                  VSCP_TYPE_DATA_IO, VSCP_PRIORITY_LOW);
-  data[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX0;
-  data[1] = 0xA5;         // FIXME: output data
-  data[2] = 0xC3;         // FIXME: output data
-//  vscp->data[1] = PORTB;
-  vscp_transmit(VSCP_MODE_RAWETHERNET, 3);
+  uint8_t *payload = vscp_createHead(VSCP_MODE_RAWETHERNET);
+  payload[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX0;
+  payload[1] = 0xA5;         // FIXME: output data
+  payload[2] = 0xC3;         // FIXME: output data
+//  vscp->payload[1] = PORTB;
+  vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_DATA, VSCP_TYPE_DATA_IO,
+                VSCP_PRIORITY_LOW);
   VSCP_DEBUG("node output data sent\n");
 }
 
@@ -441,48 +428,31 @@ sendPeriodicOutputEvents(void)
 void
 sendPeriodicInputEvents(void)
 {
-  uint8_t *data = vscp_createHead(VSCP_MODE_RAWETHERNET, VSCP_CLASS1_DATA,
-                                  VSCP_TYPE_DATA_IO, VSCP_PRIORITY_LOW);
-  data[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX1;
-  data[1] = 0xA5;         // FIXME: input data
-  data[2] = 0xC3;         // FIXME: input data
-//  vscp->data[1] = getInputState();
-  vscp_transmit(VSCP_MODE_RAWETHERNET, 3);
+  uint8_t *payload = vscp_createHead(VSCP_MODE_RAWETHERNET);
+  payload[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX1;
+  payload[1] = 0xA5;         // FIXME: input data
+  payload[2] = 0xC3;         // FIXME: input data
+//  vscp->payload[1] = getInputState();
+  vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_DATA, VSCP_TYPE_DATA_IO,
+                VSCP_PRIORITY_LOW);
   VSCP_DEBUG("node input data sent\n");
 }
 
 
 
 uint8_t*
-vscp_createHead(uint8_t mode, uint16_t class, uint16_t type, uint8_t priority)
+vscp_createHead(uint8_t mode)
 {
-  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
   struct vscp_raw_event *vscp_raw =
     (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
   struct vscp_udp_event *vscp_udp = (struct vscp_udp_event *) uip_appdata;
 
-  memset(packet->dest.addr, 0xFF, 6);                   // broadcast
-  memcpy(packet->src.addr, uip_ethaddr.addr, 6);        // our mac
   switch (mode)
   {
     case VSCP_MODE_RAWETHERNET:
-      packet->type = HTONS(VSCP_ETHTYPE);
-      vscp_raw->version = VSCP_RAWETHERNET_VERSION;
-      vscp_raw->head = htonl((uint32_t) priority << 24);
-      vscp_raw->subsource = htons(guid[14] << 8 | guid[15]);
-      vscp_raw->timestamp = htonl(0);
-      //  vscp->timestamp = htonl(clock_get_time() * 1000);
-      vscp_raw->class = htons(class);
-      vscp_raw->type = htons(type);
       return (vscp_raw->data);
     case VSCP_MODE_UDP:   // FIXME
-      packet->type = HTONS(UIP_ETHTYPE_IP);
-      vscp_udp->head = priority;
-      vscp_udp->class = htons(class);
-      vscp_udp->type = htons(type);
       return (vscp_udp->data);
-    default:
-      VSCP_DEBUG("unsupported mode\n");
   }
   return (&uip_buf[VSCP_RAWH_LEN]);
 }

@@ -148,7 +148,8 @@ struct vscp_raw_event
 void vscp_net_init(void);
 void vscp_net_udp(void);
 void vscp_net_raw(void);
-void vscp_transmit(uint8_t mode, uint16_t size);
+void vscp_transmit(uint8_t mode, uint16_t size, uint16_t class, uint16_t type,
+                   uint8_t priority);
 
 #endif /* _VSCP_NET_H */
 

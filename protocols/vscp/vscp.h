@@ -37,20 +37,22 @@
 #define VSCP_DEBUG(...)    ((void) 0)
 #endif
 
+extern uint8_t vscp_mode;
+
 void vscp_setup(void);
 void vscp_main(void);
 void vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
-              uint8_t *guid, uint8_t *data);
+              uint8_t *guid, uint8_t *payload);
 
+void vscp_periodic(void);
 void vscp_sendHeartBeat(void);
 void sendPeriodicOutputEvents(void);
 void sendPeriodicInputEvents(void);
 
-uint8_t* vscp_createHead(uint8_t mode, uint16_t class, uint16_t type,
-                         uint8_t priority);
-void vscp_readRegister(uint8_t mode);
-void vscp_writeRegister(uint8_t mode);
-void vscp_getMatrixinfo(uint8_t mode);
+uint8_t* vscp_createHead(uint8_t mode);
+void vscp_readRegister(uint8_t mode, uint8_t *payload);
+void vscp_writeRegister(uint8_t mode, uint8_t *payload);
+void vscp_getMatrixinfo(uint8_t mode, uint8_t *payload);
 
 #define FIRMWARE_MAJOR_VERSION        0x00
 #define FIRMWARE_MINOR_VERSION        0x00
