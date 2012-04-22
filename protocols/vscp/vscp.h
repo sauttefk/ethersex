@@ -49,7 +49,6 @@ void vscp_sendHeartBeat(void);
 void sendPeriodicOutputEvents(void);
 void sendPeriodicInputEvents(void);
 
-uint8_t* vscp_createHead(uint8_t mode);
 void vscp_readRegister(uint8_t mode, uint8_t *payload);
 void vscp_writeRegister(uint8_t mode, uint8_t *payload);
 void vscp_getMatrixinfo(uint8_t mode, uint8_t *payload);

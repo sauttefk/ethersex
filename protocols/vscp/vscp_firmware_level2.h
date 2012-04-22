@@ -318,10 +318,6 @@ int8_t vscp_getEvent(vscpEvent * pEvent);
 void vscp_init(void);
 
 
-// Fill in GUID information for our node  into event
-void fillGUID(vscpEvent * pEvent);
-
-
 
 // ***********************************************************************
 // * * * The following methods should be implemented by the application

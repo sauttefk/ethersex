@@ -396,7 +396,7 @@ vscp_periodic(void)
 void
 vscp_sendHeartBeat(void)
 {
-  uint8_t *payload = vscp_createHead(VSCP_MODE_RAWETHERNET);
+  uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
 #warning FIXME
   payload[0] = 0;            // no meaning
   payload[1] = 0x47;         // FIXME: zone
@@ -413,7 +413,7 @@ vscp_sendHeartBeat(void)
 void
 sendPeriodicOutputEvents(void)
 {
-  uint8_t *payload = vscp_createHead(VSCP_MODE_RAWETHERNET);
+  uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
   payload[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX0;
   payload[1] = 0xA5;         // FIXME: output data
   payload[2] = 0xC3;         // FIXME: output data
@@ -428,7 +428,7 @@ sendPeriodicOutputEvents(void)
 void
 sendPeriodicInputEvents(void)
 {
-  uint8_t *payload = vscp_createHead(VSCP_MODE_RAWETHERNET);
+  uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
   payload[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX1;
   payload[1] = 0xA5;         // FIXME: input data
   payload[2] = 0xC3;         // FIXME: input data
@@ -436,25 +436,6 @@ sendPeriodicInputEvents(void)
   vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_DATA, VSCP_TYPE_DATA_IO,
                 VSCP_PRIORITY_LOW);
   VSCP_DEBUG("node input data sent\n");
-}
-
-
-
-uint8_t*
-vscp_createHead(uint8_t mode)
-{
-  struct vscp_raw_event *vscp_raw =
-    (struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN];
-  struct vscp_udp_event *vscp_udp = (struct vscp_udp_event *) uip_appdata;
-
-  switch (mode)
-  {
-    case VSCP_MODE_RAWETHERNET:
-      return (vscp_raw->data);
-    case VSCP_MODE_UDP:   // FIXME
-      return (vscp_udp->data);
-  }
-  return (&uip_buf[VSCP_RAWH_LEN]);
 }
 
 

@@ -148,6 +148,7 @@ struct vscp_raw_event
 void vscp_net_init(void);
 void vscp_net_udp(void);
 void vscp_net_raw(void);
+uint8_t* vscp_getPayloadPointer(uint8_t mode);
 void vscp_transmit(uint8_t mode, uint16_t size, uint16_t class, uint16_t type,
                    uint8_t priority);
 

@@ -114,6 +114,22 @@ vscp_net_raw(void)
 #endif /* VSCP_USE_RAW_ETHERNET */
 
 
+
+uint8_t*
+vscp_getPayloadPointer(uint8_t mode)
+{
+  switch (mode)
+  {
+    case VSCP_MODE_RAWETHERNET:
+      return (((struct vscp_raw_event *) &uip_buf[VSCP_RAWH_LEN])->data);
+    case VSCP_MODE_UDP:   // FIXME
+      return (((struct vscp_udp_event *) uip_appdata)->data);
+  }
+  return (&uip_buf[VSCP_RAWH_LEN]);
+}
+
+
+
 void
 vscp_transmit(uint8_t mode, uint16_t size, uint16_t class, uint16_t type,
               uint8_t priority)
@@ -151,10 +167,12 @@ vscp_transmit(uint8_t mode, uint16_t size, uint16_t class, uint16_t type,
       uip_udp_conn->rport = HTONS(CONF_VSCP_PORT);
       uip_slen = VSCP_UDP_POS_DATA - VSCP_CRC_LEN + size;
       uip_process(UIP_UDP_SEND_CONN);
+      router_output();
       break;
 
     default:
       uip_len = 0;
   }
 }
+
 #endif /* VSCP_SUPPORT */
