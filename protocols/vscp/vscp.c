@@ -521,7 +521,7 @@ uint8_t vscp_getManufacturerId( uint8_t idx )
 
 void vscp_setManufacturerId( uint8_t idx, uint8_t data )
 {
-#if defined(VSCP_USE_EEPROM_FOR_MANUFACTURER_ID)
+#ifdef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
   eeprom_save_offset(vscp_manufacturer_id, idx, &data, sizeof(uint8_t));
   eeprom_update_chksum();
 #endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
@@ -555,6 +555,7 @@ uint8_t vscp_getMDF_URL( uint8_t idx )
 {
   return vscp_deviceURL[ idx ];
 }
+
 #endif /* VSCP_SUPPORT */
 
 
