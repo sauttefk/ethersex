@@ -169,11 +169,34 @@ eeprom_init (void)
   eeprom_save_offset(crontab, 0, &count, sizeof(count));
 #endif
 
-#ifdef VSCP_SUPPORT
-  eeprom_save_int (vscp_subsource, HTONS(CONF_VSCP_SUBSOURCE));
+#ifdef TANKLEVEL_SUPPORT
+  tanklevel_params_t tanklevel_temp = {
+    .sensor_offset = TANKLEVEL_SENSOR_OFFSET,
+    .med_density = TANKLEVEL_MED_DENSITY,
+    .ltr_per_m = TANKLEVEL_LTR_PER_M,
+    .ltr_full = TANKLEVEL_LTR_FULL,
+    .raise_time = TANKLEVEL_RAISE_TIME,
+    .hold_time = TANKLEVEL_HOLD_TIME
+  };
+  eeprom_save (tanklevel_params, &tanklevel_temp, sizeof(tanklevel_params_t));
 #endif
 
-  eeprom_update_chksum ();
+#ifdef VSCP_SUPPORT
+  eeprom_save_int(vscp_subsource, HTONS(CONF_VSCP_SUBSOURCE));
+  eeprom_save_char(vscp_user_id[0], CONF_VSCP_USERID0);
+  eeprom_save_char(vscp_user_id[1], CONF_VSCP_USERID1);
+  eeprom_save_char(vscp_user_id[2], CONF_VSCP_USERID2);
+  eeprom_save_char(vscp_user_id[3], CONF_VSCP_USERID3);
+  eeprom_save_char(vscp_user_id[4], CONF_VSCP_USERID4);
+#ifdef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
+  eeprom_save_long(vscp_manufacturer_id[0],
+    HTONL(CONF_VSCP_MANUFACTURER_ID));
+  eeprom_save_long(vscp_manufacturer_id[1],
+    HTONL(CONF_VSCP_MANUFACTURER_SUBID));
+#endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
+#endif /* VSCP_SUPPORT */
+
+  eeprom_update_chksum();
 }
 
 

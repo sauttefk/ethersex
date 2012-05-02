@@ -65,6 +65,10 @@
 #include "services/cron/cron.h"
 #endif
 
+#ifdef TANKLEVEL_SUPPORT
+#include "services/tanklevel/tanklevel.h"
+#endif
+
 struct eeprom_config_t
 {
 #ifdef ETHERNET_SUPPORT
@@ -136,9 +140,18 @@ struct eeprom_config_t
   uint8_t crontab[CRON_EEPROM_SIZE];
 #endif
 
+#ifdef TANKLEVEL_SUPPORT
+  tanklevel_params_t tanklevel_params;
+#endif
+
 #ifdef VSCP_SUPPORT
   uint16_t vscp_subsource;
-#endif
+  uint8_t vscp_user_id[5];
+#ifdef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
+  uint32_t vscp_manufacturer_id[2];
+#endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
+  uint8_t vscp_control_byte;
+#endif /* VSCP_SUPPORT */
 
   uint8_t crc;
 };
@@ -174,6 +187,9 @@ uint8_t eeprom_get_chksum (void);
 #define eeprom_save_int(dst, data) \
     do { uint16_t _t = data; eeprom_save(dst, &_t, 2); } while(0)
 
+#define eeprom_save_long(dst, data) \
+    do { uint32_t _t = data; eeprom_save(dst, &_t, 4); } while(0)
+
 /* Reads len byte from eeprom at dst into mem */
 #define eeprom_restore(dst, mem, len) \
   eeprom_read_block(mem, EEPROM_CONFIG_BASE + offsetof(struct eeprom_config_t, dst), len)
@@ -189,6 +205,9 @@ uint8_t eeprom_get_chksum (void);
 
 #define eeprom_restore_int(dst, mem) \
     eeprom_restore(dst, mem, 2)
+
+#define eeprom_restore_long(dst, mem) \
+    eeprom_restore(dst, mem, 4)
 
 /* Update the eeprom crc */
 #define eeprom_update_chksum() eeprom_save_char(crc, eeprom_get_chksum())

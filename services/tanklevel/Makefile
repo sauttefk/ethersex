@@ -1,11 +1,12 @@
 TOPDIR ?= ../..
 include $(TOPDIR)/.config
 
-$(VSCP_SUPPORT)_SRC += protocols/vscp/vscp.c protocols/vscp/vscp_net.c \
- protocols/vscp/vscp_firmware_level2.c
+$(TANKLEVEL_SUPPORT)_ECMD_SRC += \
+	services/tanklevel/tanklevel_ecmd.c
 
-# $(VSCP_SUPPORT)_ECMD_SRC += \
-# 	protocols/vscp/ecmd.c
+$(TANKLEVEL_SUPPORT)_SRC += \
+	services/tanklevel/tanklevel.c \
+
 ##############################################################################
 # generic fluff
 include $(TOPDIR)/scripts/rules.mk

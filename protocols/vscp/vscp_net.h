@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 by Frank Sautter <ethersix@sautter.com>
+ * (c) 2012 by Frank Sautter <ethersix@sautter.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -33,9 +33,6 @@
 
 
 #define VSCP_DM_MATRIX_BASE                     0x200 //FIXME: use top of eeprom pointer
-
-#define VSCP_MAJOR_VERSION                      1
-#define VSCP_MINOR_VERSION                      5
 
 #define VSCP_FIRMWARE_MAJOR_VERSION             0x00
 #define VSCP_FIRMWARE_MINOR_VERSION             0x00
@@ -77,22 +74,6 @@
 #define VSCP_RAW_POS_SIZE                       19
 #define VSCP_RAW_POS_DATA                       21
 
-#define VSCP_LEVEL2_PRIORITY_0                  0x00000000
-#define VSCP_LEVEL2_PRIORITY_1                  0x20000000
-#define VSCP_LEVEL2_PRIORITY_2                  0x40000000
-#define VSCP_LEVEL2_PRIORITY_3                  0x60000000
-#define VSCP_LEVEL2_PRIORITY_4                  0x80000000
-#define VSCP_LEVEL2_PRIORITY_5                  0xA0000000
-#define VSCP_LEVEL2_PRIORITY_6                  0xC0000000
-#define VSCP_LEVEL2_PRIORITY_7                  0xE0000000
-
-#define VSCP_LEVEL2_PRIORITY_HIGH               VSCP_LEVEL2_PRIORITY_0
-#define VSCP_LEVEL2_PRIORITY_MEDIUM             VSCP_LEVEL2_PRIORITY_4
-#define VSCP_LEVEL2_PRIORITY_LOW                VSCP_LEVEL2_PRIORITY_7
-
-#define VSCP_LEVEL2_MASK_PRIORITY               0xE0000000
-#define VSCP_LEVEL2_MASK_CRYPTO                 0x1E000000
-
 #define VSCP_LEVEL1_MAXDATA                     8
 #define VSCP_LEVEL2_MAXDATA                     (512 - 25)
 
@@ -127,10 +108,10 @@
 
 #ifndef htonl
 #define htonl(x) __builtin_bswap32(x)
-#endif /* !htonl */
+#endif /* htonl */
 #ifndef ntohl
 #define ntohl htonl
-#endif /* !ntohl */
+#endif /* ntohl */
 
 
 /* structs */
@@ -167,6 +148,9 @@ struct vscp_raw_event
 void vscp_net_init(void);
 void vscp_net_udp(void);
 void vscp_net_raw(void);
+uint8_t* vscp_getPayloadPointer(uint8_t mode);
+void vscp_transmit(uint8_t mode, uint16_t size, uint16_t class, uint16_t type,
+                   uint8_t priority);
 
 #endif /* _VSCP_NET_H */
 

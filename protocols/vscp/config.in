@@ -1,5 +1,14 @@
 dep_bool_menu "VSCP Node" VSCP_SUPPORT
+  string "Device URL" CONF_VSCP_DEVICEURL "sautter.com/beteigeuze.xml"
   int "Sub Source ID (lower 2 bytes of GUID)" CONF_VSCP_SUBSOURCE 0x55AA
+  int "User ID 0" CONF_VSCP_USERID0 0x12
+  int "User ID 1" CONF_VSCP_USERID1 0x34
+  int "User ID 2" CONF_VSCP_USERID2 0x56
+  int "User ID 3" CONF_VSCP_USERID3 0x78
+  int "User ID 4" CONF_VSCP_USERID4 0x9A
+  int "Manufacturer ID" CONF_VSCP_MANUFACTURER_ID 0x11223344
+  int "Manufacturer Sub-ID" CONF_VSCP_MANUFACTURER_SUBID 0x55667788
+  dep_bool "Store Manufacturer ID & SubID in EEPROM" VSCP_USE_EEPROM_FOR_MANUFACTURER_ID $VSCP_SUPPORT
   dep_bool "Raw Ethernet" VSCP_USE_RAW_ETHERNET $VSCP_SUPPORT
   dep_bool_menu "VSCP over UDP" VSCP_USE_UDP $VSCP_SUPPORT $UDP_SUPPORT $BROADCAST_SUPPORT
     int "UDP Port" CONF_VSCP_PORT 9598

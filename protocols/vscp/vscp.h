@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 by Frank Sautter <ethersix@sautter.com>
+ * (c) 2012 Frank Sautter <ethersix@sautter.com>
  *
  * This program is free software; you can redistsribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -37,23 +37,25 @@
 #define VSCP_DEBUG(...)    ((void) 0)
 #endif
 
-uint8_t guid[16];
+extern uint8_t vscp_mode;
 
 void vscp_setup(void);
 void vscp_main(void);
 void vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
-              uint8_t *guid, uint8_t *data);
+              uint8_t *guid, uint8_t *payload);
 
+void vscp_periodic(void);
 void vscp_sendHeartBeat(void);
 void sendPeriodicOutputEvents(void);
 void sendPeriodicInputEvents(void);
 
-uint8_t* vscp_createHead(uint8_t mode, uint16_t class, uint16_t type,
-                         uint16_t size);
-void vscp_readRegister(uint8_t mode);
-//void vscp_writeRegister(struct vscp_raw_event *vscp);
-void vscp_getMatrixinfo(struct vscp_raw_event *vscp);
+void vscp_readRegister(uint8_t mode, uint8_t *payload);
+void vscp_writeRegister(uint8_t mode, uint8_t *payload);
+void vscp_getMatrixinfo(uint8_t mode, uint8_t *payload);
 
+#define FIRMWARE_MAJOR_VERSION        0x00
+#define FIRMWARE_MINOR_VERSION        0x00
+#define FIRMWARE_SUB_MINOR_VERSION    0x01
 
-#endif /* _VSCP_H */
 #endif /* VSCP_SUPPORT */
+#endif /* _VSCP_H */
