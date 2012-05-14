@@ -31,7 +31,7 @@
 
 
 /* ----------------------------------------------------------------------------
- *global variables
+ * global variables
  */
 
 #ifndef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID

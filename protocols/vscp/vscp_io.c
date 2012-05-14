@@ -19,33 +19,100 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
+#include <stdio.h>
+
+#include "vscp_io.h"
+
+#ifdef VSCP_SUPPORT
+
+/* ---------------------------------------------------------------------------
+ * get value of hardware inputs
+ */
 uint32_t
-vscp_get_io(void)
+vscp_get_input(void)
 {
-  return(((uint32_t) PORTE << 24) + // io4.0 - io4.7
-         ((uint32_t) PORTF << 16) + // io3.0 - io3.7
-         ((uint32_t) PORTC << 8)  + // io2.0 - io2.7 
-          (uint32_t) PORTA)        	// io1.0 - io1.7
+  return((((uint32_t) PINE << 24) | // io4.0 - io4.7
+         ((uint32_t) PINF << 16) |  // io3.0 - io3.7
+         ((uint32_t) PINC << 8)  |  // io2.0 - io2.7
+          (uint32_t) PINA) ^        // io1.0 - io1.7
+          ~VSCP_IO_DIRECTION);
 }
 
 
+/* ---------------------------------------------------------------------------
+ * set hardware outputs
+ */
 void
-vscp_set_io(uint32_t value)
+vscp_set_output(uint32_t value)
 {
-  PORTA = value & 0xFF;
-  PORTC = (value >> 8) & 0xFF;
-  PORTF = (value >> 16) & 0xFF;
-  PORTE = (value >> 24) & 0xFF;
+  uint32_t io = ~VSCP_IO_DIRECTION | value;
+  PORTA = (uint8_t)(io);
+  PORTC = (uint8_t)(io >> 8);
+  PORTF = (uint8_t)(io >> 16);
+  PORTE = (uint8_t)(io >> 24);
 }
 
+
+/* ---------------------------------------------------------------------------
+ * set hardware io direction
+ */
+void
+vscp_set_direction(uint32_t value)
+{
+  DDRA = (uint8_t)(value);
+  DDRC = (uint8_t)(value >> 8);
+  DDRF = (uint8_t)(value >> 16);
+  DDRE = (uint8_t)(value >> 24);
+  VSCP_DEBUG ("IO-direction: 0x%08lX\n", value);
+}
+
+
+/* ---------------------------------------------------------------------------
+ * set configure io
+ */
+void
+vscp_io_init(void)
+{
+  vscp_set_direction(VSCP_IO_DIRECTION);
+  vscp_set_output(0x00000000);
+}
+
+
+/* ---------------------------------------------------------------------------
+ * debounce hardware inputs
+ */
 void
 vscp_debounce(void)
 {
-  static uint32_t vscp_debounce0, vscp_debounce1;
-  uint32_t i = key_state ^ ~KEY_PIN;    // key changed ?
-  vscp_debounce0 = ~( vscp_debounce0 & i );          // reset or count vscp_debounce0
-  vscp_debounce1 = vscp_debounce0 ^ (vscp_debounce1 & i);       // reset or count vscp_debounce1
-  i &= vscp_debounce0 & vscp_debounce1;              // count until roll over ?
-  key_state ^= i;              // then toggle debounced state
-  key_press |= key_state & i;  // 0->1: key press detect
+  static uint32_t vscp_debounce0, vscp_debounce1, vscp_input;
+
+  // test if any changes occurred
+  uint32_t vscp_edge = vscp_get_input() ^ vscp_input;
+
+  // increment the vertical counter
+  // reset the counter if no change has occurred
+  vscp_debounce1 =  vscp_debounce0 ^ (vscp_debounce1 & vscp_edge);
+  vscp_debounce0 = ~vscp_debounce0                   & vscp_edge;
+
+  // set edge detect if vertical counter has overflow (both bits are 0)
+  vscp_edge &= ~(vscp_debounce0 | vscp_debounce1);
+
+  // update debounced input
+  vscp_input ^= vscp_edge;
+
+  if (vscp_edge != 0)
+  {
+    VSCP_DEBUG ("IO-Change: 0x%08lX 0x%08lX\n", vscp_edge, vscp_input);
+    vscp_set_output((vscp_input << 8));
+  }
 }
+#endif /* VSCP_SUPPORT */
+
+
+/*
+   -- Ethersex META --
+   header(protocols/vscp/vscp_io.h)
+   init(vscp_io_init)
+   timer(1, vscp_debounce())
+   block(Miscelleanous)
+ */

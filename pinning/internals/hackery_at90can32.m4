@@ -1,5 +1,5 @@
 
-#define _AT90CAN128
+#define _AT90CAN32
 
 #define _SPMCR SPMCSR
 
