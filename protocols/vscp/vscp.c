@@ -22,28 +22,29 @@
 #include <stdio.h>
 
 #include "vscp.h"
+#include "vscp_io.h"
 #include "core/bit-macros.h"
 #include "core/periodic.h"
 #include "core/eeprom.h"
+#include "core/util/fifo.h"
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
 #ifdef VSCP_SUPPORT
-
 
 /* ----------------------------------------------------------------------------
  * global variables
  */
 
 #ifndef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
-const uint8_t vscp_manufacturer_id[8] = {          // PROGMEM doesn't work?!?
-  (uint8_t)(CONF_VSCP_MANUFACTURER_ID >> 24),
-  (uint8_t)(CONF_VSCP_MANUFACTURER_ID >> 16),
-  (uint8_t)(CONF_VSCP_MANUFACTURER_ID >> 8),
-  (uint8_t)(CONF_VSCP_MANUFACTURER_ID),
-  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID >> 24),
-  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID >> 16),
-  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID >> 8),
-  (uint8_t)(CONF_VSCP_MANUFACTURER_SUBID)
+const uint8_t vscp_manufacturer_id[8] = {       // PROGMEM doesn't work?!?
+  (uint8_t) (CONF_VSCP_MANUFACTURER_ID >> 24),
+  (uint8_t) (CONF_VSCP_MANUFACTURER_ID >> 16),
+  (uint8_t) (CONF_VSCP_MANUFACTURER_ID >> 8),
+  (uint8_t) (CONF_VSCP_MANUFACTURER_ID),
+  (uint8_t) (CONF_VSCP_MANUFACTURER_SUBID >> 24),
+  (uint8_t) (CONF_VSCP_MANUFACTURER_SUBID >> 16),
+  (uint8_t) (CONF_VSCP_MANUFACTURER_SUBID >> 8),
+  (uint8_t) (CONF_VSCP_MANUFACTURER_SUBID)
 };
 #endif /* VSCP_USE_EEPROM_FOR_MANUFACTURER_ID */
 
@@ -65,10 +66,10 @@ vscp_setup(void)
 {
   VSCP_DEBUG("init\n");
 
-  memset(&guid[0], 0xFF, 7);                     // raw ethernet first 8 bytes
-  guid[7] = 0xFE;                                // = 0xFFFFFFFFFFFFFFFE
-  memcpy(&guid[8], &uip_ethaddr.addr, 6);        // mac address
-  eeprom_restore(vscp_subsource, &guid[14], 2);  // lower 16 bits of GUID
+  memset(&guid[0], 0xFF, 7);    // raw ethernet first 8 bytes
+  guid[7] = 0xFE;               // = 0xFFFFFFFFFFFFFFFE
+  memcpy(&guid[8], &uip_ethaddr.addr, 6);       // mac address
+  eeprom_restore(vscp_subsource, &guid[14], 2); // lower 16 bits of GUID
 
   VSCP_DEBUG("GUID : %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
              "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -83,12 +84,20 @@ vscp_setup(void)
 void
 vscp_main(void)
 {
+  if (FIFO_available(vscp_InputBuffer))
+  {
+    VSCP_DEBUG("IO-Change main: 0x%08lX 0x%08lX\n",
+               FIFO_read(vscp_InputBuffer, VSCP_INPUT_BUFFER_SIZE),
+               FIFO_read(vscp_InputBuffer, VSCP_INPUT_BUFFER_SIZE));
+//    VSCP_DEBUG("R - W: 0x%02x 0x%02x\n",
+//               vscp_InputBuffer._read, vscp_InputBuffer._write);
+  }
 }
 
 
 void
 vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
-         uint8_t *oguid, uint8_t *payload)
+         uint8_t * oguid, uint8_t * payload)
 {
   VSCP_DEBUG("OGUID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:"
              "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -106,8 +115,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
 #endif /* DEBUG_VSCP */
 
 
-  if (class == VSCP_CLASS1_PROTOCOL ||
-      class == VSCP_CLASS2_LEVEL1_PROTOCOL)
+  if (class == VSCP_CLASS1_PROTOCOL || class == VSCP_CLASS2_LEVEL1_PROTOCOL)
   {
     uint8_t guidMismatch = memcmp(&payload[0], guid, VSCP_SIZE_GUID);
 
@@ -206,8 +214,7 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
         VSCP_DEBUG("unsupported type 0x%04X\n", type);
     }
   }
-  else if (class == VSCP_CLASS1_ALARM ||
-           class == VSCP_CLASS2_LEVEL1_ALARM)
+  else if (class == VSCP_CLASS1_ALARM || class == VSCP_CLASS2_LEVEL1_ALARM)
   {
   }
   else if (class == VSCP_CLASS1_MEASUREMENT ||
@@ -267,7 +274,7 @@ vscp_readRegister(uint8_t mode, uint8_t * payload)
   payload[0] = payload[16];
 
   if ((payload[16]) >= 0x80)
-       payload[1] = vscp_readStdReg(0xFFFFFF00 | payload[16]);
+    payload[1] = vscp_readStdReg(0xFFFFFF00 | payload[16]);
   else
 #warning FIXME: payload[1] = vscp_readAppReg(payload[16]);
     payload[1] = 42;
@@ -281,12 +288,10 @@ void
 vscp_readRegisterL2(uint8_t mode, uint8_t * payload)
 {
   uint32_t idx = ((uint32_t) payload[0] << 24) +
-                 ((uint32_t) payload[1] << 16) +
-                 ((uint32_t) payload[2] << 8)  +
-                  (uint32_t) payload[3];
+    ((uint32_t) payload[1] << 16) +
+    ((uint32_t) payload[2] << 8) + (uint32_t) payload[3];
 
-  uint16_t cnt = ((uint16_t) payload[4] << 8) +
-                  (uint16_t) payload[5];
+  uint16_t cnt = ((uint16_t) payload[4] << 8) + (uint16_t) payload[5];
 
   if (cnt > (LIMITED_DEVICE_DATASIZE - 8))
     cnt = (LIMITED_DEVICE_DATASIZE - 8);
@@ -320,7 +325,7 @@ vscp_writeRegister(uint8_t mode, uint8_t * payload)
     payload[1] = vscp_writeStdReg(0xFFFFFF00 | payload[16], payload[17]);
   else
 #warning FIXME: payload[1] = vscp_writeAppReg(payload[16], payload[17]);
-   payload[1] = payload[17];
+    payload[1] = payload[17];
 
   vscp_transmit(mode, 2, VSCP_CLASS1_PROTOCOL, VSCP_TYPE_PROTOCOL_RW_RESPONSE,
                 VSCP_PRIORITY_HIGH);
@@ -333,11 +338,10 @@ void
 vscp_writeRegisterL2(uint8_t mode, uint8_t * payload, uint16_t sizeData)
 {
   uint32_t idx = ((uint32_t) payload[0] << 24) +
-                 ((uint32_t) payload[1] << 16) +
-                 ((uint32_t) payload[2] << 8)  +
-                  (uint32_t) payload[3];
+    ((uint32_t) payload[1] << 16) +
+    ((uint32_t) payload[2] << 8) + (uint32_t) payload[3];
 
-  uint16_t cnt = sizeData - 16 - 4 - 4;    // reduce by GUID + addr + reserved
+  uint16_t cnt = sizeData - 16 - 4 - 4; // reduce by GUID + addr + reserved
   if (cnt > (LIMITED_DEVICE_DATASIZE - 24))
     cnt = (LIMITED_DEVICE_DATASIZE - 24);
 
@@ -347,7 +351,7 @@ vscp_writeRegisterL2(uint8_t mode, uint8_t * payload, uint16_t sizeData)
       payload[8 + i] = vscp_writeStdReg((idx & 0xFF) + i, payload[24 + i]);
     else
 #warning FIXME: payload[8 + i] = vscp_writeAppReg(idx + i, payload[24 + i]);
-     payload[8 + i] = payload[24 + i];
+      payload[8 + i] = payload[24 + i];
   }
   payload[4] = 0;
   payload[5] = 0;
@@ -362,13 +366,13 @@ vscp_writeRegisterL2(uint8_t mode, uint8_t * payload, uint16_t sizeData)
 void
 vscp_getMatrixinfo(uint8_t mode, uint8_t * payload)
 {
-  payload[0] = 16;           // 16 rows in matrix
-  payload[1] = 16;           // matrix offset
-  payload[2] = 0;            // page start
+  payload[0] = 16;              // 16 rows in matrix
+  payload[1] = 16;              // matrix offset
+  payload[2] = 0;               // page start
   payload[3] = 0;
-  payload[4] = 0;            // page end
+  payload[4] = 0;               // page end
   payload[5] = 0;
-  payload[6] = 0;            // size of row for level II
+  payload[6] = 0;               // size of row for level II
 
   vscp_transmit(mode, 7, VSCP_CLASS1_PROTOCOL,
                 VSCP_TYPE_PROTOCOL_GET_MATRIX_INFO_RESPONSE,
@@ -398,9 +402,9 @@ vscp_sendHeartBeat(void)
 {
   uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
 #warning FIXME
-  payload[0] = 0;            // no meaning
-  payload[1] = 0x47;         // FIXME: zone
-  payload[2] = 0x11;         // FIXME: subzone
+  payload[0] = 0;               // no meaning
+  payload[1] = 0x47;            // FIXME: zone
+  payload[2] = 0x11;            // FIXME: subzone
 //  payload[1] = appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_ZONE );         // Zone
 //  payload[2] = ( appcfgGetc( APPCFG_VSCP_EEPROM_REG_MODULE_SUBZONE ) & 0xe0 );   // SubZone
   vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_INFORMATION,
@@ -415,8 +419,8 @@ sendPeriodicOutputEvents(void)
 {
   uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
   payload[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX0;
-  payload[1] = 0xA5;         // FIXME: output data
-  payload[2] = 0xC3;         // FIXME: output data
+  payload[1] = 0xA5;            // FIXME: output data
+  payload[2] = 0xC3;            // FIXME: output data
 //  vscp->payload[1] = PORTB;
   vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_DATA, VSCP_TYPE_DATA_IO,
                 VSCP_PRIORITY_LOW);
@@ -430,8 +434,8 @@ sendPeriodicInputEvents(void)
 {
   uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
   payload[0] = VSCP_DATACODING_BYTE | VSCP_DATACODING_INDEX1;
-  payload[1] = 0xA5;         // FIXME: input data
-  payload[2] = 0xC3;         // FIXME: input data
+  payload[1] = 0xA5;            // FIXME: input data
+  payload[2] = 0xC3;            // FIXME: input data
 //  vscp->payload[1] = getInputState();
   vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_DATA, VSCP_TYPE_DATA_IO,
                 VSCP_PRIORITY_LOW);
@@ -440,30 +444,34 @@ sendPeriodicInputEvents(void)
 
 
 
-uint8_t vscp_getFirmwareMajorVersion( void )
+uint8_t
+vscp_getFirmwareMajorVersion(void)
 {
   return FIRMWARE_MAJOR_VERSION;
 }
 
 
 
-uint8_t vscp_getFirmwareMinorVersion( void )
+uint8_t
+vscp_getFirmwareMinorVersion(void)
 {
   return FIRMWARE_MINOR_VERSION;
 }
 
 
 
-uint8_t vscp_getFirmwareSubMinorVersion( void )
+uint8_t
+vscp_getFirmwareSubMinorVersion(void)
 {
   return FIRMWARE_SUB_MINOR_VERSION;
 }
 
 
 
-uint8_t getVSCP_DeviceURL( uint8_t idx )
+uint8_t
+getVSCP_DeviceURL(uint8_t idx)
 {
-  if ( idx < 16 )
+  if (idx < 16)
 #warning FIXME: return pgm_read_byte(&vscp_deviceURL[idx]);
     return vscp_deviceURL[idx];
 
@@ -472,7 +480,8 @@ uint8_t getVSCP_DeviceURL( uint8_t idx )
 
 
 
-uint8_t vscp_getControlByte( void )
+uint8_t
+vscp_getControlByte(void)
 {
   uint8_t rv;
   eeprom_restore_char(vscp_control_byte, &rv);
@@ -481,7 +490,8 @@ uint8_t vscp_getControlByte( void )
 
 
 
-void vscp_setControlByte( uint8_t ctrl )
+void
+vscp_setControlByte(uint8_t ctrl)
 {
   eeprom_save_char(vscp_control_byte, ctrl);
   eeprom_update_chksum();
@@ -489,7 +499,8 @@ void vscp_setControlByte( uint8_t ctrl )
 
 
 
-uint8_t vscp_getUserID( uint8_t idx )
+uint8_t
+vscp_getUserID(uint8_t idx)
 {
   uint8_t rv;
   eeprom_restore_offset(vscp_user_id, idx, &rv, sizeof(uint8_t));
@@ -498,7 +509,8 @@ uint8_t vscp_getUserID( uint8_t idx )
 
 
 
-void vscp_setUserID( uint8_t idx, uint8_t data )
+void
+vscp_setUserID(uint8_t idx, uint8_t data)
 {
   eeprom_save_offset(vscp_user_id, idx, &data, sizeof(uint8_t));
   eeprom_update_chksum();
@@ -506,7 +518,8 @@ void vscp_setUserID( uint8_t idx, uint8_t data )
 
 
 
-uint8_t vscp_getManufacturerId( uint8_t idx )
+uint8_t
+vscp_getManufacturerId(uint8_t idx)
 {
 #if defined(VSCP_USE_EEPROM_FOR_MANUFACTURER_ID)
   uint8_t rv;
@@ -519,7 +532,8 @@ uint8_t vscp_getManufacturerId( uint8_t idx )
 
 
 
-void vscp_setManufacturerId( uint8_t idx, uint8_t data )
+void
+vscp_setManufacturerId(uint8_t idx, uint8_t data)
 {
 #ifdef VSCP_USE_EEPROM_FOR_MANUFACTURER_ID
   eeprom_save_offset(vscp_manufacturer_id, idx, &data, sizeof(uint8_t));
@@ -529,21 +543,24 @@ void vscp_setManufacturerId( uint8_t idx, uint8_t data )
 
 
 
-uint8_t vscp_getGUID( uint8_t idx )
+uint8_t
+vscp_getGUID(uint8_t idx)
 {
   return guid[idx];
 }
 
 
 
-uint8_t vscp_getBootLoaderAlgorithm( void )
+uint8_t
+vscp_getBootLoaderAlgorithm(void)
 {
   return VSCP_BOOTLOADER_NONE;
 }
 
 
 
-uint8_t vscp_getBufferSize( void )
+uint8_t
+vscp_getBufferSize(void)
 {
   return LIMITED_DEVICE_DATASIZE;
 #warning FIXME: nochmal anschauen
@@ -551,9 +568,10 @@ uint8_t vscp_getBufferSize( void )
 
 
 
-uint8_t vscp_getMDF_URL( uint8_t idx )
+uint8_t
+vscp_getMDF_URL(uint8_t idx)
 {
-  return vscp_deviceURL[ idx ];
+  return vscp_deviceURL[idx];
 }
 
 #endif /* VSCP_SUPPORT */

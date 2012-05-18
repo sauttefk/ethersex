@@ -1,6 +1,4 @@
 /*
- * (c) 2012 by Frank Sautter <ethersix@sautter.com>
- *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 2 of the License, or (at your option)
@@ -19,33 +17,41 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-#include "config.h"
+#ifndef FIFO_H_
+#define FIFO_H_
 
-#ifndef _VSCP_IO_H
-#define _VSCP_IO_H
+#include <stdint.h>
 
-#ifdef VSCP_SUPPORT
-
-#include "vscp.h"
-
-#define VSCP_IO_DIRECTION 0xFF00FF00
-
-#define VSCP_INPUT_BUFFER_SIZE 16
-
+/** example for a fifo of 64 bytes */
 typedef struct
 {
   uint8_t _read;
   uint8_t _write;
-  uint32_t _buffer[VSCP_INPUT_BUFFER_SIZE];
-} vscp_InputBuffer_t;
+  uint8_t _buffer[64];
+} FIFO64_t;
 
-vscp_InputBuffer_t vscp_InputBuffer;
+#define FIFO_init(fifo) { \
+  fifo._read = 0; \
+  fifo._write = 0; \
+}
 
-void vscp_set_direction(uint32_t value);
-void vscp_set_output(uint32_t value);
-uint32_t vscp_get_input(void);
-void vscp_io_init(void);
-void vscp_debounce(void);
+#define FIFO_available(fifo) ( \
+  fifo._read != fifo._write \
+)
 
-#endif /* VSCP_SUPPORT */
-#endif /* _VSCP_IO_H */
+#define FIFO_read(fifo, size) ( \
+  fifo._buffer[fifo._read = (fifo._read + 1) & (size - 1)] \
+)
+
+#define FIFO_write(fifo, data, size) { \
+  uint8_t tmphead = (fifo._write + 1) & (size - 1); \
+  if(tmphead != fifo._read) { /* if buffer is not full */ \
+    fifo._write = tmphead; \
+    fifo._buffer[tmphead] = data; \
+  } \
+}
+
+#define FIFO64_read(fifo)         FIFO_read(fifo, 64)
+#define FIFO64_write(fifo, data)  FIFO_write(fifo, data, 64)
+
+#endif /*FIFO_H_ */

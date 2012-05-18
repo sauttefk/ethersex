@@ -22,6 +22,7 @@
 #include <stdio.h>
 
 #include "vscp_io.h"
+#include "core/util/fifo.h"
 
 #ifdef VSCP_SUPPORT
 
@@ -31,10 +32,10 @@
 uint32_t
 vscp_get_input(void)
 {
-  return((((uint32_t) PINE << 24) | // io4.0 - io4.7
-         ((uint32_t) PINF << 16) |  // io3.0 - io3.7
-         ((uint32_t) PINC << 8)  |  // io2.0 - io2.7
-          (uint32_t) PINA) ^        // io1.0 - io1.7
+  return ((((uint32_t) PINE << 24) |    // io4.0 - io4.7
+           ((uint32_t) PINF << 16) |    // io3.0 - io3.7
+           ((uint32_t) PINC << 8) |     // io2.0 - io2.7
+           (uint32_t) PINA) ^   // io1.0 - io1.7
           ~VSCP_IO_DIRECTION);
 }
 
@@ -46,10 +47,10 @@ void
 vscp_set_output(uint32_t value)
 {
   uint32_t io = ~VSCP_IO_DIRECTION | value;
-  PORTA = (uint8_t)(io);
-  PORTC = (uint8_t)(io >> 8);
-  PORTF = (uint8_t)(io >> 16);
-  PORTE = (uint8_t)(io >> 24);
+  PORTA = (uint8_t) (io);
+  PORTC = (uint8_t) (io >> 8);
+  PORTF = (uint8_t) (io >> 16);
+  PORTE = (uint8_t) (io >> 24);
 }
 
 
@@ -59,11 +60,11 @@ vscp_set_output(uint32_t value)
 void
 vscp_set_direction(uint32_t value)
 {
-  DDRA = (uint8_t)(value);
-  DDRC = (uint8_t)(value >> 8);
-  DDRF = (uint8_t)(value >> 16);
-  DDRE = (uint8_t)(value >> 24);
-  VSCP_DEBUG ("IO-direction: 0x%08lX\n", value);
+  DDRA = (uint8_t) (value);
+  DDRC = (uint8_t) (value >> 8);
+  DDRF = (uint8_t) (value >> 16);
+  DDRE = (uint8_t) (value >> 24);
+  VSCP_DEBUG("IO-direction: 0x%08lX\n", value);
 }
 
 
@@ -73,6 +74,7 @@ vscp_set_direction(uint32_t value)
 void
 vscp_io_init(void)
 {
+  FIFO_init(vscp_InputBuffer);
   vscp_set_direction(VSCP_IO_DIRECTION);
   vscp_set_output(0x00000000);
 }
@@ -91,8 +93,8 @@ vscp_debounce(void)
 
   // increment the vertical counter
   // reset the counter if no change has occurred
-  vscp_debounce1 =  vscp_debounce0 ^ (vscp_debounce1 & vscp_edge);
-  vscp_debounce0 = ~vscp_debounce0                   & vscp_edge;
+  vscp_debounce1 = vscp_debounce0 ^ (vscp_debounce1 & vscp_edge);
+  vscp_debounce0 = ~vscp_debounce0 & vscp_edge;
 
   // set edge detect if vertical counter has overflow (both bits are 0)
   vscp_edge &= ~(vscp_debounce0 | vscp_debounce1);
@@ -102,8 +104,17 @@ vscp_debounce(void)
 
   if (vscp_edge != 0)
   {
-    VSCP_DEBUG ("IO-Change: 0x%08lX 0x%08lX\n", vscp_edge, vscp_input);
-    vscp_set_output((vscp_input << 8));
+    if (((vscp_InputBuffer._write + 2) & (VSCP_INPUT_BUFFER_SIZE - 1)) !=
+        vscp_InputBuffer._read)
+    {
+      FIFO_write(vscp_InputBuffer, vscp_edge, VSCP_INPUT_BUFFER_SIZE);
+      FIFO_write(vscp_InputBuffer, vscp_input, VSCP_INPUT_BUFFER_SIZE);
+      vscp_set_output((vscp_input << 8));
+    }
+    else
+    {
+      vscp_input ^= vscp_edge;  // delay debounce
+    }
   }
 }
 #endif /* VSCP_SUPPORT */
