@@ -113,7 +113,8 @@ vscp_debounce(void)
     }
     else
     {
-      vscp_input ^= vscp_edge;  // delay debounce
+      /* we don't have space in the fifo buffer so redo the latest change */
+      vscp_input ^= vscp_edge;
     }
   }
 }

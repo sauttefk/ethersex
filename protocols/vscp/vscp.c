@@ -91,8 +91,39 @@ vscp_main(void)
                FIFO_read(vscp_InputBuffer, VSCP_INPUT_BUFFER_SIZE));
 //    VSCP_DEBUG("R - W: 0x%02x 0x%02x\n",
 //               vscp_InputBuffer._read, vscp_InputBuffer._write);
+
+/*  for ( i=1; i<8; i++ ) {
+      if ( btncnt[ i ] > 200 ) {
+        uart_puts("Button Pressed!");
+        SendInformationEvent( i-1, VSCP_CLASS1_INFORMATION, VSCP_TYPE_INFORMATION_ON );
+        btncnt[ i ] = -300;
+      }
+    }*/
   }
 }
+
+
+/*
+///////////////////////////////////////////////////////////////////////////////
+// SendInformationEvent
+//
+
+void SendInformationEvent( uint8_t idx, uint8_t eventClass, uint8_t eventTypeId )
+{
+    vscp_omsg.priority = VSCP_PRIORITY_MEDIUM;
+    vscp_omsg.flags = VSCP_VALID_MSG + 3;
+    vscp_omsg.class = eventClass;
+    vscp_omsg.type = eventTypeId;
+
+    vscp_omsg.data[ 0 ] = idx;  // Register
+    vscp_omsg.data[ 1 ] = readEEPROM( VSCP_EEPROM_END + REG_ZONE );
+    vscp_omsg.data[ 2 ] = readEEPROM( VSCP_EEPROM_END + REG_SWITCH0_SUBZONE + idx );
+
+    vscp_sendEvent(); // Send data
+}
+
+*/
+
 
 
 void
