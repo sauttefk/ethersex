@@ -31,6 +31,7 @@ atmega328p=y
 FREQ=16000000
 # alpengluehn is not set
 # Arduino_Duemilanove is not set
+# beteigeuze is not set
 # conrad_probot is not set
 # ehaserl is not set
 # etherrape is not set
@@ -72,7 +73,7 @@ EEPROM_PAGESIZE=0x4
 VERSION_STRING_CHOICE=USE_RELEASE_VERSION
 USE_RELEASE_VERSION=y
 # USE_BUILDDATE_VERSION is not set
-VERSION_GIT="9df83d1"
+VERSION_GIT="e458bce"
 # DEBUG_DISCARD_SOME is not set
 # DEBUG is not set
 DEBUG_BAUDRATE=115200
@@ -617,6 +618,22 @@ CW_WPM=12
 # CW_PWM_FREQ_SUPPORT is not set
 # CW_RFM12_ASK_SUPPORT is not set
 # DEBUG_CW is not set
+# VSCP_SUPPORT is not set
+CONF_VSCP_DEVICEURL="sautter.com/beteigeuze.xml"
+CONF_VSCP_SUBSOURCE=0x55AA
+CONF_VSCP_USERID0=0x12
+CONF_VSCP_USERID1=0x34
+CONF_VSCP_USERID2=0x56
+CONF_VSCP_USERID3=0x78
+CONF_VSCP_USERID4=0x9A
+CONF_VSCP_MANUFACTURER_ID=0x11223344
+CONF_VSCP_MANUFACTURER_SUBID=0x55667788
+# VSCP_USE_EEPROM_FOR_MANUFACTURER_ID is not set
+# VSCP_USE_RAW_ETHERNET is not set
+# VSCP_USE_UDP is not set
+CONF_VSCP_PORT=9598
+# VSCP_USE_TCP is not set
+# DEBUG_VSCP is not set
 
 #
 # Applications
