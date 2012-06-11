@@ -722,6 +722,7 @@ function l_ipv6 () {
 				sleep 2
 			fi
 
+			break
 		fi
 
 		help "$2" "$1"
