@@ -5,9 +5,9 @@ if [ "$#" -lt "2" ]; then
   exit 1
 fi
 
-tmp=`mktemp`
+tmp=`mktemp eeXXXXXX`
 
-avr-gcc -x c $1 $2 -o $tmp - << EOF
+avr-gcc -xc $1 $2 -o $tmp - << EOF
 #include <avr/io.h>
 #include <avr/eeprom.h>
 #include "config.h"
@@ -32,8 +32,7 @@ if [ -z "$ee_used" ]; then
   exit 0
 fi
 
-ee_size=`echo -e "#include <avr/eeprom.h>\nE2END" | avr-cpp $2 | sed '$!d;s/^..//'`
-ee_size=`echo $(( 0x$ee_size + 1 ))`
+ee_size=$(echo $(( `echo -e "#include <avr/io.h>\nE2END" | avr-cpp $2 | sed '$!d'` + 1 )))
 ee_pct=`perl -e "printf('%.2f', $ee_used.0 / $ee_size.0 * 100.0);"`
 
 echo "EEPROM usage: $ee_used/$ee_size bytes (${ee_pct}%)"

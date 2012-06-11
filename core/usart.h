@@ -29,12 +29,6 @@
 #ifndef _USART_H
 #define _USART_H
 
-
-/* The baudrate had to be baudrate/100 */
-#ifndef TEENSY_SUPPORT
-uint16_t usart_baudrate(uint16_t baudrate);
-#endif
-
 #ifndef USE_USART
 #define USE_USART
 #endif

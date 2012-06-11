@@ -24,6 +24,7 @@
 
 #include "config.h"
 #include "core/usart.h"
+<<<<<<< HEAD
 
 #ifndef TEENSY_SUPPORT
 /* Sets the ubrr register according to baudrate
@@ -87,3 +88,5 @@ usart_baudrate(uint16_t baudrate) {
 }
 
 #endif
+=======
+>>>>>>> upstream/master

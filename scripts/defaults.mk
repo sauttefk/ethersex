@@ -15,8 +15,7 @@ SED = gsed
 else
 M4 = m4
 ### use GNU sed from macports instead of BSD sed on MacOS X 
-SED = $(shell if [ x"$$OSTYPE" = x"darwin10.0" ] ; then echo gsed; \
-	else echo sed; fi)
+SED = $(shell [ x"`uname`" = x"Darwin" ] && echo g)sed
 endif 
 
 HOSTCC := gcc
@@ -96,7 +95,7 @@ endif
 
 
 ifeq ($(BOOTLOADER_SUPPORT),y)
-LDFLAGS += -Wl,--section-start=.text=0x$(shell scripts/bootbase $(MCU) 8192)
+LDFLAGS += -Wl,--section-start=.text=$(BOOTLOADER_START_ADDRESS)
 endif
 
 

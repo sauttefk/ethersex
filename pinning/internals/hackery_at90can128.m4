@@ -3,7 +3,7 @@
 
 #define _SPMCR SPMCSR
 
-/* AT90CANxxx specific adjustments */
+/* AT90CAN128 specific adjustments */
 #define _EIMSK EIMSK
 #define _IVREG MCUCR
 

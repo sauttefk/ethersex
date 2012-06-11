@@ -141,7 +141,11 @@ else
 all: compile-$(TARGET)
 	@echo "=======The ethersex project========"
 	@echo "Compiled for: $(MCU) at $(FREQ)Hz"
+<<<<<<< HEAD
 	@$(CONFIG_SHELL) ${TOPDIR}/scripts/size $(TARGET) $(MCU) $(BOOTLOADER_SUPPORT)
+=======
+	@$(CONFIG_SHELL) ${TOPDIR}/scripts/size $(TARGET) $(MCU) $(BOOTLOADER_SUPPORT) $(BOOTLOADER_SIZE)
+>>>>>>> upstream/master
 	@$(CONFIG_SHELL) ${TOPDIR}/scripts/eeprom-usage "$(CFLAGS)" "$(CPPFLAGS)"
 	@echo "==================================="
 endif
@@ -160,7 +164,7 @@ v:
 # print information about binary size and flash usage
 size-info:
 	@echo "===== size info ====="
-	@$(CONFIG_SHELL) ${TOPDIR}/scripts/size $(TARGET) $(MCU)
+	@$(CONFIG_SHELL) ${TOPDIR}/scripts/size $(TARGET) $(MCU) $(BOOTLOADER_SUPPORT) $(BOOTLOADER_SIZE)
 
 ##############################################################################
 # target help displays a short overview over make options
@@ -343,14 +347,14 @@ endif
 
 
 ##############################################################################
-### Special case for MacOS X (darwin10.0) and FreeBSD
-CONFIG_SHELL := $(shell if [ x"$$OSTYPE" = x"darwin10.0" ] ; then echo /opt/local/bin/bash; \
-          elif [ x"$$OSTYPE" = x"FreeBSD" ]; then echo /usr/local/bin/bash; \
+### Special case for MacOS X and FreeBSD
+CONFIG_SHELL := $(shell if [ x"`uname`" = x"Darwin" ] ; then echo /opt/local/bin/bash; \
+          elif [ x"`uname`" = x"FreeBSD" ]; then echo /usr/local/bin/bash; \
           elif [ -x "$$BASH" ]; then echo $$BASH; \
           elif [ -x /bin/bash ]; then echo /bin/bash; \
           elif [ -x /usr/local/bin/bash ]; then echo /usr/local/bin/bash; \
           else echo sh; fi)
-### Special case for MacOS X (darwin10.0)
+### Special case for MacOS X
 ### bash v3.2 in 10.6 does not work, use version 4.0 from macports
 ### (see "Voraussetzungen" in wiki)
 
