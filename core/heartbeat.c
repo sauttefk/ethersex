@@ -30,12 +30,12 @@
 
 void heartbeat_init(void)
 {
-	PIN_SET(STATUSLED_HB_ACT);
+  PIN_SET(STATUSLED_HB_ACT);
 }
 
 void heartbeat_periodic(void)
 {
-	PIN_TOGGLE(STATUSLED_HB_ACT);
+  PIN_TOGGLE(STATUSLED_HB_ACT);
 }
 
 /*

@@ -15,7 +15,7 @@ pin(IRMP_TX, PC2) dnl OC2/OC2A
 ')
 
 ifdef(`conf_STATUSLED_HB_ACT', `dnl
-  pin(STATUSLED_HB_ACT, PD7, OUTPUT)
+  pin(STATUSLED_HB_ACT, PG3, OUTPUT)
 ')dnl
 
 ifdef(`conf_ONEWIRE', `dnl
