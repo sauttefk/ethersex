@@ -1080,6 +1080,8 @@ Select the default profile you wish to load. \
 			hr20		  "Rondostat HR20/Thermotronic Basic/Thermy"	0 \
 			lome6		  "lome6 - lights out management for ethersex"	0 \
 			alpengluehn	  "Alpengluehn 16 Channel LED Driver Hardware"	0 \
+			antares_O	  "Antares Output - AT90CAN (CANBUS, RS485, 40 Outputs, DIN rail)"	0 \
+			antares_I	  "Antares Input - AT90CAN (CANBUS, RS485, 32 Inputs, DIN rail)"	0 \
 			beteigeuze	  "Beteigeuze - AT90CAN (CANBUS, RS485, 42 I/O, ⌀ 53mm)"	0 \
 			 2>MCdialog.out
 
