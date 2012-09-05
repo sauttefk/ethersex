@@ -105,6 +105,10 @@
 #define VSCP_DATACODING_INDEX6                  0x06
 #define VSCP_DATACODING_INDEX7                  0x07
 
+#define VSCP_BUTTON_RELEASE                     0x01
+#define VSCP_BUTTON_PRESS                       0x02
+#define VSCP_BUTTON_PUSH                        0x04
+#define VSCP_MASK_BUTTON_REPEATS                0xF8
 
 #ifndef htonl
 #define htonl(x) __builtin_bswap32(x)

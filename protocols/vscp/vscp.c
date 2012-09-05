@@ -89,6 +89,15 @@ vscp_main(void)
     VSCP_DEBUG("IO-Change main: 0x%08lX 0x%08lX\n",
                FIFO_read(vscp_InputBuffer, VSCP_INPUT_BUFFER_SIZE),
                FIFO_read(vscp_InputBuffer, VSCP_INPUT_BUFFER_SIZE));
+
+    uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
+    payload[0] = VSCP_BUTTON_PRESS;
+    payload[1] = 0xDE;            // FIXME: input data
+    payload[2] = 0xAD;            // FIXME: input data
+
+    vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_INFORMATION,
+                  VSCP_TYPE_INFORMATION_BUTTON, VSCP_PRIORITY_LOW);
+
 //    VSCP_DEBUG("R - W: 0x%02x 0x%02x\n",
 //               vscp_InputBuffer._read, vscp_InputBuffer._write);
 
