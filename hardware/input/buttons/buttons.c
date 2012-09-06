@@ -183,7 +183,7 @@ buttons_periodic(void)
             {
               /* Repeat time reached. Send REPEAT event. */
               buttonStatus[ctr].status = BUTTON_REPEAT;
-              BUTTONDEBUG("Repeat %s\n", buttonNames[ctr]);
+              BUTTONDEBUG("Longpress %s\n", buttonNames[ctr]);
               hook_btn_input_call(ctr, buttonStatus[ctr].status);
             }
             break;

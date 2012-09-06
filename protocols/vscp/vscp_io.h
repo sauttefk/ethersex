@@ -27,6 +27,7 @@
 #ifdef VSCP_SUPPORT
 
 #include "vscp.h"
+#include "hardware/input/buttons/buttons.h"
 
 #define VSCP_IO_DIRECTION 0xFF00FF00
 
@@ -41,6 +42,7 @@ typedef struct
 
 vscp_InputBuffer_t vscp_InputBuffer;
 
+void hook_btn_handler(btn_ButtonsType btn, uint8_t status);
 void vscp_set_direction(uint32_t value);
 void vscp_set_output(uint32_t value);
 uint32_t vscp_get_input(void);
