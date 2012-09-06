@@ -23,8 +23,14 @@
 
 #include "vscp_io.h"
 #include "core/util/fifo.h"
+#include "hardware/input/buttons/buttons.h"
 
 #ifdef VSCP_SUPPORT
+
+void hook_btn_handler(btn_ButtonsType btn, uint8_t status) {
+  debug_printf("Button %d Status: %d\n",btn, status);
+}
+
 
 /* ---------------------------------------------------------------------------
  * get value of hardware inputs
@@ -77,6 +83,7 @@ vscp_io_init(void)
   FIFO_init(vscp_InputBuffer);
   vscp_set_direction(VSCP_IO_DIRECTION);
   vscp_set_output(0x00000000);
+  hook_btn_input_register(hook_btn_handler);
 }
 
 
