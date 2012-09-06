@@ -39,6 +39,7 @@ ifdef(`conf_HD44780', `
 
 
 ifdef(`conf_VSCP', `
+  pin(VSCP_CONFIG_BUTTON, PD7, INPUT)
   pin(VSCP_INPUT00, PA0, INPUT)
   pin(VSCP_INPUT01, PA1, INPUT)
   pin(VSCP_INPUT02, PA2, INPUT)
@@ -73,7 +74,13 @@ ifdef(`conf_VSCP', `
   pin(VSCP_OUTPUT15, PE7, OUTPUT)
 ')
 
+
+ifdef(`conf_BUTTONS_INPUT', `dnl
+#undef CONF_NUM_BUTTONS
+#define CONF_NUM_BUTTONS 17
+
 #define BTN_CONFIG(_x) \
+_x(VSCP_CONFIG_BUTTON)\
 _x(VSCP_INPUT00)\
 _x(VSCP_INPUT01)\
 _x(VSCP_INPUT02)\
@@ -90,3 +97,4 @@ _x(VSCP_INPUT12)\
 _x(VSCP_INPUT13)\
 _x(VSCP_INPUT14)\
 _x(VSCP_INPUT15)
+')dnl

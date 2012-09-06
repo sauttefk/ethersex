@@ -28,6 +28,7 @@ ifdef(`conf_ONEWIRE', `dnl
 
 
 ifdef(`conf_VSCP', `
+  pin(VSCP_CONFIG_BUTTON, PD7, INPUT)
   pin(VSCP_OUTPUT00, PB4, OUTPUT)
   pin(VSCP_OUTPUT01, PB5, OUTPUT)
   pin(VSCP_OUTPUT02, PB6, OUTPUT)
@@ -69,3 +70,12 @@ ifdef(`conf_VSCP', `
   pin(VSCP_OUTPUT38, PE6, OUTPUT)
   pin(VSCP_OUTPUT39, PE7, OUTPUT)
 ')
+
+
+ifdef(`conf_BUTTONS_INPUT', `dnl
+#undef CONF_NUM_BUTTONS
+#define CONF_NUM_BUTTONS 1
+
+#define BTN_CONFIG(_x) \
+_x(VSCP_CONFIG_BUTTON)\
+')dnl

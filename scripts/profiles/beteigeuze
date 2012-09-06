@@ -46,11 +46,11 @@ beteigeuze=y
 # JeeLinkv2 is not set
 # lome6 is not set
 # MicroWebServer is not set
-# netio is not set
 # netio_addon is not set
+# netio is not set
 # other is not set
-# pollin_evalboard is not set
 # pollin_evalboard_addon is not set
+# pollin_evalboard is not set
 # pollin_funkevalboard is not set
 # radig_web is not set
 # thermy is not set
@@ -444,7 +444,7 @@ OW_SENSORS_COUNT=10
 # PS2_GERMAN_LAYOUT is not set
 # DEBUG_PS2 is not set
 BUTTONS_INPUT_SUPPORT=y
-CONF_NUM_BUTTONS=16
+CONF_NUM_BUTTONS=17
 CONF_BTN_USE_PULLUPS=y
 # CONF_BUTTON_LVL_HIGH is not set
 CONF_BUTTON_LVL_LOW=y
@@ -452,7 +452,7 @@ CONF_BUTTON_LVL=2
 CONF_BTN_USE_REPEAT=y
 CONF_BTN_REPEAT_TIME=50
 CONF_BTN_REPEAT_RATE=10
-DEBUG_BUTTONS_INPUT=y
+# DEBUG_BUTTONS_INPUT is not set
 # RFM12_ASK_SUPPORT is not set
 # RFM12_ASK_433_SUPPORT is not set
 # RFM12_ASK_2272_SUPPORT is not set

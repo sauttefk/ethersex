@@ -26,7 +26,6 @@
 #include "core/bit-macros.h"
 #include "core/periodic.h"
 #include "core/eeprom.h"
-#include "core/util/fifo.h"
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
 #ifdef VSCP_SUPPORT
@@ -84,31 +83,7 @@ vscp_setup(void)
 void
 vscp_main(void)
 {
-  if (FIFO_available(vscp_InputBuffer))
-  {
-    VSCP_DEBUG("IO-Change main: 0x%08lX 0x%08lX\n",
-               FIFO_read(vscp_InputBuffer, VSCP_INPUT_BUFFER_SIZE),
-               FIFO_read(vscp_InputBuffer, VSCP_INPUT_BUFFER_SIZE));
-
-    uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
-    payload[0] = VSCP_BUTTON_PRESS;
-    payload[1] = 0xDE;            // FIXME: input data
-    payload[2] = 0xAD;            // FIXME: input data
-
-    vscp_transmit(VSCP_MODE_RAWETHERNET, 3, VSCP_CLASS1_INFORMATION,
-                  VSCP_TYPE_INFORMATION_BUTTON, VSCP_PRIORITY_LOW);
-
-//    VSCP_DEBUG("R - W: 0x%02x 0x%02x\n",
-//               vscp_InputBuffer._read, vscp_InputBuffer._write);
-
-/*  for ( i=1; i<8; i++ ) {
-      if ( btncnt[ i ] > 200 ) {
-        uart_puts("Button Pressed!");
-        SendInformationEvent( i-1, VSCP_CLASS1_INFORMATION, VSCP_TYPE_INFORMATION_ON );
-        btncnt[ i ] = -300;
-      }
-    }*/
-  }
+  VSCP_DEBUG("bla\n");
 }
 
 
@@ -264,6 +239,27 @@ vscp_get(uint8_t mode, uint16_t class, uint16_t type, uint16_t size,
   else if (class == VSCP_CLASS1_INFORMATION ||
            class == VSCP_CLASS2_LEVEL1_INFORMATION)
   {
+    switch (type)
+    {
+      case VSCP_TYPE_INFORMATION_BUTTON:
+        VSCP_DEBUG("0x%02X VSCP_TYPE_INFORMATION_BUTTON : ",
+                   VSCP_TYPE_INFORMATION_BUTTON);
+        switch (payload[0])
+        {
+          case VSCP_BUTTON_RELEASE:
+            VSCP_DEBUG("RELEASE : \n");
+            break;
+
+          case VSCP_BUTTON_PRESS:
+            VSCP_DEBUG("PRESS : \n");
+            break;
+        }
+        //~ VSCP_DEBUG("ZONE 0x%02X : SUBZONE 0x%02X : BUTTON 0x%04X\n",
+                   //~ payload[1], payload[2], payload[3] * 256 + payload[4]);
+
+        break;
+
+    }
   }
   else if (class == VSCP_CLASS1_CONTROL ||
            class == VSCP_CLASS2_LEVEL1_CONTROL)
@@ -621,7 +617,6 @@ vscp_getMDF_URL(uint8_t idx)
    -- Ethersex META --
    header(protocols/vscp/vscp.h)
    init(vscp_setup)
-   mainloop(vscp_main)
    timer(50, vscp_periodic())
    block(Miscelleanous)
  */

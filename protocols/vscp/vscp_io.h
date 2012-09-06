@@ -29,25 +29,10 @@
 #include "vscp.h"
 #include "hardware/input/buttons/buttons.h"
 
-#define VSCP_IO_DIRECTION 0xFF00FF00
-
-#define VSCP_INPUT_BUFFER_SIZE 16
-
-typedef struct
-{
-  uint8_t _read;
-  uint8_t _write;
-  uint32_t _buffer[VSCP_INPUT_BUFFER_SIZE];
-} vscp_InputBuffer_t;
-
-vscp_InputBuffer_t vscp_InputBuffer;
-
-void hook_btn_handler(btn_ButtonsType btn, uint8_t status);
-void vscp_set_direction(uint32_t value);
+void vscp_button_handler(btn_ButtonsType button, uint8_t state);
 void vscp_set_output(uint32_t value);
 uint32_t vscp_get_input(void);
 void vscp_io_init(void);
-void vscp_debounce(void);
 
 #endif /* VSCP_SUPPORT */
 #endif /* _VSCP_IO_H */

@@ -22,13 +22,47 @@
 #include <stdio.h>
 
 #include "vscp_io.h"
-#include "core/util/fifo.h"
 #include "hardware/input/buttons/buttons.h"
 
 #ifdef VSCP_SUPPORT
 
-void hook_btn_handler(btn_ButtonsType btn, uint8_t status) {
-  debug_printf("Button %d Status: %d\n",btn, status);
+
+/* ---------------------------------------------------------------------------
+ * change of button state
+ */
+void vscp_button_handler(btn_ButtonsType button, uint8_t state) {
+  VSCP_DEBUG("Button %d Status: %d\n", button, state);
+
+  if(button > 0)
+  {
+    uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
+    switch(state)
+    {
+     case BUTTON_NOPRESS:
+       payload[0] = VSCP_BUTTON_RELEASE;
+#warning FIXME: get zone from config
+       payload[1] = 0x00;           // zone
+       payload[2] = 0x00;           // subzone
+       payload[3] = 0x00;           // MSB button
+       payload[4] = button - 1;     // LSB button
+       vscp_transmit(VSCP_MODE_RAWETHERNET, 5, VSCP_CLASS1_INFORMATION,
+                     VSCP_TYPE_INFORMATION_BUTTON, VSCP_PRIORITY_LOW);
+       break;
+     case BUTTON_PRESS:
+       payload[0] = VSCP_BUTTON_PRESS;
+#warning FIXME: get zone from config
+       payload[1] = 0x00;           // zone
+       payload[2] = 0x00;           // subzone
+       payload[3] = 0x00;           // MSB button
+       payload[4] = button - 1;     // LSB button
+       vscp_transmit(VSCP_MODE_RAWETHERNET, 5, VSCP_CLASS1_INFORMATION,
+                     VSCP_TYPE_INFORMATION_BUTTON, VSCP_PRIORITY_LOW);
+       break;
+     case BUTTON_LONGPRESS:
+     case BUTTON_REPEAT:
+       break;
+    }
+  }
 }
 
 
@@ -41,8 +75,7 @@ vscp_get_input(void)
   return ((((uint32_t) PINE << 24) |    // io4.0 - io4.7
            ((uint32_t) PINF << 16) |    // io3.0 - io3.7
            ((uint32_t) PINC << 8) |     // io2.0 - io2.7
-           (uint32_t) PINA) ^   // io1.0 - io1.7
-          ~VSCP_IO_DIRECTION);
+            (uint32_t) PINA));          // io1.0 - io1.7
 }
 
 
@@ -52,78 +85,20 @@ vscp_get_input(void)
 void
 vscp_set_output(uint32_t value)
 {
-  uint32_t io = ~VSCP_IO_DIRECTION | value;
-  PORTA = (uint8_t) (io);
-  PORTC = (uint8_t) (io >> 8);
-  PORTF = (uint8_t) (io >> 16);
-  PORTE = (uint8_t) (io >> 24);
+  PORTA = (uint8_t) (value);
+  PORTC = (uint8_t) (value >> 8);
+  PORTF = (uint8_t) (value >> 16);
+  PORTE = (uint8_t) (value >> 24);
 }
 
 
 /* ---------------------------------------------------------------------------
- * set hardware io direction
- */
-void
-vscp_set_direction(uint32_t value)
-{
-  DDRA = (uint8_t) (value);
-  DDRC = (uint8_t) (value >> 8);
-  DDRF = (uint8_t) (value >> 16);
-  DDRE = (uint8_t) (value >> 24);
-  VSCP_DEBUG("IO-direction: 0x%08lX\n", value);
-}
-
-
-/* ---------------------------------------------------------------------------
- * set configure io
+ * init vscp io
  */
 void
 vscp_io_init(void)
 {
-  FIFO_init(vscp_InputBuffer);
-  vscp_set_direction(VSCP_IO_DIRECTION);
-  vscp_set_output(0x00000000);
-  hook_btn_input_register(hook_btn_handler);
-}
-
-
-/* ---------------------------------------------------------------------------
- * debounce hardware inputs
- */
-void
-vscp_debounce(void)
-{
-  static uint32_t vscp_debounce0, vscp_debounce1, vscp_input;
-
-  // test if any changes occurred
-  uint32_t vscp_edge = vscp_get_input() ^ vscp_input;
-
-  // increment the vertical counter
-  // reset the counter if no change has occurred
-  vscp_debounce1 = vscp_debounce0 ^ (vscp_debounce1 & vscp_edge);
-  vscp_debounce0 = ~vscp_debounce0 & vscp_edge;
-
-  // set edge detect if vertical counter has overflow (both bits are 0)
-  vscp_edge &= ~(vscp_debounce0 | vscp_debounce1);
-
-  // update debounced input
-  vscp_input ^= vscp_edge;
-
-  if (vscp_edge != 0)
-  {
-    if (((vscp_InputBuffer._write + 2) & (VSCP_INPUT_BUFFER_SIZE - 1)) !=
-        vscp_InputBuffer._read)
-    {
-      FIFO_write(vscp_InputBuffer, vscp_edge, VSCP_INPUT_BUFFER_SIZE);
-      FIFO_write(vscp_InputBuffer, vscp_input, VSCP_INPUT_BUFFER_SIZE);
-      vscp_set_output((vscp_input << 8));
-    }
-    else
-    {
-      /* we don't have space in the fifo buffer so redo the latest change */
-      vscp_input ^= vscp_edge;
-    }
-  }
+  hook_btn_input_register(vscp_button_handler);
 }
 #endif /* VSCP_SUPPORT */
 
@@ -132,6 +107,5 @@ vscp_debounce(void)
    -- Ethersex META --
    header(protocols/vscp/vscp_io.h)
    init(vscp_io_init)
-   timer(1, vscp_debounce())
    block(Miscelleanous)
  */
