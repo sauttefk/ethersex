@@ -2845,6 +2845,25 @@ HTTPLOG_BUFFER_LEN
   The len for the internal buffer used for HTTPLOG strings. This
   buffer is dynamicallay allocated for each request.
 
+Use Repeat
+CONF_BTN_USE_REPEAT
+  Depends on: 
+   *  (BUTTON_INPUT_SUPPORT)
+
+  Use the repeat function (if a button is pressed for 
+  a longer time, a repeat function starts and you
+  get triggers every <x> ms. 
+
+Repeat time (x*20 ms)
+CONF_BTN_REPEAT_TIME
+ 
+  Time after which the repeat function starts.
+
+Repeat rate (x*20 ms)
+CONF_BTN_REPEAT_RATE
+
+  Interval between two REPEAT events.
+
 Backlight support
 HD44780_BACKLIGHT_SUPPORT
 
@@ -2980,7 +2999,6 @@ TANKLEVEL_HOLD_TIME
   Hold time before measurement (in 1/50 secs). Can be changed at runtime via
   ECMD command "tank param set hold_time VALUE" and stored in EEPROM.
 
-
 VSCP Support
 VSCP_SUPPORT
   Depends on:
@@ -3019,3 +3037,8 @@ CONF_VSCP_PORT
   Depends on:
 
   Define the port the VSCP over UDP protocol uses (default 9598).
+
+Use internal pullups
+CONF_BTN_USE_PULLUPS
+
+  Enable the internal pullup resistors of the controller.
