@@ -29,6 +29,7 @@
 #include "core/bit-macros.h"
 #include "protocols/uip/uip_router.h"
 #include "protocols/vscp/vscp_net.h"
+#include "protocols/rscp/rscp_net.h"
 
 #include "core/debug.h"
 
@@ -263,6 +264,13 @@ process_packet(void)
 
         break;
 #endif /* !VSCP_SUPPORT && VSCP_USE_RAW_ETHERNET */
+
+#if defined(RSCP_SUPPORT) && defined(RSCP_USE_RAW_ETHERNET)
+      case RSCP_ETHTYPE:
+        rscp_net_raw();
+
+        break;
+#endif /* !RSCP_SUPPORT && RSCP_USE_RAW_ETHERNET */
 
 #if UIP_CONF_IPV6
         /* process ip packet */
