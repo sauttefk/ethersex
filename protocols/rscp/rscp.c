@@ -28,6 +28,8 @@
 #include "core/eeprom.h"
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
+#include "hardware/onewire/onewire.h"
+
 #ifdef RSCP_SUPPORT
 
 /* ----------------------------------------------------------------------------
@@ -51,7 +53,7 @@ rscp_init(void)
 void
 rscp_main(void)
 {
-  RSCP_DEBUG("bla\n");
+  // RSCP_DEBUG("bla\n");
 }
 
 
@@ -60,7 +62,8 @@ void
 rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
          uint8_t * payload)
 {
-  RSCP_DEBUG("SRCAD: 0x%06X\n", src_addr);
+  RSCP_DEBUG("SRCAD: %02X:%02X:%02X:%02X:%02X:%02X\n", src_addr[0],
+             src_addr[1], src_addr[2], src_addr[3], src_addr[4], src_addr[5]);
   RSCP_DEBUG("TYPE : 0x%04X\n", msg_type);
   RSCP_DEBUG("DSIZE: %d\n", payload_len);
   RSCP_DEBUG("DATA : ");
@@ -80,9 +83,10 @@ rscp_periodic(void)
     /* send a heartbeat packet every 60 seconds */
     rscp_heartbeatInterval = 60;
 
-    rscp_sendHeartBeat();
-    sendPeriodicOutputEvents();
-    sendPeriodicInputEvents();
+//    rscp_sendHeartBeat();
+//    sendPeriodicOutputEvents();
+//    sendPeriodicInputEvents();
+      sendPeriodicTemperature();
   }
 }
 
@@ -127,6 +131,25 @@ sendPeriodicInputEvents(void)
   rscp_transmit(3, RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node input data sent\n");
 }
+
+
+
+void
+sendPeriodicTemperature(void)
+{
+  uint8_t *payload = rscp_getPayloadPointer();
+#warning FIXME
+  payload[0] = 0x00;
+  payload[1] = 0x00;
+  payload[2] = RSCP_UNIT_TEMPERATURE;
+  payload[3] = RSCP_FIELD_CAT_LEN_TINY << 6 | 0x21;
+  payload[4] = (ow_sensors[0].temp >> 8) & 0x1f | -1 << 5;  //
+  payload[5] = ow_sensors[0].temp & 0xff;
+  RSCP_DEBUG("temp 0x%04x\n", ow_sensors[0].temp);
+  rscp_transmit(6, RSCP_CHANNEL_EVENT);
+  RSCP_DEBUG("node temperature sent\n");
+}
+
 
 
 uint8_t

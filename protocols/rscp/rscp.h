@@ -45,6 +45,8 @@ void rscp_periodic(void);
 void rscp_sendHeartBeat(void);
 void sendPeriodicOutputEvents(void);
 void sendPeriodicInputEvents(void);
+void sendPeriodicTemperature(void);
+
 
 #define RSCP_SIZE_DEVURL              32
 #define FIRMWARE_MAJOR_VERSION        0x00

@@ -37,16 +37,20 @@ void rscp_button_handler(btn_ButtonsType button, uint8_t state) {
   if(button > 0)  // button 0 is config button
   {
     uint8_t *payload = rscp_getPayloadPointer();
+    payload[0] = 0xff;
+    payload[1] = 0xff;
     switch(state)
     {
      case BUTTON_RELEASE:
-       payload[0] = htons(button - 1);
+       payload[0] = (button - 1) >> 8;
+       payload[1] = (button - 1) & 0xFF;
        payload[2] = RSCP_UNIT_BOOLEAN;
        payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | RSCP_FIELD_TYPE_TRUE;
        rscp_transmit(5, RSCP_CHANNEL_EVENT);
        break;
      case BUTTON_PRESS:
-       payload[0] = htons(button - 1);
+       payload[0] = (button - 1) >> 8;
+       payload[1] = (button - 1) & 0xFF;
        payload[2] = RSCP_UNIT_BOOLEAN;
        payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | RSCP_FIELD_TYPE_FALSE;
        rscp_transmit(5, RSCP_CHANNEL_EVENT);
