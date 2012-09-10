@@ -12,6 +12,7 @@
 *.workspace
 *.cbp
 *.layout
+*.exe
 
 # make generated files
 .config*
