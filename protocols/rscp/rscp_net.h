@@ -37,7 +37,7 @@
 #define RSCP_RAW_POS_SIZE                       19
 #define RSCP_RAW_POS_DATA                       21
 
-#define RSCP_RAWH_LEN                           26  // complete ethernet header
+#define RSCP_RAWH_LEN                           14  // complete ethernet header
 #define RSCP_HEADER_LEN                         12
 #define RSCP_ETHTYPE                            0x4313
 #define RSCP_MAXPAYLOAD                         512 - RSCP_HEADER_LEN
