@@ -39,7 +39,7 @@ void rscp_button_handler(btn_ButtonsType button, uint8_t state) {
     uint8_t *payload = rscp_getPayloadPointer();
     switch(state)
     {
-     case BUTTON_NOPRESS:
+     case BUTTON_RELEASE:
        payload[0] = htons(button - 1);
 #warning FIXME: use defines
        payload[2] = 0x09;

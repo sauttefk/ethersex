@@ -38,7 +38,7 @@ void vscp_button_handler(btn_ButtonsType button, uint8_t state) {
     uint8_t *payload = vscp_getPayloadPointer(VSCP_MODE_RAWETHERNET);
     switch(state)
     {
-     case BUTTON_NOPRESS:
+     case BUTTON_RELEASE:
        payload[0] = VSCP_BUTTON_RELEASE;
 #warning FIXME: get zone from config
        payload[1] = 0x00;           // zone
