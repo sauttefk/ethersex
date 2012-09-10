@@ -38,6 +38,7 @@
 
 const uint8_t rscp_deviceURL[RSCP_SIZE_DEVURL] = CONF_RSCP_DEVICEURL;
   // PROGMEM doesn't work?!?
+uint8_t testid[6];
 
 
 /* ----------------------------------------------------------------------------
@@ -72,6 +73,15 @@ rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
     printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), payload[i]);
   printf_P(PSTR("\n"));
 #endif /* DEBUG_RSCP */
+
+  switch (msg_type) {
+    case RSCP_CHANNEL_EVENT:
+//     uint8_t mismatch = memcmp(&src_addr, testid, 6);
+//     if (!mismatch) {
+       RSCP_DEBUG("** MATCH **\n");
+//     }
+     break;
+  }
 }
 
 void
