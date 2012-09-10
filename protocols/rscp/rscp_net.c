@@ -54,7 +54,7 @@ rscp_net_raw(void)
   RSCP_DEBUG("RSVD : 0x%02lX\n", rscp->reserved);
   RSCP_DEBUG("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
-  rscp_get(&packet->src.addr, ntohs(rscp->msg_type), rscp->payload_len,
+  rscp_get(&packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
            rscp->payload);
 }
 #endif /* RSCP_USE_RAW_ETHERNET */
