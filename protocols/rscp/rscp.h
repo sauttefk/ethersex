@@ -53,5 +53,23 @@ void sendPeriodicInputEvents(void);
 
 #define RSCP_CHANNEL_EVENT            0x1001
 
+#define RSCP_UNIT_COUNT               0x01  // Counter
+#define RSCP_UNIT_VOLTAGE             0x02  // Voltage (V)
+#define RSCP_UNIT_TEMPERATURE         0x03  // Temperatured (°C)
+#define RSCP_UNIT_MASS                0x04  // Mass (kg)
+#define RSCP_UNIT_TIME                0x05  // Time (s)
+#define RSCP_UNIT_CURRENT             0x06  // Current (A)
+#define RSCP_UNIT_VOLUME              0x07  // Volume (l)
+#define RSCP_UNIT_PERCENT             0x08  // Percent
+#define RSCP_UNIT_BOOLEAN             0x09  // Boolean (on/off)
+
+#define RSCP_FIELD_CAT_LEN_TINY       0x0   // length encoded in the lll bits
+#define RSCP_FIELD_CAT_LEN_BYTE       0x1   // length follows as one-byte length specifier
+#define RSCP_FIELD_CAT_LEN_INT        0x2   // length follows as two-byte length specifier
+#define RSCP_FIELD_CAT_LEN_IMMEDIATE  0x3   // immediate fields (type contains value)
+
+#define RSCP_FIELD_TYPE_FALSE         0x00  // boolean false
+#define RSCP_FIELD_TYPE_TRUE          0x01  // boolean true
+
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */

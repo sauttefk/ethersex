@@ -41,17 +41,15 @@ void rscp_button_handler(btn_ButtonsType button, uint8_t state) {
     {
      case BUTTON_RELEASE:
        payload[0] = htons(button - 1);
-#warning FIXME: use defines
-       payload[2] = 0x09;
-       payload[3] = 0xC1;
-       rscp_transmit(5, 0x1001);
+       payload[2] = RSCP_UNIT_BOOLEAN;
+       payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | RSCP_FIELD_TYPE_TRUE;
+       rscp_transmit(5, RSCP_CHANNEL_EVENT);
        break;
      case BUTTON_PRESS:
        payload[0] = htons(button - 1);
-#warning FIXME: use defines
-       payload[2] = 0x09;
-       payload[3] = 0xC0;
-       rscp_transmit(5, 0x1001);
+       payload[2] = RSCP_UNIT_BOOLEAN;
+       payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | RSCP_FIELD_TYPE_FALSE;
+       rscp_transmit(5, RSCP_CHANNEL_EVENT);
        break;
      case BUTTON_LONGPRESS:
      case BUTTON_REPEAT:
