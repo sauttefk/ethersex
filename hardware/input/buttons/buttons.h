@@ -26,9 +26,33 @@
 #include "config.h"
 #ifdef BUTTONS_INPUT_SUPPORT
 
-#include "buttons_cfg.h"
+#if !defined(CONF_NUM_BUTTONS) || !defined(BTN_CONFIG)
+#error Error in pinning configuration for buttons module. Check your pinning configuration.
+#endif
 
-#define BUTTON_NOPRESS 0        /* Button is not pressed */
+/*
+ * To configure additional buttons add the following to your pinning
+ * configuration:
+ *
+ * pin(BTN_UP, PC2, INPUT)
+ * pin(BTN_RIGHT, PC3, INPUT)
+ * pin(BTN_DOWN, PC4, INPUT)
+ * pin(BTN_LEFT, PC5, INPUT)
+ * pin(BTN_FIRE, PD2, INPUT)
+ * pin(BTN_FIRE2, PD2, INPUT)
+ *
+ * #define CONF_NUM_BUTTONS 6
+ *
+ * #define BTN_CONFIG(_x) \
+ * _x(BTN_UP)\
+ * _x(BTN_DOWN)\
+ * _x(BTN_LEFT)\
+ * _x(BTN_RIGHT)\
+ * _x(BTN_FIRE)\
+ * _x(BTN_FIRE2)
+*/
+
+#define BUTTON_RELEASE 0        /* Button is not pressed */
 #define BUTTON_PRESS 1          /* Short press */
 #define BUTTON_LONGPRESS 2      /* Long press */
 #define BUTTON_REPEAT 3         /* Repeat function enabled, repeatedly triggered until button released */
@@ -57,7 +81,7 @@ typedef struct
 /* Status information for each button */
 typedef struct
 {
-  uint8_t status:2;             /* One of the values NOPRESS, PRESS, LONGPRESS... */
+  uint8_t status:2;             /* One of the values RELEASE, PRESS, LONGPRESS... */
   uint8_t curStatus:1;          /* Current pin value */
   uint8_t unused:5;
   uint8_t ctr;                  /* Debounce timer */

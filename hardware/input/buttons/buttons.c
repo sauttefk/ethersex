@@ -30,10 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <avr/io.h>
+#include "buttons.h"
 #include "config.h"
 #include "protocols/ecmd/ecmd-base.h"
-#include "buttons.h"
-#include "buttons_cfg.h"
 
 /* This driver uses the E6 hook mechanism to notify of events. (see hook.def for details)
  * To get notified in your application of a button press:
@@ -49,20 +48,17 @@
  *
  *     Upon a button press, the function will be called with the following parameters:
  *     btn = The Button that was pressed.
- *     status = One of the following values (BUTTON_PRESS, BUTTON_LONGPRESS, BUTTON_REPEAT, BUTTON_NOPRESS)
+ *     status = One of the following values (BUTTON_PRESS, BUTTON_LONGPRESS, BUTTON_REPEAT, BUTTON_RELEASE)
  *
  *     BUTTON_PRESS 	= 	Button was pressed.
  *     BUTTON_LONGPRESS =	Button was pressed for 900ms
  *     BUTTON_REPEAT 	= 	Button was pressed for <CONF_BTN_REPEAT_TIME>ms, this event is then
  *                     		repeated every <CONF_BTN_REPEAT_RATE>ms until the button is released.
- *     BUTTON_NOPRESS 	=	Button released.
+ *     BUTTON_RELEASE 	=	Button released.
  *
  */
 
 #ifdef BUTTONS_INPUT_SUPPORT
-
-#define BUTTON_DEBOUNCE_TIME 3  /* Debounce time in ethersex ticks (x*20ms) */
-#define BUTTON_LONG_PRESS_TIME 50       /* Time for long press in ethersex ticks (x*20ms) */
 
 #ifdef DEBUG_BUTTONS_INPUT
 const char *buttonNames[CONF_NUM_BUTTONS] = { BTN_CONFIG(S) };
@@ -98,7 +94,7 @@ buttons_init(void)
 
     /* No button pressed */
     buttonStatus[ctr].curStatus = 0;
-    buttonStatus[ctr].status = BUTTON_NOPRESS;
+    buttonStatus[ctr].status = BUTTON_RELEASE;
     buttonStatus[ctr].ctr = 0;
   }
 }
@@ -138,7 +134,7 @@ buttons_periodic(void)
        * run the debounce timer. Also keep the debounce timer running if the
        * button is pressed, because we need it for long press/repeat recognition */
       if ((buttonStatus[ctr].curStatus != buttonStatus[ctr].status) ||
-          (BUTTON_NOPRESS != buttonStatus[ctr].status))
+          (BUTTON_RELEASE != buttonStatus[ctr].status))
       {
         buttonStatus[ctr].ctr++;
       }
@@ -151,7 +147,7 @@ buttons_periodic(void)
     }
 
     /* Button was stable for DEBOUNCE_TIME*20 ms */
-    if (BUTTON_DEBOUNCE_TIME <= buttonStatus[ctr].ctr)
+    if (CONF_BTN_DEBOUNCE_TIME <= buttonStatus[ctr].ctr)
     {
       /* Button is pressed.. */
       if (1 == buttonStatus[ctr].curStatus)
@@ -159,7 +155,7 @@ buttons_periodic(void)
         switch (buttonStatus[ctr].status)
         {
             /* ..and was not pressed before. Send the PRESS event */
-          case BUTTON_NOPRESS:
+          case BUTTON_RELEASE:
             buttonStatus[ctr].status = BUTTON_PRESS;
             BUTTONDEBUG("Pressed %s\n", buttonNames[ctr]);
             hook_btn_input_call(ctr, buttonStatus[ctr].status);
@@ -167,7 +163,7 @@ buttons_periodic(void)
 
             /* ..and was pressed before. Wait for long press. */
           case BUTTON_PRESS:
-            if (BUTTON_LONG_PRESS_TIME <= buttonStatus[ctr].ctr)
+            if (CONF_BTN_LONGPRESS_TIME <= buttonStatus[ctr].ctr)
             {
               /* Long press time reached. Send LONGPRESS event. */
               buttonStatus[ctr].status = BUTTON_LONGPRESS;
@@ -212,8 +208,8 @@ buttons_periodic(void)
       }
       else
       {
-        /* Button is not pressed anymore. Send NO_PRESS. */
-        buttonStatus[ctr].status = BUTTON_NOPRESS;
+        /* Button is not pressed anymore. Send RELEASE. */
+        buttonStatus[ctr].status = BUTTON_RELEASE;
         BUTTONDEBUG("Released %s\n", buttonNames[ctr]);
         buttonStatus[ctr].ctr = 0;
         hook_btn_input_call(ctr, buttonStatus[ctr].status);
