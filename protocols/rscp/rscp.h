@@ -70,8 +70,33 @@ void sendPeriodicTemperature(void);
 #define RSCP_FIELD_CAT_LEN_INT        0x2   // length follows as two-byte length specifier
 #define RSCP_FIELD_CAT_LEN_IMMEDIATE  0x3   // immediate fields (type contains value)
 
-#define RSCP_FIELD_TYPE_FALSE         0x00  // boolean false
-#define RSCP_FIELD_TYPE_TRUE          0x01  // boolean true
+#define RSCP_FIELD_TYPE_FALSE         0x0   // boolean false
+#define RSCP_FIELD_TYPE_TRUE          0x1   // boolean true
+
+#define RSCP_FIELD_TYPE_SIGNED        0x1   // signed
+#define RSCP_FIELD_TYPE_UNSIGNED      0x2   // unsigned
+#define RSCP_FIELD_TYPE_FLOAT         0x3   // float
+#define RSCP_FIELD_TYPE_FIXED         0x4   // fixed
+#define RSCP_FIELD_TYPE_STRING        0x5   // string iso8859-1
+#define RSCP_FIELD_TYPE_ARRAY         0x6   // byte array
+
+#define RSCP_FIELD_SUBTYPE_INT8       0x0 | RSCP_FIELD_TYPE_SIGNED << 3   // signed byte
+#define RSCP_FIELD_SUBTYPE_INT16      0x1 | RSCP_FIELD_TYPE_SIGNED << 3   // signed int
+#define RSCP_FIELD_SUBTYPE_INT32      0x2 | RSCP_FIELD_TYPE_SIGNED << 3   // signed long
+#define RSCP_FIELD_SUBTYPE_INT64      0x3 | RSCP_FIELD_TYPE_SIGNED << 3   // signed long long
+
+#define RSCP_FIELD_SUBTYPE_UINT8      0x0 | RSCP_FIELD_TYPE_UNSIGNED << 3 // unsigned byte
+#define RSCP_FIELD_SUBTYPE_UINT16     0x1 | RSCP_FIELD_TYPE_UNSIGNED << 3 // unsigned int
+#define RSCP_FIELD_SUBTYPE_UINT32     0x2 | RSCP_FIELD_TYPE_UNSIGNED << 3 // unsigned long
+#define RSCP_FIELD_SUBTYPE_UINT64     0x3 | RSCP_FIELD_TYPE_UNSIGNED << 3 // unsigned long long
+
+#define RSCP_FIELD_SUBTYPE_FLOAT      0x0 | RSCP_FIELD_TYPE_FLOAT << 3    // unsigned float
+#define RSCP_FIELD_SUBTYPE_DOUBLE     0x1 | RSCP_FIELD_TYPE_FLOAT << 3    // unsigned double
+
+#define RSCP_FIELD_SUBTYPE_FIXED8     0x0 | RSCP_FIELD_TYPE_FIXED << 3    // fixed decimal 2 bits exponent; 6bit value
+#define RSCP_FIELD_SUBTYPE_FIXED16    0x1 | RSCP_FIELD_TYPE_FIXED << 3    // fixed decimal 3 bits exponent; 13bit value
+#define RSCP_FIELD_SUBTYPE_FIXED32    0x2 | RSCP_FIELD_TYPE_FIXED << 3    // fixed decimal 4 bits exponent; 28bit value
+
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */
