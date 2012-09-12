@@ -51,7 +51,7 @@ rscp_net_raw(void)
 
   RSCP_DEBUG("VERS : 0x%01X\n", rscp->version);
   RSCP_DEBUG("HDLEN: 0x%01X\n", rscp->header_len);
-  RSCP_DEBUG("RSVD : 0x%02lX\n", rscp->reserved);
+  RSCP_DEBUG("RSVD : 0x%02X\n", rscp->reserved);
   RSCP_DEBUG("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
   rscp_get(&packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
