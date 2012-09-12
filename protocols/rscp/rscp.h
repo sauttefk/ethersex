@@ -129,5 +129,23 @@ void sendPeriodicTemperature(void);
  * uint8    : output 2
 */
 
+
+struct rscp_eeprom_header
+{
+   uint16_t version;        // version number (currently 1)
+   uint8_t  macaddress[6];  // mac address
+   uint16_t channel_p;      // pointer to channel definitions (relative to start of configuration)
+   uint16_t button_p;       // pointer to button definitions (relative to start of configuration)
+   uint16_t rule_p;         // pointer to rule definitions (relative to start of configuration)
+   uint8_t  name[];         // name of device (ASCII encoding, zero-terminated)
+};
+
+
+struct rscp_channel_definition
+{
+  uint16_t number;          // number of defined channels
+}
+
+
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */
