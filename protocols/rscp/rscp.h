@@ -98,5 +98,36 @@ void sendPeriodicTemperature(void);
 #define RSCP_FIELD_SUBTYPE_FIXED32    0x2 | RSCP_FIELD_TYPE_FIXED << 3    // fixed decimal 4 bits exponent; 28bit value
 
 
+/* actions */
+#define RSCP_ACTION_QUIT              0x0 // end of action table reached
+#define RSCP_ACTION_PASSTHROUGH       0x1 // reflect state of input
+#define RSCP_ACTION_ALWAYS_ON         0x2 // output is always on
+#define RSCP_ACTION_ALWAYS_OFF        0x3 // output is always off
+#define RSCP_ACTION_TOGGLE            0x4 // toggle light
+#define RSCP_ACTION_TOGGLE_DUAL       0x5 // toggle two lights
+#define RSCP_ACTION_TWO_STAGE         0x6 // two stage light
+
+#define RSCP_ACTION_RETRIGGER_TIMER   0x8 // retriggerable timer
+#define RSCP_ACTION_BLINK             0x9 // blinker
+
+#define RSCP_ACTION_AWNING            0xd // awning
+#define RSCP_ACTION_BLINDS            0xe // blinds
+#define RSCP_ACTION_WINDOW            0xf // windows
+
+/**
+ *  eeprom action table
+ *
+ * ??? mask for input event (mac/type)
+ * ??? how to match input channel / temperature
+ *
+ * uint8    : type of action
+ * uint8    : length of action item
+ * uint8[6] : mac-address of sender
+ * uint16   : type of event
+ * uint8    : output 1
+ * uint16   : delay
+ * uint8    : output 2
+*/
+
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */
