@@ -144,7 +144,7 @@ struct rscp_eeprom_header
 struct rscp_channel_definition
 {
   uint16_t number;          // number of defined channels
-}
+};
 
 
 #endif /* RSCP_SUPPORT */

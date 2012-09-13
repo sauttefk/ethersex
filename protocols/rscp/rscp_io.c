@@ -23,7 +23,6 @@
 
 #include "rscp_io.h"
 #include "protocols/uip/uip.h"
-#include "hardware/input/buttons/buttons.h"
 
 #ifdef RSCP_SUPPORT
 
