@@ -132,12 +132,12 @@ void sendPeriodicTemperature(void);
 
 struct rscp_eeprom_header
 {
-   uint16_t version;        // version number (currently 1)
-   uint8_t  macaddress[6];  // mac address
-   uint16_t channel_p;      // pointer to channel definitions (relative to start of configuration)
-   uint16_t button_p;       // pointer to button definitions (relative to start of configuration)
-   uint16_t rule_p;         // pointer to rule definitions (relative to start of configuration)
-   uint8_t  name[];         // name of device (ASCII encoding, zero-terminated)
+  uint16_t version;         // version number (currently 1)
+  uint8_t  macaddress[6];   // mac address
+  uint16_t channel_p;       // pointer to channel definitions (relative to start of configuration)
+  uint16_t button_p;        // pointer to button definitions (relative to start of configuration)
+  uint16_t rule_p;          // pointer to rule definitions (relative to start of configuration)
+  uint8_t  name[];          // name of device (ASCII encoding, zero-terminated)
 };
 
 
@@ -145,6 +145,33 @@ struct rscp_channel_definition
 {
   uint16_t number;          // number of defined channels
 };
+
+
+struct rscp_channel_type_01 // binary input
+{
+  uint16_t channel_id;      // channel id
+  uint8_t channel_type;     // channel type
+  uint8_t port : 4;         // port
+  uint8_t pin : 4;          // pin
+  uint8_t negate : 1;       // negate polarity
+  uint8_t report : 1;       // report change
+  uint8_t pullup : 1;       // weak pullup resistor
+  uint8_t : 5;              // unused
+};
+
+
+struct rscp_channel_type_02 // binary output
+{
+  uint16_t channel_id;      // channel id
+  uint8_t channel_type;     // channel type
+  uint8_t port : 4;         // port
+  uint8_t pin : 4;          // pin
+  uint8_t negate : 1;       // negate polarity
+  uint8_t report : 1;       // report change
+  uint8_t mode : 2;         // output mode
+  uint8_t : 4;              // unused
+};
+
 
 
 #endif /* RSCP_SUPPORT */
