@@ -20,12 +20,17 @@
  */
 
 #include "config.h"
-#include "rscp_net.h"
 
 #ifndef _RSCP_H
 #define _RSCP_H
 
 #ifdef RSCP_SUPPORT
+
+#include <avr/io.h>
+#include <avr/eeprom.h>
+
+#include "rscp_net.h"
+#include "core/eeprom.h"
 
 #ifdef DEBUG_RSCP
 #include "core/debug.h"
@@ -129,6 +134,24 @@ void sendPeriodicTemperature(void);
  * uint8    : output 2
 */
 
+#define RSCP_EEPROM_START sizeof(struct eeprom_config_t)
+#define RSCP_FREE_EEPROM (E2END - sizeof(struct eeprom_config_t) - 1)
+
+#define RSCP_CONFIG_VERSION   RSCP_EEPROM_START
+#define RSCP_CONFIG_MAC0      (RSCP_CONFIG_VERSION + sizeof(uint16_t))
+#define RSCP_CONFIG_MAC1      (RSCP_CONFIG_MAC0 + 1 * sizeof(uint8_t))
+#define RSCP_CONFIG_MAC2      (RSCP_CONFIG_MAC0 + 2 * sizeof(uint8_t))
+#define RSCP_CONFIG_MAC3      (RSCP_CONFIG_MAC0 + 3 * sizeof(uint8_t))
+#define RSCP_CONFIG_MAC4      (RSCP_CONFIG_MAC0 + 4 * sizeof(uint8_t))
+#define RSCP_CONFIG_MAC5      (RSCP_CONFIG_MAC0 + 5 * sizeof(uint8_t))
+#define RSCP_CONFIG_CHANNEL_P (RSCP_CONFIG_MAC0 + 6 * sizeof(uint8_t))
+#define RSCP_CONFIG_BUTTON_P  (RSCP_CONFIG_CHANNEL_P + sizeof(uint16_t))
+#define RSCP_CONFIG_RULE_P    (RSCP_CONFIG_BUTTON_P + sizeof(uint16_t))
+#define RSCP_CONFIG_NAME      (RSCP_CONFIG_RULE_P + sizeof(uint16_t))
+
+uint16_t rscp_channel_p;
+uint16_t rscp_button_p;
+uint16_t rscp_rule_p;
 
 struct rscp_eeprom_header
 {
@@ -151,12 +174,12 @@ struct rscp_channel_type_01 // binary input
 {
   uint16_t channel_id;      // channel id
   uint8_t channel_type;     // channel type
-  uint8_t port : 4;         // port
-  uint8_t pin : 4;          // pin
-  uint8_t negate : 1;       // negate polarity
-  uint8_t report : 1;       // report change
-  uint8_t pullup : 1;       // weak pullup resistor
-  uint8_t : 5;              // unused
+  uint8_t port:4;           // port
+  uint8_t pin:4;            // pin
+  uint8_t negate:1;         // negate polarity
+  uint8_t report:1;         // report change
+  uint8_t pullup:1;         // weak pullup resistor
+  uint8_t :5;               // unused
 };
 
 
@@ -164,15 +187,24 @@ struct rscp_channel_type_02 // binary output
 {
   uint16_t channel_id;      // channel id
   uint8_t channel_type;     // channel type
-  uint8_t port : 4;         // port
-  uint8_t pin : 4;          // pin
-  uint8_t negate : 1;       // negate polarity
-  uint8_t report : 1;       // report change
-  uint8_t mode : 2;         // output mode
-  uint8_t : 4;              // unused
+  uint8_t port:4;           // port
+  uint8_t pin:4;            // pin
+  uint8_t negate:1;         // negate polarity
+  uint8_t report:1;         // report change
+  uint8_t mode:2;           // output mode
+  uint8_t :4;               // unused
 };
 
-
+struct rscp_button
+{
+  uint16_t button_id;       // button id
+  uint16_t channel_id;      // associated channel id
+  uint8_t report_press:1;   // report press of button
+  uint8_t report_release:1; // report release of button
+  uint8_t :6;               // unused
+  uint16_t long_press;      // long press after N*20ms (0 = disabled)
+  uint16_t repeat;          // repeat every N*20ms (0 = disabled)
+};
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */

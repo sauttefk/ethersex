@@ -48,6 +48,39 @@ void
 rscp_init(void)
 {
   RSCP_DEBUG("init\n");
+  RSCP_DEBUG("start of rscp config in eeprom: %04X\n", RSCP_EEPROM_START);
+  RSCP_DEBUG("free eeprom: %d\n", RSCP_FREE_EEPROM);
+  RSCP_DEBUG("version: %d\n", eeprom_read_word(RSCP_CONFIG_VERSION));
+  RSCP_DEBUG("mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
+             eeprom_read_byte(RSCP_CONFIG_MAC0),
+             eeprom_read_byte(RSCP_CONFIG_MAC1),
+             eeprom_read_byte(RSCP_CONFIG_MAC2),
+             eeprom_read_byte(RSCP_CONFIG_MAC3),
+             eeprom_read_byte(RSCP_CONFIG_MAC4),
+             eeprom_read_byte(RSCP_CONFIG_MAC5));
+
+  if (eeprom_read_word(RSCP_CONFIG_VERSION) != 1) {
+    RSCP_DEBUG("this firmware only supports rscp config version 1\n");
+//    return;
+  }
+  if (eeprom_read_byte(RSCP_CONFIG_MAC0) != uip_ethaddr.addr[0] ||
+      eeprom_read_byte(RSCP_CONFIG_MAC1) != uip_ethaddr.addr[1] ||
+      eeprom_read_byte(RSCP_CONFIG_MAC2) != uip_ethaddr.addr[2] ||
+      eeprom_read_byte(RSCP_CONFIG_MAC3) != uip_ethaddr.addr[3] ||
+      eeprom_read_byte(RSCP_CONFIG_MAC4) != uip_ethaddr.addr[4] ||
+      eeprom_read_byte(RSCP_CONFIG_MAC5) != uip_ethaddr.addr[5]) {
+    RSCP_DEBUG("the config does not match this device's mac address\n");
+//    return;
+  }
+
+  rscp_channel_p = eeprom_read_word(RSCP_CONFIG_CHANNEL_P);
+  RSCP_DEBUG("channel pointer: %04X\n", rscp_channel_p);
+  rscp_button_p = eeprom_read_word(RSCP_CONFIG_BUTTON_P);
+  RSCP_DEBUG("channel pointer: %04X\n", rscp_button_p);
+  rscp_rule_p = eeprom_read_word(RSCP_CONFIG_RULE_P);
+  RSCP_DEBUG("channel pointer: %04X\n", rscp_rule_p);
+
+  rscp_channel_items = eeprom_read_word(rscp_channel_p +
 }
 
 
