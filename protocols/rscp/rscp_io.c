@@ -30,15 +30,15 @@
 /* ---------------------------------------------------------------------------
  * change of button state
  */
-void rscp_button_handler(btn_ButtonsType button, uint8_t state) {
+void rscp_button_handler (btn_ButtonsType button, uint8_t state) {
   RSCP_DEBUG("button %d status: %d\n", button, state);
 
-  if(button > 0)  // button 0 is config button
+  if (button > 0)  // button 0 is config button
   {
     uint8_t *payload = rscp_getPayloadPointer();
     payload[0] = 0xff;
     payload[1] = 0xff;
-    switch(state)
+    switch (state)
     {
      case BUTTON_RELEASE:
        payload[0] = (button - 1) >> 8;
@@ -66,7 +66,7 @@ void rscp_button_handler(btn_ButtonsType button, uint8_t state) {
  * init rscp io
  */
 void
-rscp_io_init(void)
+rscp_io_init (void)
 {
   hook_btn_input_register(rscp_button_handler);
 }
