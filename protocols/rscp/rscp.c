@@ -48,102 +48,150 @@ void
 rscp_init(void)
 {
   RSCP_DEBUG("init\n");
-  RSCP_DEBUG("start of rscp config in eeprom: 0x%04X\n", RSCP_EEPROM_START);
+  RSCP_DEBUG("start of rscp config in eeprom: 0x%03X\n", RSCP_EEPROM_START);
   RSCP_DEBUG("free eeprom: %d\n", RSCP_FREE_EEPROM);
-//  RSCP_DEBUG("version: %d\n", eeprom_read_word(RSCP_CONF_VERSION));
-//  RSCP_DEBUG("mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
-//             eeprom_read_byte(RSCP_CONF_MAC0),
-//             eeprom_read_byte(RSCP_CONF_MAC1),
-//             eeprom_read_byte(RSCP_CONF_MAC2),
-//             eeprom_read_byte(RSCP_CONF_MAC3),
-//             eeprom_read_byte(RSCP_CONF_MAC4),
-//             eeprom_read_byte(RSCP_CONF_MAC5));
+  RSCP_DEBUG("version: %d\n",
+              rscpEE_word(rscp_conf_header, version, RSCP_EEPROM_START));
+  RSCP_DEBUG("mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
+             rscpEE_byte(rscp_conf_header, mac[0], RSCP_EEPROM_START),
+             rscpEE_byte(rscp_conf_header, mac[1], RSCP_EEPROM_START),
+             rscpEE_byte(rscp_conf_header, mac[2], RSCP_EEPROM_START),
+             rscpEE_byte(rscp_conf_header, mac[3], RSCP_EEPROM_START),
+             rscpEE_byte(rscp_conf_header, mac[4], RSCP_EEPROM_START),
+             rscpEE_byte(rscp_conf_header, mac[5], RSCP_EEPROM_START));
 
-  if (eeprom_read_word(RSCP_CONF_VERSION) != 1)
+  if (rscpEE_word(rscp_conf_header, version, RSCP_EEPROM_START) != 1)
   {
     RSCP_DEBUG("this firmware only supports rscp config version 1\n");
     return;
   }
-  if (eeprom_read_byte(RSCP_CONF_MAC0) != uip_ethaddr.addr[0] ||
-      eeprom_read_byte(RSCP_CONF_MAC1) != uip_ethaddr.addr[1] ||
-      eeprom_read_byte(RSCP_CONF_MAC2) != uip_ethaddr.addr[2] ||
-      eeprom_read_byte(RSCP_CONF_MAC3) != uip_ethaddr.addr[3] ||
-      eeprom_read_byte(RSCP_CONF_MAC4) != uip_ethaddr.addr[4] ||
-      eeprom_read_byte(RSCP_CONF_MAC5) != uip_ethaddr.addr[5])
+  if (rscpEE_byte(rscp_conf_header, mac[0], RSCP_EEPROM_START) != uip_ethaddr.addr[0] ||
+      rscpEE_byte(rscp_conf_header, mac[1], RSCP_EEPROM_START) != uip_ethaddr.addr[1] ||
+      rscpEE_byte(rscp_conf_header, mac[2], RSCP_EEPROM_START) != uip_ethaddr.addr[2] ||
+      rscpEE_byte(rscp_conf_header, mac[3], RSCP_EEPROM_START) != uip_ethaddr.addr[3] ||
+      rscpEE_byte(rscp_conf_header, mac[4], RSCP_EEPROM_START) != uip_ethaddr.addr[4] ||
+      rscpEE_byte(rscp_conf_header, mac[5], RSCP_EEPROM_START) != uip_ethaddr.addr[5])
   {
     RSCP_DEBUG("the config does not match this device's mac address\n");
     return;
   }
 
-  rscp_channel_items = eeprom_read_word(RSCP_CONF_CHANNEL_ITEMS);
+  rscp_channel_items = rscpEE_word(rscp_conf_header, channel_items, RSCP_EEPROM_START);
   RSCP_DEBUG("channel items: %d\n", rscp_channel_items);
-  rscp_channel_p = eeprom_read_word(RSCP_CONF_CHANNEL_P);
+  rscp_channel_p = rscpEE_word(rscp_conf_header, channel_p, RSCP_EEPROM_START);
   RSCP_DEBUG("channel pointer: 0x%04X\n", rscp_channel_p);
 
-  rscp_button_items = eeprom_read_word(RSCP_CONF_BUTTON_ITEMS);
+  rscp_button_items = rscpEE_word(rscp_conf_header, button_items, RSCP_EEPROM_START);
   RSCP_DEBUG("button items: %d\n", rscp_button_items);
-  rscp_button_p = eeprom_read_word(RSCP_CONF_BUTTON_P);
+  rscp_button_p = rscpEE_word(rscp_conf_header, button_p, RSCP_EEPROM_START);
   RSCP_DEBUG("button pointer: 0x%04X\n", rscp_button_p);
 
-  rscp_rule_items = eeprom_read_word(RSCP_CONF_RULE_ITEMS);
+  rscp_rule_items = rscpEE_word(rscp_conf_header, rule_items, RSCP_EEPROM_START);
   RSCP_DEBUG("config items: %d\n", rscp_rule_items);
-  rscp_rule_p = eeprom_read_word(RSCP_CONF_RULE_P);
+  rscp_rule_p = rscpEE_word(rscp_conf_header, rule_p, RSCP_EEPROM_START);
   RSCP_DEBUG("config pointer: 0x%04X\n", rscp_rule_p);
 
-  uint16_t p1 = rscp_channel_p;
+  void *p1 = (void *)(rscp_channel_p + RSCP_EEPROM_START);
   for (uint8_t i = 0; i < rscp_channel_items; i++)
   {
-    uint16_t channelId = eeprom_read_word(p1 + RSCP_CHANNEL_ID);
-    uint16_t channelType = eeprom_read_word(p1 + RSCP_CHANNEL_TYPE);
+    if(p1 >= (void *)(rscp_button_p + RSCP_EEPROM_START)) {
+      RSCP_DEBUG("channel list parser list overrun\n");
+      return;
+    }
+    uint16_t channelId = rscpEE_word(rscp_conf_channel, channelId, p1);
+    uint8_t channelType = rscpEE_word(rscp_conf_channel, channelType, p1);
     RSCP_DEBUG("pointer: %04x - chidx: %d - chanid: %d - chantype: 0x%02x\n",
                 p1, i, channelId, channelType);
     switch (channelType)
     {
       case RSCP_CHANNEL_BINARY_INPUT:
       {
-        uint16_t channelPort = eeprom_read_word(p1 + RSCP_CHT01_PORT);
-        uint8_t channelFlags = eeprom_read_byte(p1 + RSCP_CHT01_FLAGS);
-        RSCP_DEBUG("binary input: port:%d - flags: 0x%02x", channelPort,
+        uint16_t channelPort = rscpEE_word(rscp_conf_channel, chType01.port, p1);
+        uint8_t channelFlags = rscpEE_byte(rscp_conf_channel, chType01.flags, p1);
+        RSCP_DEBUG("binary input: port:%d - flags: 0x%02x\n", channelPort,
                     channelFlags);
         p1 += RSCP_CHT01_SIZE;
         break;
       }
       case RSCP_CHANNEL_BINARY_OUTPUT:
       {
-        uint16_t channelPort = eeprom_read_word(p1 + RSCP_CHT02_PORT);
-        uint8_t channelFlags = eeprom_read_byte(p1 + RSCP_CHT02_FLAGS);
-        RSCP_DEBUG("binary output: port:%d - flags: 0x%02x", channelPort,
+        uint16_t channelPort = rscpEE_word(rscp_conf_channel, chType02.port, p1);
+        uint8_t channelFlags = rscpEE_byte(rscp_conf_channel, chType02.flags, p1);
+        RSCP_DEBUG("binary output: port:%d - flags: 0x%02x\n", channelPort,
                     channelFlags);
         p1 += RSCP_CHT02_SIZE;
         break;
       }
       case RSCP_CHANNEL_COMPLEX_INPUT:
       {
-        uint8_t channelflags = eeprom_read_byte(p1 + RSCP_CHT11_FLAGS);
-        uint8_t numports = eeprom_read_byte(p1 + RSCP_CHT11_NUMPORTS);
-        uint8_t numstates = eeprom_read_byte(p1 + RSCP_CHT11_NUMSTATES);
+        uint8_t channelflags = rscpEE_byte(rscp_conf_channel, chType11.flags, p1);
+        uint8_t numports = rscpEE_byte(rscp_conf_channel, chType11.numports, p1);
+        uint8_t numstates = rscpEE_byte(rscp_conf_channel, chType11.numstates, p1);
         RSCP_DEBUG("complex input: flags:0x%02x - ports:%d - states:%d\n",
                     channelflags, numports, numstates);
-        p1 += numports * RSCP_CHT11_PORT_SIZE +
-              numstates * RSCP_CHT11_STATE_SIZE * ((numports + 7) >> 3);
-        RSCP_DEBUG("could not parse complex input\n");
+        p1 += RSCP_CHT11_HEADSIZE;
+        for (int j = 0; j < numports; j++) {
+          uint16_t channelPort = eeprom_read_word((void *)(p1 + RSCP_CHT11_PORTID));
+          uint8_t channelFlags = eeprom_read_byte((void *)(p1 + RSCP_CHT11_PORT_FLAGS));
+          RSCP_DEBUG("pointer: 0x%04x\n", p1);
+          RSCP_DEBUG("complex port: %d - port:%d - flags: 0x%02x\n", j,
+                     channelPort, channelFlags);
+          p1 += RSCP_CHT11_PORT_SIZE;
+        }
+        for (int j = 0; j < numstates; j++) {
+          uint8_t channelState = eeprom_read_byte((void *)(p1 + RSCP_CHT11_PORTSTATES));
+          RSCP_DEBUG("complex state: %d - bits: 0x%02x\n", j,
+                     channelState);
+          RSCP_DEBUG("pointer: 0x%04x\n", p1);
+          p1 += RSCP_CHT11_STATE_SIZE;
+        }
         break;
       }
       case RSCP_CHANNEL_COMPLEX_OUTPUT:
       {
-        uint8_t channelflags = eeprom_read_byte(p1 + RSCP_CHT12_FLAGS);
-        uint8_t numports = eeprom_read_byte(p1 + RSCP_CHT12_NUMPORTS);
-        uint8_t numstates = eeprom_read_byte(p1 + RSCP_CHT12_NUMSTATES);
+        uint8_t channelflags = rscpEE_byte(rscp_conf_channel, chType12.flags, p1);
+        uint8_t numports = rscpEE_byte(rscp_conf_channel, chType12.numports, p1);
+        uint8_t numstates = rscpEE_byte(rscp_conf_channel, chType12.numstates, p1);
         RSCP_DEBUG("complex output: flags:0x%02x - ports:%d - states:%d\n",
                     channelflags, numports, numstates);
-        p1 += numports * RSCP_CHT12_PORT_SIZE +
-              numstates * RSCP_CHT12_STATE_SIZE * ((numports + 7) >> 3);
-        RSCP_DEBUG("could not parse complex output\n");
+        p1 += RSCP_CHT12_HEADSIZE;
+        for (int j = 0; j < numports; j++) {
+          uint16_t channelPort = eeprom_read_word((void *)(p1 + RSCP_CHT12_PORTID));
+          uint8_t channelFlags = eeprom_read_byte((void *)(p1 + RSCP_CHT12_PORT_FLAGS));
+          RSCP_DEBUG("pointer: 0x%04x\n", p1);
+          RSCP_DEBUG("complex port: %d - port:%d - flags: 0x%02x\n", j,
+                     channelPort, channelFlags);
+          p1 += RSCP_CHT12_PORT_SIZE;
+        }
+        for (int j = 0; j < numstates; j++) {
+          uint8_t channelState = eeprom_read_byte((void *)(p1 + RSCP_CHT12_PORTSTATES));
+          RSCP_DEBUG("complex state: %d - bits: 0x%02x\n", j,
+                     channelState);
+          RSCP_DEBUG("pointer: 0x%04x\n", p1);
+          p1 += RSCP_CHT12_STATE_SIZE;
+        }
+        break;
+      }
+      case RSCP_CHANNEL_TEMPERATURE:
+      {
+        RSCP_DEBUG("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[0], p1),
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[1], p1),
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[2], p1),
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[3], p1),
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[4], p1),
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[5], p1),
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[6], p1),
+                    rscpEE_byte(rscp_conf_channel, chType30.owROM[7], p1));
+        RSCP_DEBUG("interval: %d\n", rscpEE_word(rscp_conf_channel, chType30.interval, p1));
+        RSCP_DEBUG("tempHi: %d\n", rscpEE_word(rscp_conf_channel, chType30.tempHi, p1));
+        RSCP_DEBUG("tempLo: %d\n", rscpEE_word(rscp_conf_channel, chType30.tempLo, p1));
+        p1 += RSCP_CHT30_SIZE;
         break;
       }
       default:
       {
-        RSCP_DEBUG("could not parse channel type 0x%02x\n", channelType);
+        RSCP_DEBUG("could not parse channel type 0x%02x --- ABORTING\n", channelType);
       }
     }
   }
@@ -275,7 +323,7 @@ getRSCP_DeviceURL(uint8_t idx)
 uint8_t
 rscp_getMDF_URL(uint8_t idx)
 {
-  return rscp_deviceURL[idx];
+//  return rscp_deviceURL[idx];
 }
 
 #endif /* RSCP_SUPPORT */
