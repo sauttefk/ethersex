@@ -67,7 +67,7 @@
   #define STRLIST(_v) _v##_str,
   #define GET_BUTTON_NAME(i) ((PGM_P)pgm_read_word(&buttonNames[i]))
 
-    /* This creates an array of string in ROM which hold the button names. */
+  /* This creates an array of string in ROM which hold the button names. */
   BTN_CONFIG(STR);
   PGM_P const buttonNames[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(STRLIST) };
 #endif
@@ -115,14 +115,15 @@ buttons_periodic(void)
 #if CONF_BUTTON_LVL == 2
     curState =
       ((*((portPtrType) pgm_read_word(&buttonConfig[ctr].portIn)) &
-        _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ==
-       _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ? 0 : 1;
+      _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ==
+      _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ? 0 : 1;
 #else
     curState =
       ((*((portPtrType) pgm_read_word(&buttonConfig[ctr].portIn)) &
-        _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ==
-       _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ? 1 : 0;
+      _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ==
+     _BV(pgm_read_byte(&buttonConfig[ctr].pin))) ? 1 : 0;
 #endif
+
     /* Actual state hasn't change since the last read... */
     if (buttonStatus[ctr].curStatus == curState)
     {
@@ -214,11 +215,11 @@ buttons_periodic(void)
   }
 }
 
-        /*
-         * -- Ethersex META --
-         * header(hardware/input/buttons/buttons.h)
-         * timer(1, buttons_periodic())
-         * init(buttons_init)
-         */
+/*
+ * -- Ethersex META --
+ * header(hardware/input/buttons/buttons.h)
+ * timer(1, buttons_periodic())
+ * init(buttons_init)
+ */
 
 #endif //BUTTONS_INPUT_SUPPORT
