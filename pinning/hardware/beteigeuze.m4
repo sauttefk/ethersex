@@ -134,7 +134,6 @@ ifdef(`conf_RSCP', `
   pin(RSCP_OUTPUT14, PE6, OUTPUT)
   pin(RSCP_OUTPUT15, PE7, OUTPUT)
 
-ifdef(`conf_BUTTONS_INPUT', `dnl
 #undef CONF_NUM_BUTTONS
 #define CONF_NUM_BUTTONS 17
 
@@ -156,5 +155,4 @@ _x(RSCP_INPUT12)\
 _x(RSCP_INPUT13)\
 _x(RSCP_INPUT14)\
 _x(RSCP_INPUT15)
-')dnl
 ')
