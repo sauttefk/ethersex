@@ -80,6 +80,8 @@ typedef struct
 
 void rscp_io_init(void);
 void buttons_periodic(void);
+uint8_t get_button_state(uint16_t portID);
+
 
 #ifdef DEBUG_BUTTONS_INPUT
 #include "core/debug.h"

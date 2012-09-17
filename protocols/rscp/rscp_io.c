@@ -42,6 +42,26 @@ const button_configType buttonConfig[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(C)
 btn_statusType buttonStatus[CONF_NUM_BUTTONS];
 
 
+uint8_t
+get_button_state(uint16_t portID)
+{
+  if (buttonStatus[portID].polarity == 0)
+  {
+    /* active low */
+    return (((*((portPtrType) pgm_read_word(&buttonConfig[portID].portIn)) &
+            _BV(pgm_read_byte(&buttonConfig[portID].pin))) ==
+            _BV(pgm_read_byte(&buttonConfig[portID].pin))) ? 0 : 1);
+  }
+  else
+  {
+    /* active high */
+    return (((*((portPtrType) pgm_read_word(&buttonConfig[portID].portIn)) &
+            _BV(pgm_read_byte(&buttonConfig[portID].pin))) ==
+            _BV(pgm_read_byte(&buttonConfig[portID].pin))) ? 1 : 0);
+  }
+}
+
+
 void
 buttons_periodic(void)
 {
@@ -51,20 +71,7 @@ buttons_periodic(void)
   for (uint8_t i = 0; i < CONF_NUM_BUTTONS; i++)
   {
     /* Get current value from portpin... */
-    if (buttonStatus[i].polarity == 0)
-    {
-      /* active low */
-      curState =
-        ((*((portPtrType) pgm_read_word(&buttonConfig[i].portIn)) &
-        _BV(pgm_read_byte(&buttonConfig[i].pin))) ==
-        _BV(pgm_read_byte(&buttonConfig[i].pin))) ? 0 : 1;
-    } else {
-      /* active high */
-      curState =
-        ((*((portPtrType) pgm_read_word(&buttonConfig[i].portIn)) &
-        _BV(pgm_read_byte(&buttonConfig[i].pin))) ==
-      _BV(pgm_read_byte(&buttonConfig[i].pin))) ? 1 : 0;
-    }
+    curState = get_button_state(i);
 
     /* Actual state hasn't change since the last read... */
     if (buttonStatus[i].curStatus == curState)
@@ -194,6 +201,7 @@ void rscp_button_handler (btn_ButtonsType button, uint8_t state) {
 void
 rscp_io_init (void)
 {
+  RSCP_DEBUG("init-io\n");
   BTN_CONFIG(PULLUP);
 }
 #endif /* RSCP_SUPPORT */
