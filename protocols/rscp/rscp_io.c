@@ -106,7 +106,8 @@ buttons_periodic(void)
           case BUTTON_RELEASE:
             buttonStatus[i].status = BUTTON_PRESS;
             BUTTONDEBUG("Pressed %S\n", GET_BUTTON_NAME(i));
-            rscp_button_handler(i, buttonStatus[i].status);
+            rscp_button_handler(i, buttonStatus[i].status,
+                                buttonStatus[i].repeat);
             break;
 
           /* ..and was pressed before. Wait for long press. */
@@ -116,7 +117,8 @@ buttons_periodic(void)
               /* Long press time reached. Send LONGPRESS event. */
               buttonStatus[i].status = BUTTON_LONGPRESS;
               BUTTONDEBUG("Long press %S\n", GET_BUTTON_NAME(i));
-              rscp_button_handler(i, buttonStatus[i].status);
+              rscp_button_handler(i, buttonStatus[i].status,
+                                  buttonStatus[i].repeat);
             }
             break;
 
@@ -127,7 +129,8 @@ buttons_periodic(void)
               /* Repeat time reached. Send REPEAT event. */
               buttonStatus[i].status = BUTTON_REPEAT;
               BUTTONDEBUG("Repeat %S\n", GET_BUTTON_NAME(i));
-              rscp_button_handler(i, buttonStatus[i].status);
+              rscp_button_handler(i, buttonStatus[i].status,
+                                  buttonStatus[i].repeat);
             }
             break;
 
@@ -138,8 +141,10 @@ buttons_periodic(void)
             {
               buttonStatus[i].status = BUTTON_REPEAT;
               buttonStatus[i].debounce = CONF_BTN_REPEAT_TIME;
+              buttonStatus[i].repeat++;
               BUTTONDEBUG("Repeat %S\n", GET_BUTTON_NAME(i));
-              rscp_button_handler(i, buttonStatus[i].status);
+              rscp_button_handler(i, buttonStatus[i].status,
+                                  buttonStatus[i].repeat);
             }
             break;
 
@@ -154,7 +159,8 @@ buttons_periodic(void)
         buttonStatus[i].status = BUTTON_RELEASE;
         BUTTONDEBUG("Released %S\n", GET_BUTTON_NAME(i));
         buttonStatus[i].debounce = 0;
-        rscp_button_handler(i, buttonStatus[i].status);
+        buttonStatus[i].repeat = 0;
+        rscp_button_handler(i, buttonStatus[i].status, buttonStatus[i].repeat);
       }
     }
   }
@@ -163,8 +169,10 @@ buttons_periodic(void)
 /* ---------------------------------------------------------------------------
  * change of button state
  */
-void rscp_button_handler (btn_ButtonsType button, uint8_t state) {
-  RSCP_DEBUG("button %d status: %d\n", button, state);
+void
+rscp_button_handler (btn_ButtonsType button, uint8_t state, uint16_t repeat)
+{
+  RSCP_DEBUG("button: %d status: %d repeat: %d\n", button, state, repeat);
 
   if (button > 0)  // button 0 is config button
   {

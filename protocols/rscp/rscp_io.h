@@ -78,9 +78,12 @@ typedef struct
   uint16_t repeat;          // repeat timer
 } btn_statusType;
 
-void rscp_io_init(void);
-void buttons_periodic(void);
-uint8_t get_button_state(uint16_t portID);
+void rscp_io_init (void);
+void buttons_periodic (void);
+uint8_t get_button_state (uint16_t portID);
+void rscp_button_handler (btn_ButtonsType button, uint8_t state,
+                          uint16_t repeat);
+
 
 
 #ifdef DEBUG_BUTTONS_INPUT
