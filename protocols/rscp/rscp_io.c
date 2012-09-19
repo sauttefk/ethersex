@@ -38,14 +38,14 @@
   PGM_P const buttonNames[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(STRLIST) };
 #endif
 
-const button_configType buttonConfig[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(C) };
-btn_statusType buttonStatus[CONF_NUM_BUTTONS];
+const ioConfig_t buttonConfig[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(C) };
+ioStatus_t ioStatus[CONF_NUM_BUTTONS];
 
 
 uint8_t
-get_button_state(uint16_t portID)
+get_io_state(uint16_t portID)
 {
-  if (buttonStatus[portID].polarity == 0)
+  if (ioStatus[portID].polarity == 0)
   {
     /* active low */
     return (((*((portPtrType) pgm_read_word(&buttonConfig[portID].portIn)) &
@@ -71,80 +71,76 @@ buttons_periodic(void)
   for (uint8_t i = 0; i < CONF_NUM_BUTTONS; i++)
   {
     /* Get current value from portpin... */
-    curState = get_button_state(i);
+    curState = get_io_state(i);
 
     /* Actual state hasn't change since the last read... */
-    if (buttonStatus[i].curStatus == curState)
+    if (ioStatus[i].curStatus == curState)
     {
       /* If the current button state is different from the last stable state,
        * run the debounce timer. Also keep the debounce timer running if the
        * button is pressed, because we need it for long press/repeat
        * recognition */
-      if ((buttonStatus[i].curStatus != buttonStatus[i].status) ||
-          (BUTTON_RELEASE != buttonStatus[i].status))
+      if ((ioStatus[i].curStatus != ioStatus[i].status) ||
+          (BUTTON_RELEASE != ioStatus[i].status))
       {
-        buttonStatus[i].debounce++;
+        ioStatus[i].debounce++;
       }
     }
     else
     {
       /* Actual state has changed since the last read.
        * Restart the debounce timer */
-      buttonStatus[i].debounce = 0;
-      buttonStatus[i].curStatus = curState;
+      ioStatus[i].debounce = 0;
+      ioStatus[i].curStatus = curState;
     }
 
     /* Button was stable for DEBOUNCE_TIME*20 ms */
-    if (CONF_BTN_DEBOUNCE_TIME <= buttonStatus[i].debounce)
+    if (CONF_BTN_DEBOUNCE_TIME <= ioStatus[i].debounce)
     {
       /* Button is pressed.. */
-      if (1 == buttonStatus[i].curStatus)
+      if (1 == ioStatus[i].curStatus)
       {
-        switch (buttonStatus[i].status)
+        switch (ioStatus[i].status)
         {
           /* ..and was not pressed before. Send the PRESS event */
           case BUTTON_RELEASE:
-            buttonStatus[i].status = BUTTON_PRESS;
+            ioStatus[i].status = BUTTON_PRESS;
             BUTTONDEBUG("Pressed %S\n", GET_BUTTON_NAME(i));
-            rscp_button_handler(i, buttonStatus[i].status,
-                                buttonStatus[i].repeat);
+            rscp_io_handler(i, ioStatus[i].status, ioStatus[i].repeatCnt);
             break;
 
           /* ..and was pressed before. Wait for long press. */
           case BUTTON_PRESS:
-            if (CONF_BTN_LONGPRESS_TIME <= buttonStatus[i].debounce)
+            if (CONF_BTN_LONGPRESS_TIME <= ioStatus[i].debounce)
             {
               /* Long press time reached. Send LONGPRESS event. */
-              buttonStatus[i].status = BUTTON_LONGPRESS;
+              ioStatus[i].status = BUTTON_LONGPRESS;
               BUTTONDEBUG("Long press %S\n", GET_BUTTON_NAME(i));
-              rscp_button_handler(i, buttonStatus[i].status,
-                                  buttonStatus[i].repeat);
+              rscp_io_handler(i, ioStatus[i].status, ioStatus[i].repeatCnt);
             }
             break;
 
           /* ..and was long pressed before. Wait for repeat start. */
           case BUTTON_LONGPRESS:
-            if (CONF_BTN_REPEAT_TIME <= buttonStatus[i].debounce)
+            if (CONF_BTN_REPEAT_DELAY <= ioStatus[i].debounce)
             {
               /* Repeat time reached. Send REPEAT event. */
-              buttonStatus[i].status = BUTTON_REPEAT;
+              ioStatus[i].status = BUTTON_REPEAT;
               BUTTONDEBUG("Repeat %S\n", GET_BUTTON_NAME(i));
-              rscp_button_handler(i, buttonStatus[i].status,
-                                  buttonStatus[i].repeat);
+              rscp_io_handler(i, ioStatus[i].status, ioStatus[i].repeatCnt);
             }
             break;
 
           /* ..and is in repeat. Send cyclic events. */
           case BUTTON_REPEAT:
-            if (CONF_BTN_REPEAT_TIME + CONF_BTN_REPEAT_RATE <=
-                buttonStatus[i].debounce)
+            if (CONF_BTN_REPEAT_DELAY + CONF_BTN_REPEAT_RATE <=
+                ioStatus[i].debounce)
             {
-              buttonStatus[i].status = BUTTON_REPEAT;
-              buttonStatus[i].debounce = CONF_BTN_REPEAT_TIME;
-              buttonStatus[i].repeat++;
+              ioStatus[i].status = BUTTON_REPEAT;
+              ioStatus[i].debounce = CONF_BTN_REPEAT_DELAY;
+              ioStatus[i].repeatCnt++;
               BUTTONDEBUG("Repeat %S\n", GET_BUTTON_NAME(i));
-              rscp_button_handler(i, buttonStatus[i].status,
-                                  buttonStatus[i].repeat);
+              rscp_io_handler(i, ioStatus[i].status, ioStatus[i].repeatCnt);
             }
             break;
 
@@ -156,11 +152,11 @@ buttons_periodic(void)
       else
       {
         /* Button is not pressed anymore. Send RELEASE. */
-        buttonStatus[i].status = BUTTON_RELEASE;
+        ioStatus[i].status = BUTTON_RELEASE;
         BUTTONDEBUG("Released %S\n", GET_BUTTON_NAME(i));
-        buttonStatus[i].debounce = 0;
-        buttonStatus[i].repeat = 0;
-        rscp_button_handler(i, buttonStatus[i].status, buttonStatus[i].repeat);
+        ioStatus[i].debounce = 0;
+        ioStatus[i].repeatCnt = 0;
+        rscp_io_handler(i, ioStatus[i].status, ioStatus[i].repeatCnt);
       }
     }
   }
@@ -170,9 +166,9 @@ buttons_periodic(void)
  * change of button state
  */
 void
-rscp_button_handler (btn_ButtonsType button, uint8_t state, uint16_t repeat)
+rscp_io_handler (rscp_io_t button, uint8_t state, uint16_t repeatCnt)
 {
-  RSCP_DEBUG("button: %d status: %d repeat: %d\n", button, state, repeat);
+  RSCP_DEBUG("button: %d status: %d repeat: %d\n", button, state, repeatCnt);
 
   if (button > 0)  // button 0 is config button
   {

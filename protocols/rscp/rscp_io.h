@@ -40,11 +40,11 @@ configuration.
 #define BUTTON_REPEAT     3         // repeat function enabled, repeatedly triggered until button released
 #define CONF_BTN_DEBOUNCE_TIME  3
 #define CONF_BTN_LONGPRESS_TIME 50
-#define CONF_BTN_REPEAT_TIME    100
+#define CONF_BTN_REPEAT_DELAY   100
 #define CONF_BTN_REPEAT_RATE    200
 
 /* These macros allow to use the the same configuration macro to initialize
- * the btn_ButtonsType enum, the button_configType struct and set the pullups.
+ * the rscp_io_t enum, the ioConfig_t struct and set the pullups.
  */
 #define E(_v) _v,
 #define C(_v) {.portIn = &PIN_CHAR(_v##_PORT), .pin = _v##_PIN},
@@ -56,16 +56,16 @@ typedef volatile uint8_t * const portPtrType;
 typedef enum
 {
   BTN_CONFIG(E)
-}btn_ButtonsType;
+}rscp_io_t;
 
-/* Static configuration data for each button */
+/* Static configuration data for each input */
 typedef struct
 {
   portPtrType portIn;
   const uint8_t pin;
-} button_configType;
+} ioConfig_t;
 
-/* Status information for each button */
+/* Status information for each input */
 typedef struct
 {
   uint8_t status        :2; // one of the values RELEASE, PRESS, LONGPRESS...
@@ -73,16 +73,15 @@ typedef struct
   uint8_t polarity      :1; // active polarity
   uint8_t reportPress   :1; // report button press
   uint8_t reportRelease :1; // report button release
-  uint8_t unused        :2; // unused bits
+  uint8_t :2;               // unused bits
   uint16_t debounce;        // debounce timer
-  uint16_t repeat;          // repeat timer
-} btn_statusType;
+  uint16_t repeatCnt;       // repeat counter
+} ioStatus_t;
 
 void rscp_io_init (void);
 void buttons_periodic (void);
-uint8_t get_button_state (uint16_t portID);
-void rscp_button_handler (btn_ButtonsType button, uint8_t state,
-                          uint16_t repeat);
+uint8_t get_io_state (uint16_t portID);
+void rscp_io_handler (rscp_io_t io, uint8_t state, uint16_t repeatCnt);
 
 
 
