@@ -145,29 +145,19 @@ void sendPeriodicTemperature(void);
  * header structure
  */
 
-// version number (currently 1)
-#define RSCP_CONF_VERSION       RSCP_EEPROM_START
-// mac address this config is meant for
-#define RSCP_CONF_MAC0          (RSCP_CONF_VERSION + sizeof(uint16_t))
-#define RSCP_CONF_MAC1          (RSCP_CONF_MAC0 + 1 * sizeof(uint8_t))
-#define RSCP_CONF_MAC2          (RSCP_CONF_MAC0 + 2 * sizeof(uint8_t))
-#define RSCP_CONF_MAC3          (RSCP_CONF_MAC0 + 3 * sizeof(uint8_t))
-#define RSCP_CONF_MAC4          (RSCP_CONF_MAC0 + 4 * sizeof(uint8_t))
-#define RSCP_CONF_MAC5          (RSCP_CONF_MAC0 + 5 * sizeof(uint8_t))
-// number of channel items
-#define RSCP_CONF_CHANNEL_ITEMS (RSCP_CONF_MAC0 + 6 * sizeof(uint8_t))
-// pointer to channel definitions (relative to start of configuration)
-#define RSCP_CONF_CHANNEL_P     (RSCP_CONF_CHANNEL_ITEMS + sizeof(uint16_t))
-// number of button items
-#define RSCP_CONF_BUTTON_ITEMS  (RSCP_CONF_CHANNEL_P + sizeof(uint16_t))
-// pointer to button definitions (relative to start of configuration)
-#define RSCP_CONF_BUTTON_P      (RSCP_CONF_BUTTON_ITEMS + sizeof(uint16_t))
-// number of rule items
-#define RSCP_CONF_RULE_ITEMS    (RSCP_CONF_BUTTON_P + sizeof(uint16_t))
-// pointer to rule definitions (relative to start of configuration)
-#define RSCP_CONF_RULE_P        (RSCP_CONF_RULE_ITEMS + sizeof(uint16_t))
-// name of device (ASCII encoding, zero-terminated)
-#define RSCP_CONF_NAME          (RSCP_CONF_RULE_P + sizeof(uint16_t))
+typedef struct __attribute__ ((packed))  __rscp_conf_header
+{
+  uint16_t version;       // version number (currently 1)
+  uint8_t mac[6];         // mac address this config is meant for
+  uint16_t channel_items; // number of channel items
+  uint16_t channel_p;     // pointer to channel definitions
+  uint16_t button_items;  // number of button items
+  uint16_t button_p;      // pointer to button definitions
+  uint16_t rule_items;    // number of rule items
+  uint16_t rule_p;        // pointer to rule definitions
+  uint8_t name[];         // name of device (ASCII encoding, zero-terminated)
+} rscp_conf_header;
+
 
 uint16_t rscp_channel_items;
 uint16_t rscp_channel_p;
@@ -180,72 +170,67 @@ uint16_t rscp_rule_p;
 /**
  * channel structure
  */
-#define RSCP_CHANNEL_ID         0
-#define RSCP_CHANNEL_TYPE       (RSCP_CHANNEL_ID + sizeof(uint16_t))
-
-#define RSCP_CHANNEL_BINARY_INPUT   0x01
-#define RSCP_CHANNEL_BINARY_OUTPUT  0x02
-#define RSCP_CHANNEL_COMPLEX_INPUT  0x11
-#define RSCP_CHANNEL_COMPLEX_OUTPUT 0x12
-
-/**
- * channel type 0x01 (binary input)
- */
-// port id
-#define RSCP_CHT01_PORT         (RSCP_CHANNEL_TYPE + sizeof(uint8_t))
-// bit flags
-#define RSCP_CHT01_FLAGS        (RSCP_CHT01_PORT + sizeof(uint16_t))
-// size of channel of this type
-#define RSCP_CHT01_SIZE         (RSCP_CHT01_FLAGS + sizeof(uint8_t))
-
-typedef struct
+typedef struct __attribute__ ((packed))  _rscp_conf_channel
 {
-  uint8_t negate:1;         // negate polarity
-  uint8_t report:1;         // report change
-  uint8_t pullup:1;         // weak pullup resistor
-  uint8_t :5;               // unused
-} rscp_cht01_flags;
+  uint16_t channelId;
+  uint8_t channelType;
+  union {
+    struct {
+      uint16_t port;            // port id
+      union {
+        uint8_t flags;          // bit flags
+        uint8_t negate:1;       // negate polarity
+        uint8_t report:1;       // report change
+        uint8_t pullup:1;       // weak pullup resistor
+      };
+    } chType01;                 // channel type 0x01 (binary input)
+    struct {
+      uint16_t port;            // port id
+      union {
+        uint8_t flags;          // bit flags
+        uint8_t negate:1;       // negate polarity
+        uint8_t report:1;       // report change
+        uint8_t mode:2;         // output mode
+        uint8_t :4;             // unused
+      };
+    } chType02;                 // channel type 0x02 (binary outnput)
+    struct {
+      uint8_t flags;            // flags (currently unused)
+      uint8_t numports;         // number of channels to follow
+      uint8_t numstates;        // number of states to follow
+      uint8_t ports_states[];
+    } chType11;                 // channel type 0x11 (complex input)
+    struct {
+      uint8_t flags;            // flags (currently unused)
+      uint8_t numports;         // number of channels to follow
+      uint8_t numstates;        // number of states to follow
+    } chType12;                 // channel type 0x12 (complex output)
+    struct {
+      uint8_t owROM[8];         // onewire ROM code
+      uint16_t interval;        // report-interval (s)
+      int16_t tempHi;           // report-above (°C / 10)
+      int16_t tempLo;           // report-below (°C / 10)
+    } chType30;                 //  channel type 0x30 (temperature)
+  };
+} rscp_conf_channel;
+
+      //~ struct {
+        //~ uint16_t port;          // port id
+        //~ uint8_t flags;          // port flags
+      //~ } port[];
+      //~ struct {
+        //~ uint8_t state[];        // port state
+      //~ } states[];
 
 
-/**
- * channel type 0x02 (binary output)
- */
-// port id
-#define RSCP_CHT02_PORT         (RSCP_CHANNEL_TYPE + sizeof(uint8_t))
-// bit flags
-#define RSCP_CHT02_FLAGS        (RSCP_CHT02_PORT + sizeof(uint16_t))
-// size of channel of this type
-#define RSCP_CHT02_SIZE         (RSCP_CHT02_FLAGS + sizeof(uint8_t))
-
-typedef struct rscp_cht02_flags
-{
-  uint8_t negate:1;         // negate polarity
-  uint8_t report:1;         // report change
-  uint8_t mode:2;           // output mode
-  uint8_t :4;               // unused
-};
 
 
-/**
- * channel type 0x11 (complex input)
- */
-// flags (currently unused)
-#define RSCP_CHT11_FLAGS        (RSCP_CHANNEL_TYPE + sizeof(uint8_t))
-// number of channels to follow
-#define RSCP_CHT11_NUMPORTS     (RSCP_CHT11_FLAGS + sizeof(uint8_t))
-// number of states to follow
-#define RSCP_CHT11_NUMSTATES    (RSCP_CHT11_NUMPORTS + sizeof(uint8_t))
-// size of channel header of this type
-#define RSCP_CHT11_HEADSIZE     (RSCP_CHT11_NUMSTATES + sizeof(uint8_t))
-
-// port id
 #define RSCP_CHT11_PORTID       0
-// port flags
 #define RSCP_CHT11_PORT_FLAGS   (RSCP_CHT11_PORTID + sizeof(uint16_t))
 // size of one channel id
 #define RSCP_CHT11_PORT_SIZE    (RSCP_CHT11_PORT_FLAGS + sizeof(uint8_t))
 
-// port states
+
 #define RSCP_CHT11_PORTSTATES   0
 // size of one portstate
 #define RSCP_CHT11_STATE_SIZE    sizeof(uint8_t)
@@ -254,14 +239,6 @@ typedef struct rscp_cht02_flags
 /**
  * channel type 0x12 (complex output)
  */
-// flags
-#define RSCP_CHT12_FLAGS        (RSCP_CHANNEL_TYPE + sizeof(uint8_t))
-// number of channels to follow
-#define RSCP_CHT12_NUMPORTS     (RSCP_CHT12_FLAGS + sizeof(uint8_t))
-// number of states to follow
-#define RSCP_CHT12_NUMSTATES    (RSCP_CHT12_NUMPORTS + sizeof(uint8_t))
-// size of channel header of this type
-#define RSCP_CHT12_HEADSIZE     (RSCP_CHT12_NUMSTATES + sizeof(uint8_t))
 
 // port id
 #define RSCP_CHT12_PORTID       0
@@ -275,6 +252,25 @@ typedef struct rscp_cht02_flags
 // size of one portstate
 #define RSCP_CHT12_STATE_SIZE    sizeof(uint8_t)
 
+
+#define rscpEE_byte(x, y, z) eeprom_read_byte((void *)(offsetof(x, y) + z))
+#define rscpEE_word(x, y, z) eeprom_read_word((void *)(offsetof(x, y) + z))
+
+
+#define RSCP_CHANNEL_ID         0
+#define RSCP_CHANNEL_TYPE       (RSCP_CHANNEL_ID + sizeof(uint16_t))
+
+#define RSCP_CHANNEL_BINARY_INPUT   0x01
+#define RSCP_CHANNEL_BINARY_OUTPUT  0x02
+#define RSCP_CHANNEL_COMPLEX_INPUT  0x11
+#define RSCP_CHANNEL_COMPLEX_OUTPUT 0x12
+#define RSCP_CHANNEL_TEMPERATURE    0x30
+
+#define RSCP_CHT01_SIZE         6
+#define RSCP_CHT02_SIZE         6
+#define RSCP_CHT11_HEADSIZE     6
+#define RSCP_CHT12_HEADSIZE     6
+#define RSCP_CHT30_SIZE         17
 
 /**
  * button
