@@ -1,0 +1,69 @@
+device beteigeuze1 {
+	macaddress <ba db 10 0d 00 00>;
+	
+	channel Config  binary-input port 0  pull-up report-change reverse-polarity debounce 80ms;
+	channel Rauf1   binary-input port 1  pull-up report-change reverse-polarity;
+	channel Runter1 binary-input port 2  pull-up report-change reverse-polarity;
+	channel Rauf2   binary-input port 3  pull-up report-change reverse-polarity;
+	channel Runter2 binary-input port 4  pull-up report-change reverse-polarity;
+	channel Rauf3   binary-input port 5  pull-up report-change reverse-polarity;
+	channel Runter3 binary-input port 6  pull-up report-change reverse-polarity;
+	channel Rauf4   binary-input port 7  pull-up report-change reverse-polarity;
+	channel Runter4 binary-input port 8  pull-up report-change reverse-polarity;
+	channel Rauf5   binary-input port 9  pull-up report-change reverse-polarity;
+	channel Runter5 binary-input port 10 pull-up report-change reverse-polarity;
+	channel Rauf6   binary-input port 11 pull-up report-change reverse-polarity;
+	channel Runter6 binary-input port 12 pull-up report-change reverse-polarity;
+	channel Rauf7   binary-input port 13 pull-up report-change reverse-polarity;
+	channel Runter7 binary-input port 14 pull-up report-change reverse-polarity;
+	channel Rauf8   binary-input port 15 pull-up report-change reverse-polarity;
+	channel Runter8 binary-input port 16 pull-up report-change reverse-polarity;
+
+	channel Ausgang1  binary-output port 17 bipolar report-change;
+	channel Ausgang2  binary-output port 18 bipolar report-change;
+	channel Ausgang3  binary-output port 19 bipolar report-change;
+	channel Ausgang4  binary-output port 20 bipolar report-change;
+	channel Ausgang5  binary-output port 21 bipolar report-change;
+	channel Ausgang6  binary-output port 22 bipolar report-change;
+	channel Ausgang7  binary-output port 23 bipolar report-change;
+	channel Ausgang8  binary-output port 24 bipolar report-change;
+	channel Ausgang9  binary-output port 25 bipolar report-change;
+	channel Ausgang10 binary-output port 26 bipolar report-change;
+	channel Ausgang11 binary-output port 27 bipolar report-change;
+	channel Ausgang12 binary-output port 28 bipolar report-change;
+	channel Ausgang13 binary-output port 29 bipolar report-change;
+	channel Ausgang14 binary-output port 30 bipolar report-change;
+	channel Ausgang15 binary-output port 31 bipolar report-change;
+	channel Ausgang16 binary-output port 32 bipolar report-change;
+	
+//	channel foo3 binary-output port 2 bipolar reverse-polarity;
+//	channel foo99 binary-output port 3 open-source ;
+//	channel foo98 binary-output port 4 open-drain report-change;
+//	
+//	channel foo4a complex-input {
+//		port 5 pull-up reverse-polarity report on poll;
+//		port 6 pull-up reverse-polarity report on poll;
+//
+//		state Off: OFF OFF;
+//		state On: ON OFF;
+//		state Down: ON ON;
+//	};
+//	
+//	channel foo4b complex-output {
+//		report-change
+//		
+//		port 7 open-source;
+//		port 8 open-drain;
+//
+//		state Off: OFF OFF;
+//		state Up: ON OFF;
+//		state Down: ON ON;
+//	};
+//	
+	channel ow1 onewire-temp <00010203aabbccdd> every 5 s above 5 °C below 50 °C;
+//	
+//	button baz channel foo3 
+//		long-press after 500 ms
+//		repeat 1000 ms
+//		press release;
+}
