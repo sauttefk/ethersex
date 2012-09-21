@@ -47,7 +47,7 @@ configuration.
  * the rscp_io_t enum, the ioConfig_t struct and set the pullups.
  */
 #define E(_v) _v,
-#define C(_v) {.portIn = &PIN_CHAR(_v##_PORT), .pin = _v##_PIN},
+#define C(_v) {.portIn = &PIN_CHAR(_v##_PORT), .portOut = &PORT_CHAR(_v##_PORT), .ddr = &DDR_CHAR(_v##_PORT), .pin = _v##_PIN},
 #define PULLUP(_v) PIN_SET(_v);
 
 typedef volatile uint8_t * const portPtrType;
@@ -62,25 +62,16 @@ typedef enum
 typedef struct
 {
   portPtrType portIn;
+  portPtrType portOut;
+  portPtrType ddr;
   const uint8_t pin;
 } ioConfig_t;
 
-/* Status information for each input */
-typedef struct
-{
-  uint8_t status        :2; // one of the values RELEASE, PRESS, LONGPRESS...
-  uint8_t curStatus     :1; // current pin value
-  uint8_t polarity      :1; // active polarity
-  uint8_t reportPress   :1; // report button press
-  uint8_t reportRelease :1; // report button release
-  uint8_t :2;               // unused bits
-  uint16_t debounce;        // debounce timer
-  uint16_t repeatCnt;       // repeat counter
-} ioStatus_t;
-
 void rscp_io_init (void);
-void buttons_periodic (void);
-uint8_t get_io_state (uint16_t portID);
+void rscp_inputChannels_periodic (void);
+uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value);
+uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value);
+uint8_t rscp_getPortPIN(uint16_t portID);
 void rscp_io_handler (rscp_io_t io, uint8_t state, uint16_t repeatCnt);
 
 

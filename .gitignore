@@ -13,6 +13,8 @@
 *.cbp
 *.layout
 *.exe
+subdir.mk
+Debug/*
 
 # make generated files
 .config*

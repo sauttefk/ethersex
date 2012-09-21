@@ -46,6 +46,7 @@ void rscp_main(void);
 void rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
               uint8_t * payload);
 
+void rscp_init(void);
 void rscp_periodic(void);
 void rscp_sendHeartBeat(void);
 void sendPeriodicOutputEvents(void);
@@ -166,7 +167,6 @@ uint16_t rscp_button_p;
 uint16_t rscp_rule_items;
 uint16_t rscp_rule_p;
 
-
 /**
  * channel structure
  */
@@ -182,6 +182,8 @@ typedef struct __attribute__ ((packed))  _rscp_conf_channel
         uint8_t negate:1;       // negate polarity
         uint8_t report:1;       // report change
         uint8_t pullup:1;       // weak pullup resistor
+        uint8_t debounceDelay:4;// the debounce delay in increments of 20ms
+        uint8_t :1;             // unused
       };
     } chType01;                 // channel type 0x01 (binary input)
     struct {
@@ -214,16 +216,52 @@ typedef struct __attribute__ ((packed))  _rscp_conf_channel
   };
 } rscp_conf_channel;
 
-      //~ struct {
-        //~ uint16_t port;          // port id
-        //~ uint8_t flags;          // port flags
-      //~ } port[];
-      //~ struct {
-        //~ uint8_t state[];        // port state
-      //~ } states[];
+typedef struct  __attribute__ ((packed))
+{
+	uint16_t port;            // port id
+  union {
+    uint8_t flags;          // bit flags
+    struct {
+      uint8_t :1;
+      uint8_t debounceDelay:4;// the debounce delay in increments of 20ms
+      uint8_t pullup:1;       // weak pullup resistor
+      uint8_t report:1;       // report change
+      uint8_t negate:1;       // negate polarity
+    };
+  };
+  uint8_t debounceCounter:4;
+	uint8_t lastRawState:1;
+	uint8_t lastDebouncedState:1;
+	uint8_t didChangeState:1;
+  uint8_t :1;
+} rscp_binaryInputChannel;
 
+uint16_t rscp_numBinaryInputChannels;
+rscp_binaryInputChannel *rscp_binaryInputChannels;
 
-
+//typedef struct  __attribute__ ((packed))
+//{
+//	rscp_binary_input_channel **channels; // pointers to used channels
+//	union {
+//    uint8_t flags;          // bit flags
+//    uint8_t reportPress:1;  // report button press
+//    uint8_t reportRelease:1;// report button release
+//	};
+//	uint16_t longPressDelay;
+//	uint16_t repeatInterval;
+//} rscp_conf_complex_input_channel;
+//
+//typedef struct  __attribute__ ((packed))
+//{
+//	rscp_binary_input_channel* bic;         // the channel id used by the button
+//	union {
+//    uint8_t flags;          // bit flags
+//    uint8_t reportPress:1;  // report button press
+//    uint8_t reportRelease:1;// report button release
+//	};
+//	uint16_t longPressDelay;
+//	uint16_t repeatInterval;
+//} rscp_conf_button;
 
 #define RSCP_CHT11_PORTID       0
 #define RSCP_CHT11_PORT_FLAGS   (RSCP_CHT11_PORTID + sizeof(uint16_t))
@@ -288,12 +326,12 @@ typedef struct __attribute__ ((packed))  _rscp_conf_channel
 // size of button structure
 #define RSCP_BUTTON_SIZE        (RSCP_BUTTON_REPEAT + sizeof(uint16_t))
 
-typedef struct rscp_button_flags
-{
-  uint8_t report_press:1;   // report press of button
-  uint8_t report_release:1; // report release of button
-  uint8_t :6;               // unused
-};
+//typedef struct rscp_button_flags
+//{
+//  uint8_t report_press:1;   // report press of button
+//  uint8_t report_release:1; // report release of button
+//  uint8_t :6;               // unused
+//};
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */
