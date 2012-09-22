@@ -8,13 +8,13 @@
 *.old
 *.rej
 *.hex
-*.bin
 *.workspace
 *.cbp
 *.layout
 *.exe
 subdir.mk
 Debug/*
+ethersex.bin
 
 # make generated files
 .config*
