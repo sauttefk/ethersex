@@ -27,6 +27,11 @@
 #define RSCP_FIRMWARE_MINOR_VERSION             0x00
 #define RSCP_FIRMWARE_SUB_MINOR_VERSION         0x01
 
+typedef enum rscp_networkMode {
+  rscp_ModeRawEthernet,
+  rscp_ModeUDP
+} rscp_networkMode_t;
+
 #define RSCP_RAW_POS_VERSION                    0
 #define RSCP_RAW_POS_HEAD                       1
 #define RSCP_RAW_POS_SUBSOURCE                  5
@@ -37,9 +42,11 @@
 #define RSCP_RAW_POS_SIZE                       19
 #define RSCP_RAW_POS_DATA                       21
 
+#define RSCP_UDP_POS_DATA                       23
+
 #define RSCP_RAWH_LEN                           14  // complete ethernet header
-#define RSCP_HEADER_LEN                         12
 #define RSCP_ETHTYPE                            0x4313
+#define RSCP_HEADER_LEN                         10
 #define RSCP_MAXPAYLOAD                         512 - RSCP_HEADER_LEN
 
 #ifndef htonl
@@ -51,7 +58,7 @@
 
 
 /* structs */
-struct rscp_raw_event
+typedef struct rscp_message
 {
   uint8_t  version:4;                 // bit 7-4: version; currently 0
   uint8_t  header_len:4;              // bit 3-0: header length
@@ -60,8 +67,7 @@ struct rscp_raw_event
   uint16_t msg_type;                  // RSCP message type
   uint16_t payload_len;               // number of valid data bytes
   uint8_t  payload[RSCP_MAXPAYLOAD];  // data; max 487 (512- 25) bytes
-};
-
+} rscp_message_t;
 
 /* prototypes */
 void rscp_net_init(void);

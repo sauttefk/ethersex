@@ -319,7 +319,7 @@ rscp_periodic(void)
   if (--rscp_heartbeatInterval == 0)
   {
     /* send a heartbeat packet every 60 seconds */
-    rscp_heartbeatInterval = 60;
+    rscp_heartbeatInterval = 10;
 
 //    rscp_sendHeartBeat();
 //    sendPeriodicOutputEvents();
@@ -376,14 +376,20 @@ void
 sendPeriodicTemperature(void)
 {
   uint8_t *payload = rscp_getPayloadPointer();
+
+  // set channel
 #warning FIXME
-  payload[0] = 0x00;
-  payload[1] = 0x00;
+  ((uint16_t*)payload)[0] = htons(0);
+
+  // set unit and value
   payload[2] = RSCP_UNIT_TEMPERATURE;
   payload[3] = RSCP_FIELD_CAT_LEN_TINY << 6 | 0x21;
+
   payload[4] = ((ow_sensors[0].temp >> 8) & 0x1f) | (-1 << 5);  //
   payload[5] = ow_sensors[0].temp & 0xff;
+
   RSCP_DEBUG("temp 0x%04x\n", ow_sensors[0].temp);
+
   rscp_transmit(6, RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node temperature sent\n");
 }
