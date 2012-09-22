@@ -1,6 +1,5 @@
 /*
  * (c) 2012 by Frank Sautter <ethersix@sautter.com>
- * (c) 2012 by Daniel Walter <fordprfkt@googlemail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -46,7 +45,7 @@ const ioConfig_t rscp_portConfig[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(C) };
 void
 rscp_io_handler (rscp_io_t button, uint8_t state, uint16_t repeatCnt)
 {
-  RSCP_DEBUG("button: %d status: %d repeat: %d\n", button, state, repeatCnt);
+  RSCP_DEBUG_IO("button: %d status: %d repeat: %d\n", button, state, repeatCnt);
 
   if (button > 0)  // button 0 is config button
   {
@@ -80,7 +79,7 @@ uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
   portPtrType portDDR = (portPtrType) pgm_read_word(&rscp_portConfig[portID].ddr);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
-  RSCP_DEBUG("set DDR port %d (%d, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
+  RSCP_DEBUG_IO("set DDR port %d (%d, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
 
   // set direction
   if(value)
@@ -93,7 +92,7 @@ uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
   portPtrType portOut = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
-  RSCP_DEBUG("set PORT port %d (%d, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
+  RSCP_DEBUG_IO("set PORT port %d (%d, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
 
   // set pullup
   if(value)
@@ -114,7 +113,7 @@ uint8_t rscp_getPortPIN(uint16_t portID) {
 void
 rscp_txBinaryInputChannelChange (uint16_t channel, uint8_t state)
 {
-  RSCP_DEBUG("BinaryInputChannel: %d status: %d\n", channel, state, state);
+  RSCP_DEBUG_IO("BinaryInputChannel: %d status: %d\n", channel, state, state);
 
   uint8_t *payload = rscp_getPayloadPointer();
 
@@ -123,8 +122,8 @@ rscp_txBinaryInputChannelChange (uint16_t channel, uint8_t state)
 
   // set unit and value
   payload[2] = RSCP_UNIT_BOOLEAN;
-  payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | (state ? RSCP_FIELD_TYPE_TRUE : RSCP_FIELD_TYPE_FALSE);
-
+  payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 |
+               (state ? RSCP_FIELD_TYPE_TRUE : RSCP_FIELD_TYPE_FALSE);
   rscp_transmit(5, RSCP_CHANNEL_EVENT);
 }
 
@@ -135,8 +134,7 @@ rscp_txBinaryInputChannelChange (uint16_t channel, uint8_t state)
 void
 rscp_io_init (void)
 {
-  RSCP_DEBUG("init-io\n");
-  BTN_CONFIG(PULLUP);
+  RSCP_DEBUG_IO("init-io\n");
 }
 #endif /* RSCP_SUPPORT */
 
@@ -146,7 +144,6 @@ rscp_inputChannels_periodic(void)
   /* Check all configured buttons */
   for (uint8_t i = 0; i < rscp_numBinaryInputChannels; i++)
   {
-
     rscp_binaryInputChannel *bic = &rscp_binaryInputChannels[i];
 
     /* Get current value from portpin... */
@@ -163,7 +160,8 @@ rscp_inputChannels_periodic(void)
        * button is pressed, because we need it for long press/repeat
        * recognition */
       if (bic->lastRawState != bic->lastDebouncedState) {
-        RSCP_DEBUG("c %d debounce for: %d - %d (%d)\n", i, curState, bic->debounceCounter, bic->debounceDelay);
+        RSCP_DEBUG_IO("c %d debounce for: %d - %d (%d)\n", i, curState,
+                   bic->debounceCounter, bic->debounceDelay);
         bic->debounceCounter++;
       }
     }
@@ -171,16 +169,18 @@ rscp_inputChannels_periodic(void)
     {
       /* Actual state has changed since the last read.
        * Restart the debounce timer */
-      RSCP_DEBUG("c %d raw change to: %d\n", i, curState);
+      RSCP_DEBUG_IO("c %d raw change to: %d\n", i, curState);
       bic->debounceCounter = 0;
       bic->lastRawState = curState;
     }
 
     /* Button was stable for debounceDelay*20 ms */
-    if (bic->lastRawState != bic->lastDebouncedState && bic->debounceDelay <= bic->debounceCounter)
+    if (bic->lastRawState != bic->lastDebouncedState &&
+        bic->debounceDelay <= bic->debounceCounter)
     {
       bic->lastDebouncedState = bic->lastRawState;
-      BUTTONDEBUG("Debounced BinaryInputChannel % changed to %d\n", i, bic->lastDebouncedState);
+      BUTTONDEBUG("Debounced BinaryInputChannel % changed to %d\n", i,
+                  bic->lastDebouncedState);
       rscp_txBinaryInputChannelChange(i, bic->lastDebouncedState);
     }
   }

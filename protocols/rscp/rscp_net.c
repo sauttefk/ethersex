@@ -28,78 +28,76 @@
 
 #ifdef RSCP_SUPPORT
 
-//rscp_udpinit(void)
-//{
-//  uip_udp_conn_t *conn;
-//  uip_ipaddr_t ip;
-//  uip_ipaddr_copy(&ip, all_ones_addr);
-//  if (!(conn = uip_udp_new(&ip, 0, vscp_net_udp)))
-//  {
-//    RSCP_DEBUG("couldn't bind to UDP port %d\n", RSCP_ETHTYPE);
-//    return(FALSE);                     /* couldn't bind socket */
-//  }
-//
-//  // uip_udp_bind(conn, HTONS(RSCP_ETHTYPE));
-//  RSCP_DEBUG("listening on UDP port %d\n", RSCP_ETHTYPE);
-//  return(TRUE);
-//}
+#ifdef RSCP_USE_UDP_ETHERNET
+void
+rscp_netUdp(void)
+{
+  if (!uip_newdata())
+    return;
+
+  struct rscp_message *rscp = (struct rscp_message *) uip_appdata;
+
+  RSCP_DEBUG_NET("received %d bytes UDP data containing %d bytes RSCP data\n",
+             uip_len, ntohs(rscp->payload_len));
+
+  uip_len = 0;
+
+  RSCP_DEBUG_NET("VERS : 0x%01X\n", rscp->version);
+  RSCP_DEBUG_NET("HDLEN: 0x%01X\n", rscp->header_len);
+  RSCP_DEBUG_NET("RSVD : 0x%02X\n", rscp->reserved);
+  RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
+
+  rscp_get(&rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
+           rscp->payload);
+}
+
+
+#endif /* RSCP_USE_UDP_ETHERNET */
+uint8_t
+rscp_netInit(void)
+{
+#ifdef RSCP_USE_UDP_ETHERNET
+  uip_udp_conn_t *conn;
+  uip_ipaddr_t ip;
+  uip_ipaddr_copy(&ip, all_ones_addr);
+  if (!(conn = uip_udp_new(&ip, 0, rscp_netUdp)))
+  {
+    RSCP_DEBUG_NET("couldn't bind to UDP port %d\n", RSCP_ETHTYPE);
+    return(FALSE);                     /* couldn't bind socket */
+  }
+
+  uip_udp_bind(conn, HTONS(RSCP_ETHTYPE));
+  RSCP_DEBUG_NET("listening on UDP port %d\n", RSCP_ETHTYPE);
+#endif /* RSCP_USE_UDP_ETHERNET */
+
+  return(TRUE);
+}
+
 
 #ifdef RSCP_USE_RAW_ETHERNET
 void
 rscp_net_raw(void)
 {
-  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
   struct rscp_message *rscp = (struct rscp_message *) &uip_buf[RSCP_RAWH_LEN];
 
-  RSCP_DEBUG("received %d bytes RAW data containing %d bytes RSCP data\n",
+  RSCP_DEBUG_NET("received %d bytes RAW data containing %d bytes RSCP data\n",
              uip_len, ntohs(rscp->payload_len));
 
-/*  if (uip_len < 60 ||
-      uip_len > 512 ||
-      uip_len - RSCP_RAWH_LEN - RSCP_RAW_POS_DATA < ntohs(rscp->size))
-  {
-    RSCP_DEBUG("ethernet frame has wrong size\n");
-    uip_len = 0;
-    return;
-  } */
   uip_len = 0;
 
-  RSCP_DEBUG("VERS : 0x%01X\n", rscp->version);
-  RSCP_DEBUG("HDLEN: 0x%01X\n", rscp->header_len);
-  RSCP_DEBUG("RSVD : 0x%02X\n", rscp->reserved);
-  RSCP_DEBUG("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
+  RSCP_DEBUG_NET("VERS : 0x%01X\n", rscp->version);
+  RSCP_DEBUG_NET("HDLEN: 0x%01X\n", rscp->header_len);
+  RSCP_DEBUG_NET("RSVD : 0x%02X\n", rscp->reserved);
+  RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
-  rscp_get(&packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
+  rscp_get(&rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
            rscp->payload);
 }
 #endif /* RSCP_USE_RAW_ETHERNET */
 
-rscp_networkMode_t rscp_networkMode = rscp_ModeUDP;
 
-//rscp_net_udp(void)
-//{
-//  if (!uip_newdata())
-//    return;
-//
-//  struct rscp_udp_event *rscp = (struct rscp_udp_event *) uip_appdata;
-//
-//  RSCP_DEBUG("received %d bytes UDP data containing %d bytes RSCP data\n",
-//             uip_len, ntohs(rscp->size));
-//
-//  if (uip_len > 512 ||
-//      uip_len - rscp_UDP_POS_DATA - rscp_CRC_LEN < ntohs(rscp->size))
-//  {
-//    rscp_DEBUG("ethernet frame has wrong size\n");
-//    uip_len = 0;
-//    return;
-//  }
-//  uip_len = 0;
-//
-//  rscp_DEBUG("HEAD : 0x%02X\n", rscp->head);
-//
-//  rscp_get(rscp_MODE_UDP, ntohs(rscp->class), ntohs(rscp->type),
-//           ntohs(rscp->size), rscp->guid, rscp->data);
-//}
+rscp_networkMode_t rscp_networkMode = rscp_ModeUDP;
+//rscp_networkMode_t rscp_networkMode = rscp_ModeRawEthernet;
 
 
 uint8_t*
@@ -111,7 +109,8 @@ rscp_getPayloadPointer()
 
     case rscp_ModeUDP:
     default:
-      return (((rscp_message_t *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN])->payload);
+//      return (((rscp_message_t *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN])->payload);
+      return (((rscp_message_t *) uip_appdata)->payload);
   }
 }
 
@@ -139,6 +138,7 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
 
   rscp_message->version = 0x0;
   rscp_message->header_len = RSCP_HEADER_LEN;
+  memcpy(rscp_message->mac, uip_ethaddr.addr, 6);
   rscp_message->timestamp = htonl(0xaabbccdd);
   rscp_message->msg_type = htons(msg_type);
   rscp_message->payload_len = htons(payload_len);
@@ -162,7 +162,7 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
       uip_process(UIP_UDP_SEND_CONN);
       router_output();
 
-      RSCP_DEBUG("Sent UDP packet %d (%d)\n", payload_len, uip_slen);
+      RSCP_DEBUG_NET("Sent UDP packet %d (%d)\n", payload_len, uip_slen);
       break;
 
     default:
@@ -172,3 +172,10 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
 }
 
 #endif /* RSCP_SUPPORT */
+
+
+/*
+   -- Ethersex META --
+   init(rscp_netInit)
+   block(Miscelleanous)
+ */

@@ -22,6 +22,14 @@
 #ifndef _RSCP_NET_H
 #define _RSCP_NET_H
 
+#ifdef DEBUG_RSCP_NET
+#include "core/debug.h"
+#define RSCP_DEBUG_NET(str...) debug_printf ("RSCP-NET: " str)
+#else
+#define RSCP_DEBUG_NET(...)    ((void) 0)
+#endif
+
+
 /* constants */
 #define RSCP_FIRMWARE_MAJOR_VERSION             0x00
 #define RSCP_FIRMWARE_MINOR_VERSION             0x00
@@ -46,7 +54,7 @@ typedef enum rscp_networkMode {
 
 #define RSCP_RAWH_LEN                           14  // complete ethernet header
 #define RSCP_ETHTYPE                            0x4313
-#define RSCP_HEADER_LEN                         10
+#define RSCP_HEADER_LEN                         16
 #define RSCP_MAXPAYLOAD                         512 - RSCP_HEADER_LEN
 
 #ifndef htonl
@@ -63,11 +71,13 @@ typedef struct rscp_message
   uint8_t  version:4;                 // bit 7-4: version; currently 0
   uint8_t  header_len:4;              // bit 3-0: header length
   uint8_t  reserved;                  // reserved
+  uint8_t  mac[6];                    // mac address of sender
   uint32_t timestamp;                 // timestamp in miliseconds
   uint16_t msg_type;                  // RSCP message type
   uint16_t payload_len;               // number of valid data bytes
   uint8_t  payload[RSCP_MAXPAYLOAD];  // data; max 487 (512- 25) bytes
 } rscp_message_t;
+
 
 /* prototypes */
 void rscp_net_init(void);

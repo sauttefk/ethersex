@@ -34,9 +34,16 @@
 
 #ifdef DEBUG_RSCP
 #include "core/debug.h"
-#define RSCP_DEBUG(str...) debug_printf ("rscp: " str)
+#define RSCP_DEBUG(str...) debug_printf ("RSCP: " str)
 #else
 #define RSCP_DEBUG(...)    ((void) 0)
+#endif
+
+#ifdef DEBUG_RSCP_CONF
+#include "core/debug.h"
+#define RSCP_DEBUG_CONF(str...) debug_printf ("RSCP-CONF: " str)
+#else
+#define RSCP_DEBUG_CONF(...)    ((void) 0)
 #endif
 
 extern uint8_t rscp_mode;
@@ -45,13 +52,12 @@ void rscp_setup(void);
 void rscp_main(void);
 void rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
               uint8_t * payload);
-
 void rscp_init(void);
 void rscp_periodic(void);
 void rscp_sendHeartBeat(void);
-void sendPeriodicOutputEvents(void);
-void sendPeriodicInputEvents(void);
-void sendPeriodicTemperature(void);
+void rscp_sendPeriodicOutputEvents(void);
+void rscp_sendPeriodicInputEvents(void);
+void rscp_sendPeriodicTemperature(void);
 
 
 #define RSCP_SIZE_DEVURL              32
@@ -218,7 +224,7 @@ typedef struct __attribute__ ((packed))  _rscp_conf_channel
 
 typedef struct  __attribute__ ((packed))
 {
-	uint16_t port;            // port id
+  uint16_t port;            // port id
   union {
     uint8_t flags;          // bit flags
     struct {
@@ -230,9 +236,9 @@ typedef struct  __attribute__ ((packed))
     };
   };
   uint8_t debounceCounter:4;
-	uint8_t lastRawState:1;
-	uint8_t lastDebouncedState:1;
-	uint8_t didChangeState:1;
+  uint8_t lastRawState:1;
+  uint8_t lastDebouncedState:1;
+  uint8_t didChangeState:1;
   uint8_t :1;
 } rscp_binaryInputChannel;
 
@@ -241,26 +247,26 @@ rscp_binaryInputChannel *rscp_binaryInputChannels;
 
 //typedef struct  __attribute__ ((packed))
 //{
-//	rscp_binary_input_channel **channels; // pointers to used channels
-//	union {
+//  rscp_binary_input_channel **channels; // pointers to used channels
+//  union {
 //    uint8_t flags;          // bit flags
 //    uint8_t reportPress:1;  // report button press
 //    uint8_t reportRelease:1;// report button release
-//	};
-//	uint16_t longPressDelay;
-//	uint16_t repeatInterval;
+//  };
+//  uint16_t longPressDelay;
+//  uint16_t repeatInterval;
 //} rscp_conf_complex_input_channel;
 //
 //typedef struct  __attribute__ ((packed))
 //{
-//	rscp_binary_input_channel* bic;         // the channel id used by the button
-//	union {
+//  rscp_binary_input_channel* bic;         // the channel id used by the button
+//  union {
 //    uint8_t flags;          // bit flags
 //    uint8_t reportPress:1;  // report button press
 //    uint8_t reportRelease:1;// report button release
-//	};
-//	uint16_t longPressDelay;
-//	uint16_t repeatInterval;
+//  };
+//  uint16_t longPressDelay;
+//  uint16_t repeatInterval;
 //} rscp_conf_button;
 
 #define RSCP_CHT11_PORTID       0

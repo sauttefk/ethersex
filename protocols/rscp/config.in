@@ -1,9 +1,10 @@
 dep_bool_menu "RSCP Node" RSCP_SUPPORT
   string "Device URL" CONF_RSCP_DEVICEURL "sautter.com/beteigeuze.xml"
-  int "Manufacturer ID" CONF_RSCP_MANUFACTURER_ID 0x11223344
-  int "Manufacturer Sub-ID" CONF_RSCP_MANUFACTURER_SUBID 0x55667788
-  dep_bool "Store Manufacturer ID & SubID in EEPROM" RSCP_USE_EEPROM_FOR_MANUFACTURER_ID $RSCP_SUPPORT
   dep_bool "Raw Ethernet" RSCP_USE_RAW_ETHERNET $RSCP_SUPPORT
+  dep_bool "UDP Ethernet" RSCP_USE_UDP_ETHERNET $RSCP_SUPPORT
   comment "Debugging Flags"
-  dep_bool 'RSCP' DEBUG_RSCP $RSCP_SUPPORT $DEBUG
+  dep_bool "RSCP" DEBUG_RSCP $RSCP_SUPPORT $DEBUG
+  dep_bool "RSCP config" DEBUG_RSCP_CONF $RSCP_SUPPORT $DEBUG_RSCP
+  dep_bool "RSCP io" DEBUG_RSCP_IO $RSCP_SUPPORT $DEBUG_RSCP
+  dep_bool "RSCP net" DEBUG_RSCP_NET $RSCP_SUPPORT $DEBUG_RSCP
 endmenu

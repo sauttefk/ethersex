@@ -29,6 +29,14 @@
 
 #include "rscp.h"
 
+#ifdef DEBUG_RSCP_IO
+#include "core/debug.h"
+#define RSCP_DEBUG_IO(str...) debug_printf ("RSCP-IO: " str)
+#else
+#define RSCP_DEBUG_IO(...)    ((void) 0)
+#endif
+
+
 #if !defined(CONF_NUM_BUTTONS) || !defined(BTN_CONFIG)
 #error Error in pinning configuration for buttons module. Check your pinning \
 configuration.
@@ -47,8 +55,10 @@ configuration.
  * the rscp_io_t enum, the ioConfig_t struct and set the pullups.
  */
 #define E(_v) _v,
-#define C(_v) {.portIn = &PIN_CHAR(_v##_PORT), .portOut = &PORT_CHAR(_v##_PORT), .ddr = &DDR_CHAR(_v##_PORT), .pin = _v##_PIN},
-#define PULLUP(_v) PIN_SET(_v);
+#define C(_v) {.portIn = &PIN_CHAR(_v##_PORT), \
+               .portOut = &PORT_CHAR(_v##_PORT), \
+               .ddr = &DDR_CHAR(_v##_PORT), \
+               .pin = _v##_PIN},
 
 typedef volatile uint8_t * const portPtrType;
 
@@ -56,7 +66,7 @@ typedef volatile uint8_t * const portPtrType;
 typedef enum
 {
   BTN_CONFIG(E)
-}rscp_io_t;
+} rscp_io_t;
 
 /* Static configuration data for each input */
 typedef struct
