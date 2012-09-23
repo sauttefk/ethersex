@@ -47,7 +47,7 @@ rscp_netUdp(void)
   RSCP_DEBUG_NET("RSVD : 0x%02X\n", rscp->reserved);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
-  rscp_get(&rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
+  rscp_get(rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
            rscp->payload);
 }
 
@@ -57,16 +57,16 @@ uint8_t
 rscp_netInit(void)
 {
 #ifdef RSCP_USE_UDP_ETHERNET
-  uip_udp_conn_t *conn;
+  uip_udp_conn_t *rscp_conn;
   uip_ipaddr_t ip;
   uip_ipaddr_copy(&ip, all_ones_addr);
-  if (!(conn = uip_udp_new(&ip, 0, rscp_netUdp)))
+  if (!(rscp_conn = uip_udp_new(&ip, 0, rscp_netUdp)))
   {
     RSCP_DEBUG_NET("couldn't bind to UDP port %d\n", RSCP_ETHTYPE);
     return(FALSE);                     /* couldn't bind socket */
   }
 
-  uip_udp_bind(conn, HTONS(RSCP_ETHTYPE));
+  uip_udp_bind(rscp_conn, HTONS(RSCP_ETHTYPE));
   RSCP_DEBUG_NET("listening on UDP port %d\n", RSCP_ETHTYPE);
 #endif /* RSCP_USE_UDP_ETHERNET */
 
@@ -90,7 +90,7 @@ rscp_net_raw(void)
   RSCP_DEBUG_NET("RSVD : 0x%02X\n", rscp->reserved);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
-  rscp_get(&rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
+  rscp_get(rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
            rscp->payload);
 }
 #endif /* RSCP_USE_RAW_ETHERNET */
@@ -109,8 +109,7 @@ rscp_getPayloadPointer()
 
     case rscp_ModeUDP:
     default:
-//      return (((rscp_message_t *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN])->payload);
-      return (((rscp_message_t *) uip_appdata)->payload);
+      return (((rscp_message_t *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN])->payload);
   }
 }
 
