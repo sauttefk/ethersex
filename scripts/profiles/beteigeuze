@@ -704,9 +704,9 @@ CONF_RSCP_DEVICEURL="sautter.com/beteigeuze.xml"
 RSCP_USE_RAW_ETHERNET=y
 RSCP_USE_UDP_ETHERNET=y
 DEBUG_RSCP=y
-DEBUG_RSCP_CONF=y
+# DEBUG_RSCP_CONF is not set
 DEBUG_RSCP_IO=y
-DEBUG_RSCP_NET=y
+# DEBUG_RSCP_NET is not set
 
 #
 # Applications

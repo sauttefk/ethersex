@@ -1,5 +1,6 @@
 /*
  * (c) 2012 by Frank Sautter <ethersix@sautter.com>
+ * (c) 2012 by Jörg Henne <hennejg@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -80,7 +81,7 @@ uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
   portPtrType portDDR = (portPtrType) pgm_read_word(&rscp_portConfig[portID].ddr);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
-  RSCP_DEBUG_IO("set DDR port %d (%d, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
+  RSCP_DEBUG_IO("set DDR port %d (%x, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
 
   // set direction
   if(value)
@@ -94,13 +95,23 @@ uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
   portPtrType portOut = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
-  RSCP_DEBUG_IO("set PORT port %d (%d, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
+  RSCP_DEBUG_IO("set PORT port %d (%x, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].portOut), bit, value);
 
   // set pullup
   if(value)
     return *portOut |= bit;
   else
     return *portOut &= ~bit;
+}
+
+
+uint8_t rscp_togglePortPORT(uint16_t portID) {
+  portPtrType portOut = (portPtrType) pgm_read_byte(&rscp_portConfig[portID].portOut);
+  uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
+
+  RSCP_DEBUG_IO("toggle PORT port %d (%x, bit %d)\n", portID, portOut, bit);
+
+  return *portOut ^= bit;
 }
 
 
@@ -132,16 +143,6 @@ rscp_txBinaryInputChannelChange (uint16_t channel, uint8_t state)
 }
 
 
-/* ---------------------------------------------------------------------------
- * init rscp io
- */
-void
-rscp_io_init (void)
-{
-  RSCP_DEBUG_IO("init-io\n");
-}
-#endif /* RSCP_SUPPORT */
-
 void
 rscp_inputChannels_periodic(void)
 {
@@ -150,7 +151,7 @@ rscp_inputChannels_periodic(void)
   {
     rscp_binaryInputChannel *bic = &rscp_binaryInputChannels[i];
 
-    /* Get current value from portpin... */
+    /* get current value from portpin... */
     volatile uint8_t portState =
         *((portPtrType) pgm_read_word(&rscp_portConfig[bic->port].portIn));
     uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[bic->port].pin);
@@ -159,7 +160,7 @@ rscp_inputChannels_periodic(void)
     /* current state hasn't changed since the last read... */
     if (bic->lastRawState == curState)
     {
-      /* If the current button state is different from the last stable state,
+      /* if the current button state is different from the last stable state,
        * run the debounce timer. Also keep the debounce timer running if the
        * button is pressed, because we need it for long press/repeat
        * recognition */
@@ -189,11 +190,11 @@ rscp_inputChannels_periodic(void)
     }
   }
 }
+#endif /* RSCP_SUPPORT */
 
 /**
  * -- Ethersex META --
  * header(protocols/rscp/rscp_io.h)
  * timer(1, rscp_inputChannels_periodic())
- * init(rscp_io_init)
  * block(Miscelleanous)
  */

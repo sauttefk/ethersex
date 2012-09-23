@@ -1,5 +1,6 @@
 /*
  * (c) 2012 Frank Sautter <ethersix@sautter.com>
+ * (c) 2012 by Jörg Henne <hennejg@gmail.com>
  *
  * This program is free software; you can redistsribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -245,6 +246,30 @@ typedef struct  __attribute__ ((packed))
 uint16_t rscp_numBinaryInputChannels;
 rscp_binaryInputChannel *rscp_binaryInputChannels;
 
+
+typedef struct  __attribute__ ((packed))
+{
+  uint16_t port;            // port id
+  union {
+    uint8_t flags;          // bit flags
+    struct {
+      uint8_t :1;
+      uint8_t debounceDelay:4;// the debounce delay in increments of 20ms
+      uint8_t pullup:1;       // weak pullup resistor
+      uint8_t report:1;       // report change
+      uint8_t negate:1;       // negate polarity
+    };
+  };
+  uint8_t debounceCounter:4;
+  uint8_t lastRawState:1;
+  uint8_t lastDebouncedState:1;
+  uint8_t didChangeState:1;
+  uint8_t :1;
+} rscp_binaryOutputChannel;
+
+uint16_t rscp_numBinaryOutputChannels;
+rscp_binaryOutputChannel *rscp_binaryOutputChannels;
+
 //typedef struct  __attribute__ ((packed))
 //{
 //  rscp_binary_input_channel **channels; // pointers to used channels
@@ -332,12 +357,6 @@ rscp_binaryInputChannel *rscp_binaryInputChannels;
 // size of button structure
 #define RSCP_BUTTON_SIZE        (RSCP_BUTTON_REPEAT + sizeof(uint16_t))
 
-//typedef struct rscp_button_flags
-//{
-//  uint8_t report_press:1;   // report press of button
-//  uint8_t report_release:1; // report release of button
-//  uint8_t :6;               // unused
-//};
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */

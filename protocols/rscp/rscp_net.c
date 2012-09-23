@@ -1,5 +1,6 @@
 /*
  * (c) 2012 by Frank Sautter <ethersix@sautter.com>
+ * (c) 2012 by Jörg Henne <hennejg@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -38,7 +39,7 @@ rscp_netUdp(void)
   struct rscp_message *rscp = (struct rscp_message *) uip_appdata;
 
   RSCP_DEBUG_NET("received %d bytes UDP data containing %d bytes RSCP data\n",
-             uip_len, ntohs(rscp->payload_len));
+    uip_len, ntohs(rscp->payload_len));
 
   uip_len = 0;
 
@@ -48,29 +49,24 @@ rscp_netUdp(void)
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
   rscp_get(rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
-           rscp->payload);
+    rscp->payload);
 }
 
 
 #endif /* RSCP_USE_UDP_ETHERNET */
-uint8_t
-rscp_netInit(void)
+void
+rscp_net_init(void)
 {
 #ifdef RSCP_USE_UDP_ETHERNET
   uip_udp_conn_t *rscp_conn;
   uip_ipaddr_t ip;
   uip_ipaddr_copy(&ip, all_ones_addr);
   if (!(rscp_conn = uip_udp_new(&ip, 0, rscp_netUdp)))
-  {
     RSCP_DEBUG_NET("couldn't bind to UDP port %d\n", RSCP_ETHTYPE);
-    return(FALSE);                     /* couldn't bind socket */
-  }
 
   uip_udp_bind(rscp_conn, HTONS(RSCP_ETHTYPE));
   RSCP_DEBUG_NET("listening on UDP port %d\n", RSCP_ETHTYPE);
 #endif /* RSCP_USE_UDP_ETHERNET */
-
-  return(TRUE);
 }
 
 
@@ -81,7 +77,7 @@ rscp_net_raw(void)
   struct rscp_message *rscp = (struct rscp_message *) &uip_buf[RSCP_RAWH_LEN];
 
   RSCP_DEBUG_NET("received %d bytes RAW data containing %d bytes RSCP data\n",
-             uip_len, ntohs(rscp->payload_len));
+    uip_len, ntohs(rscp->payload_len));
 
   uip_len = 0;
 
@@ -91,7 +87,7 @@ rscp_net_raw(void)
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
   rscp_get(rscp->mac, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
-           rscp->payload);
+    rscp->payload);
 }
 #endif /* RSCP_USE_RAW_ETHERNET */
 
@@ -112,7 +108,6 @@ rscp_getPayloadPointer()
       return (((rscp_message_t *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN])->payload);
   }
 }
-
 
 
 void
@@ -178,7 +173,8 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
 
 
 /*
-   -- Ethersex META --
-   init(rscp_netInit)
-   block(Miscelleanous)
+  -- Ethersex META --
+  header(protocols/rscp/rscp_net.h)
+  init(rscp_net_init)
+  block(Miscelleanous)
  */

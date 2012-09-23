@@ -1,6 +1,6 @@
 /*
  * (c) 2012 by Frank Sautter <ethersix@sautter.com>
- * (c) 2012 by Daniel Walter <fordprfkt@googlemail.com>
+ * (c) 2012 by Jörg Henne <hennejg@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -77,13 +77,14 @@ typedef struct
   const uint8_t pin;
 } ioConfig_t;
 
+
 void rscp_io_init (void);
 void rscp_inputChannels_periodic (void);
 uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value);
 uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value);
+uint8_t rscp_tooglePortPORT(uint16_t portID);
 uint8_t rscp_getPortPIN(uint16_t portID);
 void rscp_io_handler (rscp_io_t io, uint8_t state, uint16_t repeatCnt);
-
 
 
 #ifdef DEBUG_BUTTONS_INPUT
