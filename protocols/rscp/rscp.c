@@ -120,20 +120,22 @@ void rscp_parseChannelDefinitions() {
     {
       case RSCP_CHANNEL_BINARY_INPUT:
       {
-      uint16_t port = rscpEE_word(rscp_conf_channel, chType01.port, p1);
-      rscp_binaryInputChannels[bicIndex].port = port;
-        rscp_binaryInputChannels[bicIndex].flags = rscpEE_byte(rscp_conf_channel, chType01.flags, p1);
+        rscp_binaryInputChannels[bicIndex].port =
+          rscpEE_word(rscp_conf_channel, chType01.port, p1);
+        rscp_binaryInputChannels[bicIndex].flags =
+          rscpEE_byte(rscp_conf_channel, chType01.flags, p1);
 
         RSCP_DEBUG_CONF("binary input: port:%d - flags: %02x -> %c%c%c\n",
-            port,
+            rscp_binaryInputChannels[bicIndex].port,
             rscp_binaryInputChannels[bicIndex].flags,
             rscp_binaryInputChannels[bicIndex].pullup ? 'P' : 'p',
             rscp_binaryInputChannels[bicIndex].negate ? 'N' : 'n',
             rscp_binaryInputChannels[bicIndex].report ? 'R' : 'r'
             );
 
-        rscp_setPortDDR(port, 0);
-        rscp_setPortPORT(port, rscp_binaryInputChannels[bicIndex].pullup);
+        rscp_setPortDDR(rscp_binaryInputChannels[bicIndex].port, 0);
+        rscp_setPortPORT(rscp_binaryInputChannels[bicIndex].port,
+          rscp_binaryInputChannels[bicIndex].pullup);
 
         bicIndex++;
         p1 += RSCP_CHT01_SIZE;
@@ -141,10 +143,14 @@ void rscp_parseChannelDefinitions() {
       }
       case RSCP_CHANNEL_BINARY_OUTPUT:
       {
-        uint16_t channelPort = rscpEE_word(rscp_conf_channel, chType02.port, p1);
-        uint8_t channelFlags = rscpEE_byte(rscp_conf_channel, chType02.flags, p1);
-        RSCP_DEBUG_CONF("binary output: port:%d - flags: 0x%02x\n", channelPort,
-                    channelFlags);
+        uint16_t port = rscpEE_word(rscp_conf_channel, chType02.port, p1);
+        uint8_t flags = rscpEE_byte(rscp_conf_channel, chType02.flags, p1);
+        RSCP_DEBUG_CONF("binary output: port:%d - flags: 0x%02x\n", port,
+                    flags);
+
+        rscp_setPortDDR(port, 1);
+        rscp_setPortPORT(port, 0);
+
         p1 += RSCP_CHT02_SIZE;
         break;
       }

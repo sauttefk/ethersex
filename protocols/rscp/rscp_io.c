@@ -75,6 +75,7 @@ rscp_io_handler (rscp_io_t button, uint8_t state, uint16_t repeatCnt)
   }
 }
 
+
 uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
   portPtrType portDDR = (portPtrType) pgm_read_word(&rscp_portConfig[portID].ddr);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
@@ -87,6 +88,7 @@ uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
   else
     return *portDDR &= ~bit;
 }
+
 
 uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
   portPtrType portOut = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
@@ -101,11 +103,13 @@ uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
     return *portOut &= ~bit;
 }
 
+
 uint8_t rscp_getPortPIN(uint16_t portID) {
   portPtrType portIn = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portIn);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
   return *portIn & bit ? 1 : 0;
 }
+
 
 /* ---------------------------------------------------------------------------
  * change of button state
@@ -152,7 +156,7 @@ rscp_inputChannels_periodic(void)
     uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[bic->port].pin);
     uint8_t curState = (portState & bit ? 1 : 0) ^ (bic->negate ? 1 : 0);
 
-    /* Actual state hasn't change since the last read... */
+    /* current state hasn't changed since the last read... */
     if (bic->lastRawState == curState)
     {
       /* If the current button state is different from the last stable state,
@@ -167,14 +171,14 @@ rscp_inputChannels_periodic(void)
     }
     else
     {
-      /* Actual state has changed since the last read.
-       * Restart the debounce timer */
+      /* currect state has changed since the last read.
+       * restart the debounce timer */
       RSCP_DEBUG_IO("c %d raw change to: %d\n", i, curState);
       bic->debounceCounter = 0;
       bic->lastRawState = curState;
     }
 
-    /* Button was stable for debounceDelay*20 ms */
+    /* button was stable for debounceDelay * 20 ms */
     if (bic->lastRawState != bic->lastDebouncedState &&
         bic->debounceDelay <= bic->debounceCounter)
     {

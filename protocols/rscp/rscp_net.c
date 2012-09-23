@@ -148,21 +148,25 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
       packet->type = HTONS(RSCP_ETHTYPE);
       uip_len = RSCP_RAWH_LEN + RSCP_RAW_POS_DATA + payload_len;
       transmit_packet();
+      RSCP_DEBUG_NET("Sent RAW RSCP packet %d (%d)\n", payload_len, uip_len);
       break;
 
     case rscp_ModeUDP:
       packet->type = HTONS(UIP_ETHTYPE_IP);
 
       // UDP broadcast
+      uip_udp_conn_t rscp_conn;
       for(int i=0; i<4; i++)
-        uip_udp_conn->ripaddr[i] = uip_hostaddr[i] | ~uip_netmask[i];
+        rscp_conn.ripaddr[i] = uip_hostaddr[i] | ~uip_netmask[i];
 
-      uip_udp_conn->rport = HTONS(RSCP_ETHTYPE);
+      rscp_conn.rport = HTONS(RSCP_ETHTYPE);
+      rscp_conn.lport = HTONS(RSCP_ETHTYPE);
       uip_slen = RSCP_HEADER_LEN + payload_len;
+      uip_udp_conn = &rscp_conn;
       uip_process(UIP_UDP_SEND_CONN);
       router_output();
-
-      RSCP_DEBUG_NET("Sent UDP packet %d (%d)\n", payload_len, uip_slen);
+      RSCP_DEBUG_NET("Sent UDP RSCP packet %d (%d)\n", payload_len, uip_slen);
+      uip_slen = 0;
       break;
 
     default:
