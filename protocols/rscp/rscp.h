@@ -189,7 +189,7 @@ enum
   RSCP_CHANNEL_OWTEMPERATURE  = 0x30
 };
 
-struct chType01_t               // channel type 0x01 (binary input)
+struct __attribute__ ((packed)) chType01_t               // channel type 0x01 (binary input)
 {
   uint16_t port;                // port id
   union {
@@ -202,7 +202,7 @@ struct chType01_t               // channel type 0x01 (binary input)
   };
 };
 
-struct chType02_t               // channel type 0x02 (binary outnput)
+struct __attribute__ ((packed)) chType02_t               // channel type 0x02 (binary outnput)
 {
   uint16_t port;                // port id
   union {
@@ -214,7 +214,7 @@ struct chType02_t               // channel type 0x02 (binary outnput)
   };
 };
 
-struct chType11_t               // channel type 0x11 (complex input)
+struct __attribute__ ((packed)) chType11_t               // channel type 0x11 (complex input)
 {
   uint8_t flags;                // flags (currently unused)
   uint8_t numports;             // number of channels to follow
@@ -222,7 +222,7 @@ struct chType11_t               // channel type 0x11 (complex input)
 //  uint8_t ports_states[];
 };
 
-struct chType12_t               // channel type 0x12 (complex output)
+struct __attribute__ ((packed)) chType12_t               // channel type 0x12 (complex output)
 {
   uint8_t flags;                // flags (currently unused)
   uint8_t numports;             // number of channels to follow
@@ -230,7 +230,7 @@ struct chType12_t               // channel type 0x12 (complex output)
 //  uint8_t ports_states[];
 };
 
-struct chType30_t               // channel type 0x30 (ow temperature)
+struct __attribute__ ((packed)) chType30_t               // channel type 0x30 (ow temperature)
 {
   uint8_t owROM[8];             // onewire ROM code
   uint16_t interval;            // report-interval (s)
@@ -283,11 +283,11 @@ typedef struct __attribute__ ((packed))  _rscp_conf_channel
 #define RSCP_CHANNEL_ID         offsetof(struct _rscp_conf_channel, channelId)
 #define RSCP_CHANNEL_TYPE       offsetof(struct _rscp_conf_channel, channelType)
 
-#define RSCP_CHT01_SIZE         sizeof(struct chType01_t)
-#define RSCP_CHT02_SIZE         sizeof(struct chType02_t)
-#define RSCP_CHT11_HEADSIZE     sizeof(struct chType11_t)
-#define RSCP_CHT12_HEADSIZE     sizeof(struct chType12_t)
-#define RSCP_CHT30_SIZE         sizeof(struct chType30_t)
+#define RSCP_CHT01_SIZE         sizeof(struct chType01_t) + offsetof(rscp_conf_channel, chType01)
+#define RSCP_CHT02_SIZE         sizeof(struct chType02_t) + offsetof(rscp_conf_channel, chType01)
+#define RSCP_CHT11_HEADSIZE     sizeof(struct chType11_t) + offsetof(rscp_conf_channel, chType01)
+#define RSCP_CHT12_HEADSIZE     sizeof(struct chType12_t) + offsetof(rscp_conf_channel, chType01)
+#define RSCP_CHT30_SIZE         sizeof(struct chType30_t) + offsetof(rscp_conf_channel, chType01)
 
 
 /**
