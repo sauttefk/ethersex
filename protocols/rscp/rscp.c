@@ -88,7 +88,7 @@ void rscp_parseChannelDefinitions() {
           numstates * RSCP_CHT12_STATE_SIZE;
         break;
       }
-      case RSCP_CHANNEL_TEMPERATURE:
+      case RSCP_CHANNEL_OWTEMPERATURE:
       {
         p1 += RSCP_CHT30_SIZE;
         break;
@@ -235,7 +235,7 @@ void rscp_parseChannelDefinitions() {
         }
         break;
       }
-      case RSCP_CHANNEL_TEMPERATURE:
+      case RSCP_CHANNEL_OWTEMPERATURE:
       {
         RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
                     rscpEE_byte(rscp_conf_channel, chType30.owROM[0], p1),

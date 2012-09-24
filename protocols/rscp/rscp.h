@@ -142,12 +142,15 @@ void rscp_sendPeriodicTemperature(void);
  * uint8    : output 2
 */
 
-#define RSCP_EEPROM_START sizeof(struct eeprom_config_t)
-#define RSCP_FREE_EEPROM (E2END - sizeof(struct eeprom_config_t) - 1)
-
 /*****************************************************************************
  * defines for eeprom config structure of rscp
  ****************************************************************************/
+
+#define RSCP_EEPROM_START sizeof(struct eeprom_config_t)
+#define RSCP_FREE_EEPROM (E2END - sizeof(struct eeprom_config_t) - 1)
+
+#define rscpEE_byte(x, y, z) eeprom_read_byte((void *)(offsetof(x, y) + z))
+#define rscpEE_word(x, y, z) eeprom_read_word((void *)(offsetof(x, y) + z))
 
 /**
  * header structure
@@ -183,7 +186,56 @@ enum
   RSCP_CHANNEL_BINARY_OUTPUT  = 0x02,
   RSCP_CHANNEL_COMPLEX_INPUT  = 0x11,
   RSCP_CHANNEL_COMPLEX_OUTPUT = 0x12,
-  RSCP_CHANNEL_TEMPERATURE    = 0x30
+  RSCP_CHANNEL_OWTEMPERATURE  = 0x30
+};
+
+struct chType01_t               // channel type 0x01 (binary input)
+{
+  uint16_t port;                // port id
+  union {
+    uint8_t flags;              // bit flags
+    uint8_t negate:1;           // negate polarity
+    uint8_t report:1;           // report change
+    uint8_t pullup:1;           // weak pullup resistor
+    uint8_t debounceDelay:4;    // the debounce delay in increments of 20ms
+    uint8_t :1;                 // unused
+  };
+};
+
+struct chType02_t               // channel type 0x02 (binary outnput)
+{
+  uint16_t port;                // port id
+  union {
+    uint8_t flags;              // bit flags
+    uint8_t negate:1;           // negate polarity
+    uint8_t report:1;           // report change
+    uint8_t mode:2;             // output mode
+    uint8_t :4;                 // unused
+  };
+};
+
+struct chType11_t               // channel type 0x11 (complex input)
+{
+  uint8_t flags;                // flags (currently unused)
+  uint8_t numports;             // number of channels to follow
+  uint8_t numstates;            // number of states to follow
+//  uint8_t ports_states[];
+};
+
+struct chType12_t               // channel type 0x12 (complex output)
+{
+  uint8_t flags;                // flags (currently unused)
+  uint8_t numports;             // number of channels to follow
+  uint8_t numstates;            // number of states to follow
+//  uint8_t ports_states[];
+};
+
+struct chType30_t               // channel type 0x30 (ow temperature)
+{
+  uint8_t owROM[8];             // onewire ROM code
+  uint16_t interval;            // report-interval (s)
+  int16_t tempHi;               // report-above (°C / 10)
+  int16_t tempLo;               // report-below (°C / 10)
 };
 
 typedef struct __attribute__ ((packed))  _rscp_conf_channel
@@ -191,94 +243,13 @@ typedef struct __attribute__ ((packed))  _rscp_conf_channel
   uint16_t channelId;
   uint8_t channelType;
   union {
-    struct {
-      uint16_t port;             // port id
-      union {
-        uint8_t flags;           // bit flags
-        uint8_t negate:1;        // negate polarity
-        uint8_t report:1;        // report change
-        uint8_t pullup:1;        // weak pullup resistor
-        uint8_t debounceDelay:4; // the debounce delay in increments of 20ms
-        uint8_t :1;              // unused
-      };
-    } chType01;                   // channel type 0x01 (binary input)
-    struct {
-      uint16_t port;             // port id
-      union {
-        uint8_t flags;           // bit flags
-        uint8_t negate:1;        // negate polarity
-        uint8_t report:1;        // report change
-        uint8_t mode:2;          // output mode
-        uint8_t :4;              // unused
-      };
-    } chType02;                   // channel type 0x02 (binary outnput)
-    struct {
-      uint8_t flags;             // flags (currently unused)
-      uint8_t numports;          // number of channels to follow
-      uint8_t numstates;         // number of states to follow
-      uint8_t ports_states[];
-    } chType11;                   // channel type 0x11 (complex input)
-    struct {
-      uint8_t flags;             // flags (currently unused)
-      uint8_t numports;          // number of channels to follow
-      uint8_t numstates;         // number of states to follow
-      uint8_t ports_states[];
-    } chType12;                   // channel type 0x12 (complex output)
-    struct {
-      uint8_t owROM[8];          // onewire ROM code
-      uint16_t interval;         // report-interval (s)
-      int16_t tempHi;            // report-above (°C / 10)
-      int16_t tempLo;            // report-below (°C / 10)
-    } chType30;                   // channel type 0x30 (temperature)
+    struct chType01_t chType01; // channel type 0x01 (binary input)
+    struct chType02_t chType02; // channel type 0x02 (binary outnput)
+    struct chType11_t chType11; // channel type 0x11 (complex input)
+    struct chType12_t chType12; // channel type 0x12 (complex output)
+    struct chType30_t chType30; // channel type 0x30 (temperature)
   };
 } rscp_conf_channel;
-
-
-typedef struct  __attribute__ ((packed))
-{
-  uint16_t port;                 // port id
-  union {
-    uint8_t flags;               // bit flags
-    struct {
-      uint8_t :1;
-      uint8_t debounceDelay:4;   // the debounce delay in increments of 20ms
-      uint8_t pullup:1;          // weak pullup resistor
-      uint8_t report:1;          // report on change
-      uint8_t negate:1;          // negate polarity
-    };
-  };
-  uint8_t lastRawState:1;
-  uint8_t lastDebouncedState:1;
-  uint8_t didChangeState:1;
-  uint8_t debounceCounter:4;
-  uint8_t :1;
-} rscp_binaryInputChannel;
-
-uint16_t rscp_numBinaryInputChannels;
-rscp_binaryInputChannel *rscp_binaryInputChannels;
-
-
-typedef struct  __attribute__ ((packed))
-{
-  uint16_t port;                 // port id
-  union {
-    uint8_t flags;               // bit flags
-    struct {
-      uint8_t :4;
-      uint8_t openDrain:1;       // open drain output
-      uint8_t openSource:1;      // open source output => combined: bipolar
-      uint8_t report:1;          // report on change
-      uint8_t negate:1;          // negate polarity
-    };
-  };
-  uint8_t lastRawState:1;
-  uint8_t lastDebouncedState:1;
-  uint8_t didChangeState:1;
-  uint8_t :5;
-} rscp_binaryOutputChannel;
-
-uint16_t rscp_numBinaryOutputChannels;
-rscp_binaryOutputChannel *rscp_binaryOutputChannels;
 
 
 #define RSCP_CHT11_PORTID       0
@@ -289,7 +260,7 @@ rscp_binaryOutputChannel *rscp_binaryOutputChannels;
 
 #define RSCP_CHT11_PORTSTATES   0
 // size of one portstate
-#define RSCP_CHT11_STATE_SIZE    sizeof(uint8_t)
+#define RSCP_CHT11_STATE_SIZE   sizeof(uint8_t)
 
 
 /**
@@ -306,21 +277,18 @@ rscp_binaryOutputChannel *rscp_binaryOutputChannels;
 // port states
 #define RSCP_CHT12_PORTSTATES   0
 // size of one portstate
-#define RSCP_CHT12_STATE_SIZE    sizeof(uint8_t)
+#define RSCP_CHT12_STATE_SIZE   sizeof(uint8_t)
 
 
-#define rscpEE_byte(x, y, z) eeprom_read_byte((void *)(offsetof(x, y) + z))
-#define rscpEE_word(x, y, z) eeprom_read_word((void *)(offsetof(x, y) + z))
+#define RSCP_CHANNEL_ID         offsetof(struct _rscp_conf_channel, channelId)
+#define RSCP_CHANNEL_TYPE       offsetof(struct _rscp_conf_channel, channelType)
 
+#define RSCP_CHT01_SIZE         sizeof(struct chType01_t)
+#define RSCP_CHT02_SIZE         sizeof(struct chType02_t)
+#define RSCP_CHT11_HEADSIZE     sizeof(struct chType11_t)
+#define RSCP_CHT12_HEADSIZE     sizeof(struct chType12_t)
+#define RSCP_CHT30_SIZE         sizeof(struct chType30_t)
 
-#define RSCP_CHANNEL_ID         0
-#define RSCP_CHANNEL_TYPE       (RSCP_CHANNEL_ID + sizeof(uint16_t))
-
-#define RSCP_CHT01_SIZE         6
-#define RSCP_CHT02_SIZE         6
-#define RSCP_CHT11_HEADSIZE     6
-#define RSCP_CHT12_HEADSIZE     6
-#define RSCP_CHT30_SIZE         17
 
 /**
  * button
@@ -338,6 +306,52 @@ rscp_binaryOutputChannel *rscp_binaryOutputChannels;
 // size of button structure
 #define RSCP_BUTTON_SIZE        (RSCP_BUTTON_REPEAT + sizeof(uint16_t))
 
+
+typedef struct  __attribute__ ((packed))
+{
+  uint16_t port;                // port id
+  union {
+    uint8_t flags;              // bit flags
+    struct {
+      uint8_t :1;
+      uint8_t debounceDelay:4;  // the debounce delay in increments of 20ms
+      uint8_t pullup:1;         // weak pullup resistor
+      uint8_t report:1;         // report on change
+      uint8_t negate:1;         // negate polarity
+    };
+  };
+  uint8_t lastRawState:1;
+  uint8_t lastDebouncedState:1;
+  uint8_t didChangeState:1;
+  uint8_t debounceCounter:4;
+  uint8_t :1;
+} rscp_binaryInputChannel;
+
+uint16_t rscp_numBinaryInputChannels;
+rscp_binaryInputChannel *rscp_binaryInputChannels;
+
+
+typedef struct  __attribute__ ((packed))
+{
+  uint16_t port;                // port id
+  union {
+    uint8_t flags;              // bit flags
+    struct {
+      uint8_t :4;
+      uint8_t openDrain:1;      // open drain output
+      uint8_t openSource:1;     // open source output => combined: bipolar
+      uint8_t report:1;         // report on change
+      uint8_t negate:1;         // negate polarity
+    };
+  };
+  uint8_t lastRawState:1;
+  uint8_t lastDebouncedState:1;
+  uint8_t didChangeState:1;
+  uint8_t :5;
+} rscp_binaryOutputChannel;
+
+uint16_t rscp_numBinaryOutputChannels;
+rscp_binaryOutputChannel *rscp_binaryOutputChannels;
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */
