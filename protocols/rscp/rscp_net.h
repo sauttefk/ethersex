@@ -75,7 +75,7 @@ typedef struct rscp_message
   uint8_t  payload[512];              // data; max 512 bytes
 } rscp_message_t;
 
-#define RSCP_HEADER_LEN                         offsetof(rscp_message_t, payload)
+#define RSCP_HEADER_LEN               offsetof(rscp_message_t, payload)
 
 typedef struct rscp_udp_message
 {
@@ -83,7 +83,7 @@ typedef struct rscp_udp_message
   rscp_message_t message;             // rscp message
 } rscp_udp_message_t;
 
-#define RSCP_UDP_HEADER_LEN                         offsetof(rscp_udp_message_t, message.payload)
+#define RSCP_UDP_HEADER_LEN           offsetof(rscp_udp_message_t, message.payload)
 
 
 /* prototypes */
