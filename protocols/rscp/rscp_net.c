@@ -25,6 +25,7 @@
 #include "rscp.h"
 #include "core/bool.h"
 #include "protocols/uip/uip_router.h"
+#include "services/clock/clock.h"
 
 
 #ifdef RSCP_SUPPORT
@@ -47,8 +48,8 @@ rscp_netUdp(void)
   RSCP_DEBUG_NET("HDLEN: 0x%02X\n", rscp->message.header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->message.timestamp));
 
-  rscp_get(rscp->mac, ntohs(rscp->message.msg_type), ntohs(rscp->message.payload_len),
-    rscp->message.payload);
+  rscp_get(rscp->mac, ntohs(rscp->message.msg_type),
+    ntohs(rscp->message.payload_len), rscp->message.payload);
 }
 
 
@@ -85,7 +86,8 @@ rscp_net_raw(void)
   RSCP_DEBUG_NET("HDLEN: 0x%01X\n", rscp->header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
-  rscp_get(packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len), rscp->payload);
+  rscp_get(packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
+    rscp->payload);
 }
 #endif /* RSCP_USE_RAW_ETHERNET */
 
@@ -103,7 +105,8 @@ rscp_getPayloadPointer()
 
     case rscp_ModeUDP:
     default:
-      return ((struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN])->message.payload;
+      return ((struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN +
+        UIP_IPUDPH_LEN])->message.payload;
   }
 }
 
@@ -122,7 +125,8 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
 
     case rscp_ModeUDP:
     default:
-      rscp_udp_message = (struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN];
+      rscp_udp_message =
+        (struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN];
       memcpy(rscp_udp_message->mac, uip_ethaddr.addr, 6);
 
       rscp_message = &(rscp_udp_message->message);
@@ -134,7 +138,8 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
 
   rscp_message->version = 0x0;
   rscp_message->header_len = RSCP_HEADER_LEN;
-  rscp_message->timestamp = htonl(0xaabbccdd);
+  rscp_message->timestamp = htonl(clock_get_time() * 1000 +
+    clock_get_ticks() * 20);
   rscp_message->msg_type = htons(msg_type);
   rscp_message->payload_len = htons(payload_len);
 
