@@ -146,7 +146,7 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
   switch (rscp_networkMode) {
     case rscp_ModeRawEthernet:
       packet->type = HTONS(RSCP_ETHTYPE);
-      uip_len = RSCP_RAWH_LEN + RSCP_RAW_POS_DATA + payload_len;
+      uip_len = RSCP_RAWH_LEN + RSCP_HEADER_LEN + payload_len;
       transmit_packet();
       RSCP_DEBUG_NET("Sent RAW RSCP packet %d (%d)\n", payload_len, uip_len);
       break;
@@ -176,7 +176,6 @@ rscp_transmit(uint16_t payload_len, uint16_t msg_type)
 }
 
 #endif /* RSCP_SUPPORT */
-
 
 /*
   -- Ethersex META --

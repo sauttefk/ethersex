@@ -37,8 +37,6 @@
  * global variables
  */
 
-const uint8_t rscp_deviceURL[RSCP_SIZE_DEVURL] = CONF_RSCP_DEVICEURL;
-  // PROGMEM doesn't work?!?
 uint8_t testid[6];
 
 

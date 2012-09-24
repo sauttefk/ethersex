@@ -61,11 +61,6 @@ void rscp_sendPeriodicInputEvents(void);
 void rscp_sendPeriodicTemperature(void);
 
 
-#define RSCP_SIZE_DEVURL              32
-#define FIRMWARE_MAJOR_VERSION        0x00
-#define FIRMWARE_MINOR_VERSION        0x00
-#define FIRMWARE_SUB_MINOR_VERSION    0x01
-
 #define RSCP_CHANNEL_EVENT            0x1001
 
 #define RSCP_UNIT_COUNT               0x01  // Counter
