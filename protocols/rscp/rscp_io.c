@@ -69,9 +69,6 @@ rscp_io_handler (rscp_io_t button, uint8_t state, uint16_t repeatCnt)
        payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | RSCP_FIELD_TYPE_FALSE;
        rscp_transmit(5, RSCP_CHANNEL_EVENT);
        break;
-     case BUTTON_LONGPRESS:
-     case BUTTON_REPEAT:
-       break;
     }
   }
 }
@@ -106,7 +103,7 @@ uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
 
 
 uint8_t rscp_togglePortPORT(uint16_t portID) {
-  portPtrType portOut = (portPtrType) pgm_read_byte(&rscp_portConfig[portID].portOut);
+  portPtrType portOut = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
   RSCP_DEBUG_IO("toggle PORT port %d (%x, bit %d)\n", portID, portOut, bit);

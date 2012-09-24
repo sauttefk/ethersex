@@ -42,14 +42,11 @@
 configuration.
 #endif
 
-#define BUTTON_RELEASE    0         // button is not pressed
-#define BUTTON_PRESS      1         // short press
-#define BUTTON_LONGPRESS  2         // long press
-#define BUTTON_REPEAT     3         // repeat function enabled, repeatedly triggered until button released
-#define CONF_BTN_DEBOUNCE_TIME  3
-#define CONF_BTN_LONGPRESS_TIME 50
-#define CONF_BTN_REPEAT_DELAY   100
-#define CONF_BTN_REPEAT_RATE    200
+enum
+{
+  BUTTON_RELEASE = 0,         // button is not pressed
+  BUTTON_PRESS   = 1          // short press
+};
 
 /* These macros allow to use the the same configuration macro to initialize
  * the rscp_io_t enum, the ioConfig_t struct and set the pullups.
@@ -82,7 +79,7 @@ void rscp_io_init (void);
 void rscp_inputChannels_periodic (void);
 uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value);
 uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value);
-uint8_t rscp_tooglePortPORT(uint16_t portID);
+uint8_t rscp_togglePortPORT(uint16_t portID);
 uint8_t rscp_getPortPIN(uint16_t portID);
 void rscp_io_handler (rscp_io_t io, uint8_t state, uint16_t repeatCnt);
 
