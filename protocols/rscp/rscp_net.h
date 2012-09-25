@@ -81,7 +81,7 @@ ENCODE_NUMBER(8, 0x01)
 ENCODE_NUMBER(16, 0x03)
 ENCODE_NUMBER(32, 0x05)
 
-// FIXME: support for float/double?
+#warn FIXME: support for float/double is missing
 
 int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale, uint8_t *buffer);
 int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, uint8_t *buffer);
