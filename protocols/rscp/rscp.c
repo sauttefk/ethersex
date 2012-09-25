@@ -333,9 +333,50 @@ rscp_main(void)
   // RSCP_DEBUG("bla\n");
 }
 
+void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *channel, uint8_t* payload) {
+  RSCP_DEBUG("setBinaryOutputChannel(%d): ", channel->channelID);
+
+  switch(payload[0]) {
+  case 0x10: // boolean false
+    RSCP_DEBUG("off\n");
+    rscp_setPortPORT(channel->port, 0);
+    break;
+  case 0x11: // boolean true
+    RSCP_DEBUG("on\n");
+    rscp_setPortPORT(channel->port, 1);
+    break;
+  default:
+    RSCP_DEBUG("Invalid value for setBinaryOutputChannel of type %d", payload[0]);
+    return;
+  }
+}
+
+void rscp_handleChannelStateCommand(uint8_t* payload) {
+  uint16_t channelID = ntohs(*((uint16_t*)payload));
+
+  RSCP_DEBUG("handleChannelStateCommand: channel=%d\n", channelID);
+
+  /*
+   * FIXME: we might want to build a list of channelIDs, types and pointers to the
+   * actual channel definition struct, to speed up the channel search.
+   */
+  // search for matching channel...
+  // ...in binary output channels
+  for(int i=0; i<rscp_numBinaryOutputChannels; i++)
+    if(rscp_binaryOutputChannels[i].channelID == channelID) {
+      rscp_setBinaryOutputChannel(&(rscp_binaryOutputChannels[i]), &(payload[2]));
+      return;
+    }
+
+  // ...more channel types
+}
+
+uint8_t rscp_isForMe(uint8_t* payload) {
+  return !memcmp(uip_ethaddr.addr, payload, 6);
+}
 
 void
-rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
+rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
          uint8_t * payload)
 {
   RSCP_DEBUG("SRCAD: %02X:%02X:%02X:%02X:%02X:%02X\n", src_addr[0],
@@ -349,25 +390,35 @@ rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
   printf_P(PSTR("\n"));
 #endif /* DEBUG_RSCP */
 
+  // Is this a command? Check whether this is even for me.
+  if((msg_type & 0xf000) == 0x2000 && !rscp_isForMe(payload)) {
+    RSCP_DEBUG("Command to %02X:%02X:%02X:%02X:%02X:%02X isn't for me\n",
+              payload[0], payload[1], payload[2], payload[3], payload[4], payload[5]);
+    return;
+  }
+
   switch (msg_type) {
     case RSCP_CHANNEL_EVENT:
 //      uint8_t mismatch = memcmp(&src_addr, testid, 6);
 //      if (!mismatch) {
 //    }
+#warning FIXME: testcode
       if(payload[2] == RSCP_UNIT_BOOLEAN &&
          payload[3] == 0x11)
       {
         uint16_t channel = htons((*(uint16_t*)&(payload[0])));
         if(channel > 0 && channel <= 16) {
-#warning FIXME: testcode
           RSCP_DEBUG("** MATCH ** channel %d\n", channel);
           rscp_togglePortPORT(channel + 16);
         }
       }
       break;
+
+    case RSCP_CHANNEL_STATE_CMD:
+      rscp_handleChannelStateCommand(&(payload[6]));
+      break;
   }
 }
-
 
 void
 rscp_periodic(void)
