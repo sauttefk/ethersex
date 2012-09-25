@@ -388,12 +388,11 @@ rscp_periodic(void)
 void
 rscp_sendHeartBeat(void)
 {
-  uint8_t *payload = rscp_getPayloadPointer();
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+
 #warning FIXME
-  payload[0] = 0;               // no meaning
-  payload[1] = 0x47;            // FIXME: zone
-  payload[2] = 0x11;            // FIXME: subzone
-  rscp_transmit(3, RSCP_CHANNEL_EVENT);
+
+  rscp_transmit(RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node heartbeat sent\n");
 }
 
@@ -401,12 +400,11 @@ rscp_sendHeartBeat(void)
 void
 rscp_sendPeriodicOutputEvents(void)
 {
-  uint8_t *payload = rscp_getPayloadPointer();
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+
 #warning FIXME
-  payload[0] = 0x00;
-  payload[1] = 0xA5;            // FIXME: output data
-  payload[2] = 0xC3;            // FIXME: output data
-  rscp_transmit(3, RSCP_CHANNEL_EVENT);
+
+  rscp_transmit(RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node output data sent\n");
 }
 
@@ -414,12 +412,11 @@ rscp_sendPeriodicOutputEvents(void)
 void
 rscp_sendPeriodicInputEvents(void)
 {
-  uint8_t *payload = rscp_getPayloadPointer();
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+
 #warning FIXME
-  payload[0] = 0x00;
-  payload[1] = 0xA5;            // FIXME: input data
-  payload[2] = 0xC3;            // FIXME: input data
-  rscp_transmit(3, RSCP_CHANNEL_EVENT);
+
+  rscp_transmit(RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node input data sent\n");
 }
 
@@ -427,23 +424,19 @@ rscp_sendPeriodicInputEvents(void)
 void
 rscp_sendPeriodicTemperature(void)
 {
-  uint8_t *payload = rscp_getPayloadPointer();
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
 
   // set channel
 #warning FIXME
-  ((uint16_t*)payload)[0] = htons(0);
+  rscp_encodeChannel(0, buffer);
 
   // set unit and value
-  payload[2] = RSCP_UNIT_TEMPERATURE;
-  payload[3] = RSCP_FIELD_CAT_LEN_TINY << 6 | 0x21;
-
-  payload[4] = ((ow_sensors[0].temp >> 8) & 0x1f) | (-1 << 5);  //
-  payload[5] = ow_sensors[0].temp & 0xff;
+  rscp_encodeUInt8(RSCP_UNIT_TEMPERATURE, buffer);
+  rscp_encodeDecimal16Field(ow_sensors[0].temp, -1, buffer);
 
   RSCP_DEBUG("temp 0x%04x\n", ow_sensors[0].temp);
 
-  rscp_transmit(6, RSCP_CHANNEL_EVENT);
-  RSCP_DEBUG("node temperature sent\n");
+  rscp_transmit(RSCP_CHANNEL_EVENT);
 }
 #endif /* RSCP_SUPPORT */
 

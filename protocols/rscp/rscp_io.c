@@ -94,16 +94,16 @@ rscp_txBinaryIOChannelChange (uint16_t channel, uint8_t state)
 {
   RSCP_DEBUG_IO("BinaryIOChannel: %d status: %d\n", channel, state, state);
 
-  uint8_t *payload = rscp_getPayloadPointer();
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
 
   // set channel
-  ((uint16_t*)payload)[0] = htons(channel);
+  rscp_encodeChannel(channel, buffer);
 
   // set unit and value
-  payload[2] = RSCP_UNIT_BOOLEAN;
-  payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 |
-               (state ? RSCP_FIELD_TYPE_TRUE : RSCP_FIELD_TYPE_FALSE);
-  rscp_transmit(5, RSCP_CHANNEL_EVENT);
+  rscp_encodeUInt8(RSCP_UNIT_BOOLEAN, buffer);
+  rscp_encodeBooleanField(state, buffer);
+
+  rscp_transmit(RSCP_CHANNEL_EVENT);
 }
 
 
