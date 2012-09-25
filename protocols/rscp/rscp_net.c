@@ -110,7 +110,6 @@ rscp_getPayloadPointer()
   }
 }
 
-
 void
 rscp_transmit(uint16_t payload_len, uint16_t msg_type)
 {
