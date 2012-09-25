@@ -336,17 +336,14 @@ typedef struct  __attribute__ ((packed))
   union {
     uint8_t flags;              // bit flags
     struct {
-      uint8_t :4;
+      uint8_t lastState:1;
+      uint8_t :3;
       uint8_t openDrain:1;      // open drain output
       uint8_t openSource:1;     // open source output => combined: bipolar
       uint8_t report:1;         // report on change
       uint8_t negate:1;         // negate polarity
     };
   };
-  uint8_t lastRawState:1;
-  uint8_t lastDebouncedState:1;
-  uint8_t didChangeState:1;
-  uint8_t :5;
 } rscp_binaryOutputChannel;
 
 uint16_t rscp_numBinaryOutputChannels;

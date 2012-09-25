@@ -81,7 +81,6 @@ uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value);
 uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value);
 uint8_t rscp_togglePortPORT(uint16_t portID);
 uint8_t rscp_getPortPIN(uint16_t portID);
-void rscp_io_handler (rscp_io_t io, uint8_t state, uint16_t repeatCnt);
 
 
 #ifdef DEBUG_BUTTONS_INPUT
