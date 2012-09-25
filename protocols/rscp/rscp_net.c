@@ -48,7 +48,7 @@ rscp_netUdp(void)
   RSCP_DEBUG_NET("HDLEN: 0x%02X\n", rscp->message.header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->message.timestamp));
 
-  rscp_get(rscp->mac, ntohs(rscp->message.msg_type),
+  rscp_handleMessage(rscp->mac, ntohs(rscp->message.msg_type),
     ntohs(rscp->message.payload_len), rscp->message.payload);
 }
 
@@ -86,7 +86,7 @@ rscp_net_raw(void)
   RSCP_DEBUG_NET("HDLEN: 0x%01X\n", rscp->header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
-  rscp_get(packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
+  rscp_handleMessage(packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
     rscp->payload);
 }
 #endif /* RSCP_USE_RAW_ETHERNET */

@@ -150,7 +150,7 @@ rscp_inputChannels_periodic(void)
       bic->lastDebouncedState = bic->lastRawState;
       BUTTONDEBUG("Debounced BinaryInputChannel % changed to %d\n", i,
                   bic->lastDebouncedState);
-      rscp_txBinaryIOChannelChange(i, bic->lastDebouncedState);
+      rscp_txBinaryIOChannelChange(bic->channelID, bic->lastDebouncedState);
     }
   }
 
@@ -170,7 +170,7 @@ rscp_inputChannels_periodic(void)
     {
       boc->lastState = curState;
       BUTTONDEBUG("BinaryOutputChannel % changed to %d\n", i, boc->lastState);
-      rscp_txBinaryIOChannelChange(i, boc->lastState);
+      rscp_txBinaryIOChannelChange(boc->channelID, boc->lastState);
     }
   }
 }

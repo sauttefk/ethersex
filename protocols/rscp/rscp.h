@@ -51,7 +51,7 @@ extern uint8_t rscp_mode;
 
 void rscp_setup(void);
 void rscp_main(void);
-void rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
+void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
               uint8_t * payload);
 void rscp_init(void);
 void rscp_periodic(void);
@@ -62,6 +62,7 @@ void rscp_sendPeriodicTemperature(void);
 
 
 #define RSCP_CHANNEL_EVENT            0x1001
+#define RSCP_CHANNEL_STATE_CMD        0x2000
 
 #define RSCP_UNIT_COUNT               0x01  // Counter
 #define RSCP_UNIT_VOLTAGE             0x02  // Voltage (V)
@@ -308,6 +309,7 @@ typedef struct
 
 typedef struct  __attribute__ ((packed))
 {
+  uint16_t channelID;
   uint16_t port;                // port id
   union {
     uint8_t flags;              // bit flags
@@ -332,6 +334,7 @@ rscp_binaryInputChannel *rscp_binaryInputChannels;
 
 typedef struct  __attribute__ ((packed))
 {
+  uint16_t channelID;
   uint16_t port;                // port id
   union {
     uint8_t flags;              // bit flags
