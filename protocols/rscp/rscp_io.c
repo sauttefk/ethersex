@@ -108,7 +108,7 @@ rscp_txBinaryIOChannelChange (uint16_t channel, uint8_t state)
 
 
 void
-rscp_inputChannels_periodic(void)
+rscp_IOChannels_periodic(void)
 {
   /* Check all configured inputs */
   for (uint8_t i = 0; i < rscp_numBinaryInputChannels; i++)
@@ -129,8 +129,8 @@ rscp_inputChannels_periodic(void)
        * button is pressed, because we need it for long press/repeat
        * recognition */
       if (bic->lastRawState != bic->lastDebouncedState) {
-        RSCP_DEBUG_IO("c %d debounce for: %d - %d (%d)\n", i, curState,
-                   bic->debounceCounter, bic->debounceDelay);
+        RSCP_DEBUG_IO("c %d debounce for: %d - %d (%d)\n", bic->channel,
+          curState, bic->debounceCounter, bic->debounceDelay);
         bic->debounceCounter++;
       }
     }
@@ -138,7 +138,7 @@ rscp_inputChannels_periodic(void)
     {
       /* currect state has changed since the last read.
        * restart the debounce timer */
-      RSCP_DEBUG_IO("c %d raw change to: %d\n", i, curState);
+      RSCP_DEBUG_IO("c %d raw change to: %d\n", bic->channel, curState);
       bic->debounceCounter = 0;
       bic->lastRawState = curState;
     }
@@ -148,9 +148,9 @@ rscp_inputChannels_periodic(void)
         bic->debounceDelay <= bic->debounceCounter)
     {
       bic->lastDebouncedState = bic->lastRawState;
-      BUTTONDEBUG("Debounced BinaryInputChannel % changed to %d\n", i,
-                  bic->lastDebouncedState);
-      rscp_txBinaryIOChannelChange(i, bic->lastDebouncedState);
+      BUTTONDEBUG("Debounced BinaryInputChannel % changed to %d\n",
+        bic->channel, bic->lastDebouncedState);
+      rscp_txBinaryIOChannelChange(bic->channel, bic->lastDebouncedState);
     }
   }
 
@@ -169,8 +169,9 @@ rscp_inputChannels_periodic(void)
     if (boc->lastState != curState)
     {
       boc->lastState = curState;
-      BUTTONDEBUG("BinaryOutputChannel % changed to %d\n", i, boc->lastState);
-      rscp_txBinaryIOChannelChange(i, boc->lastState);
+      BUTTONDEBUG("BinaryOutputChannel % changed to %d\n", boc->channel,
+        boc->lastState);
+      rscp_txBinaryIOChannelChange(boc->channel, boc->lastState);
     }
   }
 }
@@ -179,6 +180,6 @@ rscp_inputChannels_periodic(void)
 /**
  * -- Ethersex META --
  * header(protocols/rscp/rscp_io.h)
- * timer(1, rscp_inputChannels_periodic())
+ * timer(1, rscp_IOChannels_periodic())
  * block(Miscelleanous)
  */

@@ -133,6 +133,7 @@ void rscp_parseChannelDefinitions() {
     {
       case RSCP_CHANNEL_BINARY_INPUT:
       {
+        rscp_binaryInputChannels[bicIndex].channel = channelId;
         rscp_binaryInputChannels[bicIndex].port =
           rscpEE_word(rscp_conf_channel, chType01.port, p1);
         rscp_binaryInputChannels[bicIndex].flags =
@@ -155,6 +156,7 @@ void rscp_parseChannelDefinitions() {
       }
       case RSCP_CHANNEL_BINARY_OUTPUT:
       {
+        rscp_binaryOutputChannels[bocIndex].channel = channelId;
         rscp_binaryOutputChannels[bocIndex].port =
           rscpEE_word(rscp_conf_channel, chType02.port, p1);
         rscp_binaryOutputChannels[bocIndex].flags =
@@ -353,14 +355,13 @@ rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
 //      if (!mismatch) {
 //    }
       if(payload[2] == RSCP_UNIT_BOOLEAN &&
-         payload[3] == (RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 |
-                        RSCP_FIELD_TYPE_TRUE))
+         payload[3] == 0x11)
       {
-        uint16_t port = htons((*(uint16_t*)&(payload[0]))) + 16;
-        if(port > 16) {
+        uint16_t channel = htons((*(uint16_t*)&(payload[0])));
+        if(channel > 0 && channel <= 16) {
 #warning FIXME: testcode
-          RSCP_DEBUG("** MATCH ** port %d\n", port);
-          rscp_togglePortPORT(port);
+          RSCP_DEBUG("** MATCH ** channel %d\n", channel);
+          rscp_togglePortPORT(channel + 16);
         }
       }
       break;
@@ -375,7 +376,7 @@ rscp_periodic(void)
   if (--rscp_heartbeatInterval == 0)
   {
     /* send a heartbeat packet every 60 seconds */
-    rscp_heartbeatInterval = 10;
+    rscp_heartbeatInterval = 60;
 
 //    rscp_sendHeartBeat();
 //    rscp_sendPeriodicOutputEvents();
