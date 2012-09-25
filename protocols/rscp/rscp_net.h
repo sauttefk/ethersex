@@ -37,7 +37,6 @@
 #define ntohl htonl
 #endif /* ntohl */
 
-
 /* constants */
 
 typedef enum rscp_networkMode {
