@@ -40,39 +40,6 @@
 
 const ioConfig_t rscp_portConfig[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(C) };
 
-/* ---------------------------------------------------------------------------
- * change of button state
- */
-void
-rscp_io_handler (rscp_io_t button, uint8_t state, uint16_t repeatCnt)
-{
-  RSCP_DEBUG_IO("button: %d status: %d repeat: %d\n", button, state, repeatCnt);
-
-  if (button > 0)  // button 0 is config button
-  {
-    uint8_t *payload = rscp_getPayloadPointer();
-    payload[0] = 0xff;
-    payload[1] = 0xff;
-    switch (state)
-    {
-     case BUTTON_RELEASE:
-       payload[0] = (button - 1) >> 8;
-       payload[1] = (button - 1) & 0xFF;
-       payload[2] = RSCP_UNIT_BOOLEAN;
-       payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | RSCP_FIELD_TYPE_TRUE;
-       rscp_transmit(5, RSCP_CHANNEL_EVENT);
-       break;
-     case BUTTON_PRESS:
-       payload[0] = (button - 1) >> 8;
-       payload[1] = (button - 1) & 0xFF;
-       payload[2] = RSCP_UNIT_BOOLEAN;
-       payload[3] = RSCP_FIELD_CAT_LEN_IMMEDIATE << 6 | RSCP_FIELD_TYPE_FALSE;
-       rscp_transmit(5, RSCP_CHANNEL_EVENT);
-       break;
-    }
-  }
-}
-
 
 uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
   portPtrType portDDR = (portPtrType) pgm_read_word(&rscp_portConfig[portID].ddr);
@@ -123,9 +90,9 @@ uint8_t rscp_getPortPIN(uint16_t portID) {
  * change of button state
  */
 void
-rscp_txBinaryInputChannelChange (uint16_t channel, uint8_t state)
+rscp_txBinaryIOChannelChange (uint16_t channel, uint8_t state)
 {
-  RSCP_DEBUG_IO("BinaryInputChannel: %d status: %d\n", channel, state, state);
+  RSCP_DEBUG_IO("BinaryIOChannel: %d status: %d\n", channel, state, state);
 
   uint8_t *payload = rscp_getPayloadPointer();
 
@@ -143,7 +110,7 @@ rscp_txBinaryInputChannelChange (uint16_t channel, uint8_t state)
 void
 rscp_inputChannels_periodic(void)
 {
-  /* Check all configured buttons */
+  /* Check all configured inputs */
   for (uint8_t i = 0; i < rscp_numBinaryInputChannels; i++)
   {
     rscp_binaryInputChannel *bic = &rscp_binaryInputChannels[i];
@@ -183,7 +150,27 @@ rscp_inputChannels_periodic(void)
       bic->lastDebouncedState = bic->lastRawState;
       BUTTONDEBUG("Debounced BinaryInputChannel % changed to %d\n", i,
                   bic->lastDebouncedState);
-      rscp_txBinaryInputChannelChange(i, bic->lastDebouncedState);
+      rscp_txBinaryIOChannelChange(i, bic->lastDebouncedState);
+    }
+  }
+
+  /* Check all configured outputs */
+  for (uint8_t i = 0; i < rscp_numBinaryOutputChannels; i++)
+  {
+    rscp_binaryOutputChannel *boc = &rscp_binaryOutputChannels[i];
+
+    /* get current value from portpin... */
+    volatile uint8_t portState =
+        *((portPtrType) pgm_read_word(&rscp_portConfig[boc->port].portIn));
+    uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[boc->port].pin);
+    uint8_t curState = (portState & bit ? 1 : 0) ^ (boc->negate ? 1 : 0);
+
+    /* current state hasn't changed since the last read... */
+    if (boc->lastState != curState)
+    {
+      boc->lastState = curState;
+      BUTTONDEBUG("BinaryOutputChannel % changed to %d\n", i, boc->lastState);
+      rscp_txBinaryIOChannelChange(i, boc->lastState);
     }
   }
 }

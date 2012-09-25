@@ -30,32 +30,6 @@
 #define RSCP_DEBUG_NET(...)    ((void) 0)
 #endif
 
-
-/* constants */
-#define RSCP_FIRMWARE_MAJOR_VERSION             0x00
-#define RSCP_FIRMWARE_MINOR_VERSION             0x00
-#define RSCP_FIRMWARE_SUB_MINOR_VERSION         0x01
-
-typedef enum rscp_networkMode {
-  rscp_ModeRawEthernet,
-  rscp_ModeUDP
-} rscp_networkMode_t;
-
-#define RSCP_RAW_POS_VERSION                    0
-#define RSCP_RAW_POS_HEAD                       1
-#define RSCP_RAW_POS_SUBSOURCE                  5
-#define RSCP_RAW_POS_TIMESTAMP                  7
-#define RSCP_RAW_POS_OBID                       11
-#define RSCP_RAW_POS_CLASS                      15
-#define RSCP_RAW_POS_TYPE                       17
-#define RSCP_RAW_POS_SIZE                       19
-#define RSCP_RAW_POS_DATA                       21
-
-#define RSCP_UDP_POS_DATA                       23
-
-#define RSCP_RAWH_LEN                           14  // complete ethernet header
-#define RSCP_ETHTYPE                            0x4313
-
 #ifndef htonl
 #define htonl(x) __builtin_bswap32(x)
 #endif /* htonl */
@@ -63,6 +37,13 @@ typedef enum rscp_networkMode {
 #define ntohl htonl
 #endif /* ntohl */
 
+
+/* constants */
+
+typedef enum rscp_networkMode {
+  rscp_ModeRawEthernet,
+  rscp_ModeUDP
+} rscp_networkMode_t;
 
 /* structs */
 typedef struct rscp_message
@@ -75,15 +56,17 @@ typedef struct rscp_message
   uint8_t  payload[512];              // data; max 512 bytes
 } rscp_message_t;
 
-#define RSCP_HEADER_LEN                         offsetof(rscp_message_t, payload)
-
 typedef struct rscp_udp_message
 {
   uint8_t  mac[6];                    // mac address of sender
   rscp_message_t message;             // rscp message
 } rscp_udp_message_t;
 
-#define RSCP_UDP_HEADER_LEN                         offsetof(rscp_udp_message_t, message.payload)
+
+#define RSCP_ETHTYPE                  0x4313
+#define RSCP_RAWH_LEN                 sizeof(struct uip_eth_hdr)
+#define RSCP_HEADER_LEN               offsetof(rscp_message_t, payload)
+#define RSCP_UDP_HEADER_LEN           offsetof(rscp_udp_message_t, message.payload)
 
 
 /* prototypes */
@@ -91,6 +74,19 @@ void rscp_net_init(void);
 void rscp_net_raw(void);
 uint8_t* rscp_getPayloadPointer();
 void rscp_transmit(uint16_t size, uint16_t type);
+
+// generate encode/decode methods by macro expansion
+#define ENCODE_NUMBER(SIZE, CODE) int8_t rscp_encodeInt##SIZE##Field(int##SIZE##_t value, uint8_t *buffer); \
+int8_t rscp_encodeUInt##SIZE##Field(uint##SIZE##_t value, uint8_t *buffer);
+ENCODE_NUMBER(8, 0x01)
+ENCODE_NUMBER(16, 0x03)
+ENCODE_NUMBER(32, 0x05)
+
+// FIXME: support for float/double?
+
+int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale, uint8_t *buffer);
+int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, uint8_t *buffer);
+int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, uint8_t *buffer);
 
 #endif /* _RSCP_NET_H */
 

@@ -37,8 +37,6 @@
  * global variables
  */
 
-const uint8_t rscp_deviceURL[RSCP_SIZE_DEVURL] = CONF_RSCP_DEVICEURL;
-  // PROGMEM doesn't work?!?
 uint8_t testid[6];
 
 
@@ -267,6 +265,7 @@ void rscp_parseChannelDefinitions() {
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
 }
 
+
 /* ----------------------------------------------------------------------------
  * initialization of RSCP
  */
@@ -325,12 +324,12 @@ rscp_init(void)
   rscp_parseChannelDefinitions();
 }
 
+
 void
 rscp_main(void)
 {
   // RSCP_DEBUG("bla\n");
 }
-
 
 
 void
@@ -368,6 +367,7 @@ rscp_get(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
   }
 }
 
+
 void
 rscp_periodic(void)
 {
@@ -385,7 +385,6 @@ rscp_periodic(void)
 }
 
 
-
 void
 rscp_sendHeartBeat(void)
 {
@@ -397,7 +396,6 @@ rscp_sendHeartBeat(void)
   rscp_transmit(3, RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node heartbeat sent\n");
 }
-
 
 
 void
@@ -413,7 +411,6 @@ rscp_sendPeriodicOutputEvents(void)
 }
 
 
-
 void
 rscp_sendPeriodicInputEvents(void)
 {
@@ -425,7 +422,6 @@ rscp_sendPeriodicInputEvents(void)
   rscp_transmit(3, RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node input data sent\n");
 }
-
 
 
 void
@@ -449,29 +445,7 @@ rscp_sendPeriodicTemperature(void)
   rscp_transmit(6, RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node temperature sent\n");
 }
-
-
-
-uint8_t
-rscp_getDeviceURL(uint8_t idx)
-{
-  if (idx < 16)
-#warning FIXME: return pgm_read_byte(&rscp_deviceURL[idx]);
-    return rscp_deviceURL[idx];
-
-  return 0;
-}
-
-
-uint8_t
-rscp_getMDFURL(uint8_t idx)
-{
-//  return rscp_deviceURL[idx];
-  return 0;
-}
-
 #endif /* RSCP_SUPPORT */
-
 
 /*
    -- Ethersex META --
