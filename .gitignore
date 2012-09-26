@@ -12,6 +12,7 @@
 *.cbp
 *.layout
 *.exe
+*.bin
 subdir.mk
 Debug/*
 ethersex.bin
