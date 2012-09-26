@@ -414,7 +414,7 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
 //          rscp_togglePortPORT(port);
 //        }
 //      }
-//      break;
+      break;
 
     case RSCP_CHANNEL_STATE_CMD:
       rscp_handleChannelStateCommand(&(payload[6]));
