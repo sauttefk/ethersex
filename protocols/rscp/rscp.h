@@ -47,12 +47,14 @@
 #define RSCP_DEBUG_CONF(...)    ((void) 0)
 #endif
 
+#define RSCP_ISFORME(X) (!memcmp(uip_ethaddr.addr, X, 6))
+
 extern uint8_t rscp_mode;
 
 void rscp_setup(void);
 void rscp_main(void);
-void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type, uint16_t payload_len,
-              uint8_t * payload);
+void rscp_handleMessage(struct uip_eth_addr * src_addr, uint16_t msg_type,
+ uint16_t payload_len, uint8_t * payload);
 void rscp_init(void);
 void rscp_periodic(void);
 void rscp_sendHeartBeat(void);
@@ -205,7 +207,8 @@ struct __attribute__ ((packed)) chType02_t
     uint8_t flags;              // bit flags
     uint8_t negate:1;           // negate polarity
     uint8_t report:1;           // report change
-    uint8_t mode:2;             // output mode
+    uint8_t openSource:1;       // open source output => combined: bipolar
+    uint8_t openDrain:1;        // open drain output
     uint8_t :4;                 // unused
   };
 };
@@ -299,9 +302,9 @@ typedef struct
 #define RSCP_BUTTON_CHANNEL     (RSCP_BUTTON_ID + sizeof(uint16_t))
 // flags
 #define RSCP_BUTTON_FLAGS       (RSCP_BUTTON_CHANNEL + sizeof(uint16_t))
-// long press after N*20 ms (0 = disabled)
+// long press after N * 20 ms (0 = disabled)
 #define RSCP_BUTTON_LONGPRESS   (RSCP_BUTTON_FLAGS + sizeof(uint8_t))
-// repeat every N*20 ms (0 = disabled)
+// repeat every N * 20 ms (0 = disabled)
 #define RSCP_BUTTON_REPEAT      (RSCP_BUTTON_LONGPRESS + sizeof(uint16_t))
 // size of button structure
 #define RSCP_BUTTON_SIZE        (RSCP_BUTTON_REPEAT + sizeof(uint16_t))
