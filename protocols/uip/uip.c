@@ -912,9 +912,15 @@ uip_process(u8_t flag)
 
 #endif /* UIP_BROADCAST */
 
-    /* Check if the packet is destined for our IP address. */
+    /*
+     * Check if the packet is destined for our IP address or the local
+     * address is all zeros. In the latter case we assume that the address
+     * hasn't been configured and accept all packets so that bootp/dhcp can
+     * do their thing.
+     */
 #if !UIP_CONF_IPV6
-    if(!uip_ipaddr_cmp(BUF->destipaddr, uip_hostaddr)) {
+    if(!uip_ipaddr_cmp(BUF->destipaddr, uip_hostaddr) &&
+        (uip_hostaddr[0] != 0 || uip_hostaddr[1] != 0)) {
       UIP_STAT(++uip_stat.ip.drop);
       goto drop;
     }
