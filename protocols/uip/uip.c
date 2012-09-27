@@ -1138,7 +1138,7 @@ ip_check_end:
     }
   }
   DEBUG_PRINTF("udp: no matching connection found, sport %d, dport %d\n",
-               UDPBUF->srcport, UDPBUF->destport);
+               ntohs(UDPBUF->srcport), ntohs(UDPBUF->destport));
   goto drop;
 
  udp_found:
