@@ -46,11 +46,11 @@ beteigeuze=y
 # JeeLinkv2 is not set
 # lome6 is not set
 # MicroWebServer is not set
-# netio_addon is not set
 # netio is not set
+# netio_addon is not set
 # other is not set
-# pollin_evalboard_addon is not set
 # pollin_evalboard is not set
+# pollin_evalboard_addon is not set
 # pollin_funkevalboard is not set
 # radig_web is not set
 # thermy is not set
@@ -60,7 +60,7 @@ beteigeuze=y
 # SRAM_SUPPORT is not set
 # SRAM_MEMTEST_ON_BOOT is not set
 # BOOTLOADER_SUPPORT is not set
-# BOOTLOADER_JUMP is not set
+BOOTLOADER_JUMP=y
 BOOTLOADER_SIZE=8192
 BOOTLOADER_START_ADDRESS=0x1E000
 FLASH_SIZE=0x20000
@@ -77,7 +77,7 @@ SPI_TIMEOUT=y
 # USE_RELEASE_VERSION is not set
 VERSION_STRING_CHOICE=USE_BUILDDATE_VERSION
 USE_BUILDDATE_VERSION=y
-DEBUG_DISCARD_SOME=y
+# DEBUG_DISCARD_SOME is not set
 DEBUG=y
 DEBUG_BAUDRATE=115200
 # DEBUG_USE_SYSLOG is not set
@@ -330,6 +330,7 @@ CONF_LTC1257_NUM_DEVICES=4
 # I2C_DS13X7_SUPPORT is not set
 # I2C_PCF8583_SUPPORT is not set
 # I2C_TSL2550_SUPPORT is not set
+# I2C_TSL2561_SUPPORT is not set
 # I2C_BMP085_SUPPORT is not set
 # I2C_PCA9531_SUPPORT is not set
 # I2C_PCA9685_SUPPORT is not set
@@ -704,9 +705,9 @@ CONF_RSCP_DEVICEURL="sautter.com/beteigeuze.xml"
 RSCP_USE_RAW_ETHERNET=y
 RSCP_USE_UDP_ETHERNET=y
 DEBUG_RSCP=y
-# DEBUG_RSCP_CONF is not set
+DEBUG_RSCP_CONF=y
 DEBUG_RSCP_IO=y
-# DEBUG_RSCP_NET is not set
+DEBUG_RSCP_NET=y
 
 #
 # Applications
