@@ -49,7 +49,7 @@ if [ "$ARCH_AVR" = "y" ]; then
 
 	# get the flash size according to the cpu type
 	FLASH_SIZE=$(( `echo -e "#include <avr/io.h>\nFLASHEND" | avr-cpp -mmcu=$MCU | sed '$!d'` + 1 ))
-
+  
 	# set the default bootloader bytes according to cpu flash size
 	if [ "$BOOTLOADER_SIZE" = "" ] ; then
 		if [ "$FLASH_SIZE" = 8192 ] ; then BOOTLOADER_SIZE=2048 ; fi
