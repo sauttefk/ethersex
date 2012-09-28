@@ -255,8 +255,49 @@ process_packet(void)
         if (uip_len > 0)
           transmit_packet();
 
+<<<<<<< HEAD
         break;
 #endif /* !UIP_CONF_IPV6 */
+=======
+#       if UIP_CONF_IPV6
+        /* process ip packet */
+        case UIP_ETHTYPE_IP6:
+#           ifdef DEBUG_NET
+            debug_printf ("net: ip6 packet received\n");
+#           endif
+#       else /* !UIP_CONF_IPV6 */
+        /* process ip packet */
+        case UIP_ETHTYPE_IP:
+#           ifdef DEBUG_NET
+            debug_printf ("net: ip packet received\n");
+#           endif
+            uip_arp_ipin();
+#       endif /* !UIP_CONF_IPV6 */
+
+            router_input(STACK_ENC);
+
+	    /* if there is a packet to send, send it now */
+	    if (uip_len > 0)
+		router_output();
+
+            break;
+#ifdef DEBUG_UNKNOWN_PACKETS
+      default:
+      	/* debug output */
+        debug_printf("net: unknown packet, %02x%02x%02x%02x%02x%02x "
+                     "-> %02x%02x%02x%02x%02x%02x, type 0x%04x\n",
+                     packet->src.addr[0], packet->src.addr[1],
+                     packet->src.addr[2], packet->src.addr[3],
+                     packet->src.addr[4], packet->src.addr[5],
+                     packet->dest.addr[0], packet->dest.addr[1],
+                     packet->dest.addr[2], packet->dest.addr[3],
+                     packet->dest.addr[4], packet->dest.addr[5],
+                     ntohs(packet->type));
+            break;
+#       endif
+    }
+    }
+>>>>>>> upstream/master
 
 #if defined(VSCP_SUPPORT) && defined(VSCP_USE_RAW_ETHERNET)
       case VSCP_ETHTYPE:
