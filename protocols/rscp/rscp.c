@@ -46,7 +46,7 @@ void rscp_parseChannelDefinitions(void)
   void *p1 = (void *)(rscp_channel_p + RSCP_EEPROM_START);
   for (uint8_t i = 0; i < rscp_channel_items; i++)
   {
-    if(p1 >= (void *)(rscp_button_p + RSCP_EEPROM_START)) {
+    if(p1 >= (void *)(rscp_rule_p + RSCP_EEPROM_START)) {
       RSCP_DEBUG_CONF("channel list parser list overrun\n");
       return;
     }
@@ -315,13 +315,6 @@ rscp_init(void)
   rscp_channel_p =
     rscpEE_word(rscp_conf_header, channel_p, RSCP_EEPROM_START);
   RSCP_DEBUG_CONF("channel pointer: 0x%04X\n", rscp_channel_p);
-
-  rscp_button_items =
-    rscpEE_word(rscp_conf_header, button_items, RSCP_EEPROM_START);
-  RSCP_DEBUG_CONF("button items: %d\n", rscp_button_items);
-  rscp_button_p =
-    rscpEE_word(rscp_conf_header, button_p, RSCP_EEPROM_START);
-  RSCP_DEBUG_CONF("button pointer: 0x%04X\n", rscp_button_p);
 
   rscp_rule_items =
     rscpEE_word(rscp_conf_header, rule_items, RSCP_EEPROM_START);

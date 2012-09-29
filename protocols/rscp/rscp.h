@@ -160,8 +160,6 @@ typedef struct __attribute__ ((packed))  __rscp_conf_header
   uint8_t mac[6];         // mac address this config is meant for
   uint16_t channel_items; // number of channel items
   uint16_t channel_p;     // pointer to channel definitions
-  uint16_t button_items;  // number of button items
-  uint16_t button_p;      // pointer to button definitions
   uint16_t rule_items;    // number of rule items
   uint16_t rule_p;        // pointer to rule definitions
   uint8_t name[];         // name of device (ASCII encoding, zero-terminated)
@@ -170,8 +168,6 @@ typedef struct __attribute__ ((packed))  __rscp_conf_header
 
 uint16_t rscp_channel_items;
 uint16_t rscp_channel_p;
-uint16_t rscp_button_items;
-uint16_t rscp_button_p;
 uint16_t rscp_rule_items;
 uint16_t rscp_rule_p;
 
