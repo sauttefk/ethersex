@@ -30,16 +30,13 @@ atmega644=y
 # at90can128 is not set
 FREQ=20000000
 # Arduino_Duemilanove is not set
-<<<<<<< HEAD
 # beteigeuze is not set
-=======
 # Fimser is not set
 # Jackalope is not set
 # JeeLinkv2 is not set
 # MicroWebServer is not set
 # USBrfm12stick is not set
 # alpengluehn is not set
->>>>>>> upstream/master
 # conrad_probot is not set
 # ehaserl is not set
 HARDWARE=etherrape
@@ -82,11 +79,7 @@ EEPROM_PAGESIZE=0x8
 VERSION_STRING_CHOICE=USE_RELEASE_VERSION
 USE_RELEASE_VERSION=y
 # USE_BUILDDATE_VERSION is not set
-<<<<<<< HEAD
 VERSION_GIT="e458bce"
-=======
-VERSION_GIT="8ff2777"
->>>>>>> upstream/master
 # DEBUG_DISCARD_SOME is not set
 # DEBUG is not set
 DEBUG_BAUDRATE=115200
