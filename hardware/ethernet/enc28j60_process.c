@@ -255,6 +255,8 @@ process_packet(void)
         if (uip_len > 0)
           transmit_packet();
         break;
+#endif /* !UIP_CONF_IPV6 */
+
 #if defined(VSCP_SUPPORT) && defined(VSCP_USE_RAW_ETHERNET)
       case VSCP_ETHTYPE:
         vscp_net_raw();
