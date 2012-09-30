@@ -34,6 +34,7 @@ scripts/lxdialog/lxdialog
 #eclipse project files
 .project
 .cproject
+.settings/*
 
 # control6
 control6/control6.c

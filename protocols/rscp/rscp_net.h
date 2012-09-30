@@ -78,29 +78,5 @@ void rscp_net_raw(void);
 rscp_payloadBuffer_t* rscp_getPayloadBuffer();
 void rscp_transmit(uint16_t messageType);
 
-// generate encode/decode methods by macro expansion
-#define ENCODE_NUMBER(SIZE) int8_t rscp_encodeInt##SIZE (int##SIZE##_t value, rscp_payloadBuffer_t *buffer); \
-int8_t rscp_encodeUInt##SIZE (uint##SIZE##_t value, rscp_payloadBuffer_t *buffer);
-ENCODE_NUMBER(8)
-ENCODE_NUMBER(16)
-ENCODE_NUMBER(32)
-
-int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
-
-int8_t rscp_encodeBooleanField(int8_t value, rscp_payloadBuffer_t *buffer);
-
-// generate encode/decode methods by macro expansion
-#define ENCODE_NUMBER_FIELD(SIZE, CODE) int8_t rscp_encodeInt##SIZE##Field(int##SIZE##_t value, rscp_payloadBuffer_t *buffer); \
-int8_t rscp_encodeUInt##SIZE##Field(uint##SIZE##_t value, rscp_payloadBuffer_t *buffer);
-ENCODE_NUMBER_FIELD(8, 0x01)
-ENCODE_NUMBER_FIELD(16, 0x03)
-ENCODE_NUMBER_FIELD(32, 0x05)
-
-#warning FIXME: support for float/double is missing
-
-int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale, rscp_payloadBuffer_t *buffer);
-int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer);
-int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer);
-
 #endif /* _RSCP_NET_H */
 
