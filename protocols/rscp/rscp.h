@@ -369,7 +369,6 @@ rscp_binaryInputChannel *rscp_binaryInputChannels;
 
 typedef struct  __attribute__ ((packed))
 {
-  uint16_t channelID;
   uint16_t port;                // port id
   uint16_t channel;             // channel id
   union {

@@ -326,7 +326,7 @@ rscp_main(void)
 
 void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *channel,
   uint8_t* payload) {
-  RSCP_DEBUG("setBinaryOutputChannel(%d): ", channel->channelID);
+  RSCP_DEBUG("setBinaryOutputChannel(%d): ", channel->channel);
 
   switch (payload[0]) {
     case 0x10: // boolean false
@@ -346,7 +346,7 @@ void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *channel,
 
 void rscp_handleChannelStateCommand(uint8_t* payload)
 {
-  uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
+  uint16_t channelID = ntohs(((uint16_t*)payload)[0]);
 
   RSCP_DEBUG("handleChannelStateCommand: channel=%d\n", channelID);
 
@@ -357,7 +357,7 @@ void rscp_handleChannelStateCommand(uint8_t* payload)
   // search for matching channel...
   // ...in binary output channels
   for (uint16_t i = 0; i < rscp_numBinaryOutputChannels; i++)
-    if (rscp_binaryOutputChannels[i].channelID == channelID)
+    if (rscp_binaryOutputChannels[i].channel == channelID)
     {
       rscp_setBinaryOutputChannel(&(rscp_binaryOutputChannels[i]), &(payload[2]));
       return;
@@ -394,15 +394,15 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
 #warning FIXME: testcode
 //      if (RSCP_ISFORME(src_addr)) {
 //      }
-      if(payload[2] == RSCP_UNIT_BOOLEAN &&
-         payload[3] == 0x11)
-      {
-        uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
-        if(channelID > 0 && channelID <= 16) {
-          RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
-          rscp_togglePortPORT(channelID + 16);
-        }
-      }
+//      if(payload[2] == RSCP_UNIT_BOOLEAN &&
+//         payload[3] == 0x11)
+//      {
+//        uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
+//        if(channelID > 0 && channelID <= 16) {
+//          RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
+//          rscp_togglePortPORT(channelID + 16);
+//        }
+//      }
       break;
 
     case RSCP_CHANNEL_STATE_CMD:
