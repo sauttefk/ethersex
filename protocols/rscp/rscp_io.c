@@ -22,8 +22,7 @@
 
 #include <stdio.h>
 
-#include "rscp_io.h"
-#include "protocols/uip/uip.h"
+#include "rscp.h"
 
 #ifdef RSCP_SUPPORT
 
@@ -34,18 +33,20 @@
   #define GET_BUTTON_NAME(i) ((PGM_P)pgm_read_word(&buttonNames[i]))
 
   /* This creates an array of string in ROM which hold the button names. */
-  BTN_CONFIG(STR);
-  PGM_P const buttonNames[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(STRLIST) };
+  RSCP_IO_CONFIG(STR);
+  PGM_P const buttonNames[RSCP_IOS] PROGMEM = { RSCP_IO_CONFIG(STRLIST) };
 #endif
 
-const ioConfig_t rscp_portConfig[CONF_NUM_BUTTONS] PROGMEM = { BTN_CONFIG(C) };
+const ioConfig_t rscp_portConfig[RSCP_IOS] PROGMEM = { RSCP_IO_CONFIG(C) };
 
 
 uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
-  portPtrType portDDR = (portPtrType) pgm_read_word(&rscp_portConfig[portID].ddr);
+  portPtrType portDDR =
+      (portPtrType) pgm_read_word(&rscp_portConfig[portID].ddr);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
-  RSCP_DEBUG_IO("set DDR port %d (%x, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
+  RSCP_DEBUG_IO("set DDR port %d (%x, bit %d): %d\n", portID,
+      pgm_read_word(&rscp_portConfig[portID].ddr), bit, value);
 
   // set direction
   if(value)
@@ -56,10 +57,12 @@ uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
 
 
 uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
-  portPtrType portOut = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
+  portPtrType portOut =
+      (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
-  RSCP_DEBUG_IO("set PORT port %d (%x, bit %d): %d\n", portID, pgm_read_word(&rscp_portConfig[portID].portOut), bit, value);
+  RSCP_DEBUG_IO("set PORT port %d (%x, bit %d): %d\n", portID,
+      pgm_read_word(&rscp_portConfig[portID].portOut), bit, value);
 
   // set pullup
   if(value)
@@ -70,7 +73,8 @@ uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
 
 
 uint8_t rscp_togglePortPORT(uint16_t portID) {
-  portPtrType portOut = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
+  portPtrType portOut =
+      (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
 
   RSCP_DEBUG_IO("toggle PORT port %d (%x, bit %d)\n", portID, portOut, bit);
@@ -80,7 +84,8 @@ uint8_t rscp_togglePortPORT(uint16_t portID) {
 
 
 uint8_t rscp_getPortPIN(uint16_t portID) {
-  portPtrType portIn = (portPtrType) pgm_read_word(&rscp_portConfig[portID].portIn);
+  portPtrType portIn =
+      (portPtrType) pgm_read_word(&rscp_portConfig[portID].portIn);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
   return *portIn & bit ? 1 : 0;
 }
@@ -136,7 +141,7 @@ rscp_IOChannels_periodic(void)
     }
     else
     {
-      /* currect state has changed since the last read.
+      /* current state has changed since the last read.
        * restart the debounce timer */
       RSCP_DEBUG_IO("c %d raw change to: %d\n", bic->channel, curState);
       bic->debounceCounter = 0;
@@ -148,7 +153,7 @@ rscp_IOChannels_periodic(void)
         bic->debounceDelay <= bic->debounceCounter)
     {
       bic->lastDebouncedState = bic->lastRawState;
-      BUTTONDEBUG("Debounced BinaryInputChannel % changed to %d\n",
+      RSCP_DEBUG_IO("Debounced BinaryInputChannel %hu changed to %hu\n",
         bic->channel, bic->lastDebouncedState);
       rscp_txBinaryIOChannelChange(bic->channel, bic->lastDebouncedState);
     }
@@ -169,7 +174,7 @@ rscp_IOChannels_periodic(void)
     if (boc->lastState != curState)
     {
       boc->lastState = curState;
-      BUTTONDEBUG("BinaryOutputChannel % changed to %d\n", boc->channel,
+      RSCP_DEBUG_IO("BinaryOutputChannel %hu changed to %hu\n", boc->channel,
         boc->lastState);
       rscp_txBinaryIOChannelChange(boc->channel, boc->lastState);
     }
@@ -177,9 +182,9 @@ rscp_IOChannels_periodic(void)
 }
 #endif /* RSCP_SUPPORT */
 
-/**
- * -- Ethersex META --
- * header(protocols/rscp/rscp_io.h)
- * timer(1, rscp_IOChannels_periodic())
- * block(Miscelleanous)
+/*
+  -- Ethersex META --
+  header(protocols/rscp/rscp_io.h)
+  timer(1, rscp_IOChannels_periodic())
+  block(Miscelleanous)
  */

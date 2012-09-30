@@ -21,15 +21,7 @@
  */
 
 #include <stdio.h>
-
 #include "rscp.h"
-#include "rscp_io.h"
-#include "core/bit-macros.h"
-#include "core/periodic.h"
-#include "core/eeprom.h"
-#include "protocols/uip/uip.h"
-#include "protocols/uip/uip_router.h"
-#include "hardware/onewire/onewire.h"
 
 #ifdef RSCP_SUPPORT
 
@@ -262,10 +254,9 @@ void rscp_parseChannelDefinitions(void)
         break;
       }
       default:
-      {
         RSCP_DEBUG_CONF("could not parse channel type 0x%02x --- ABORTING\n",
           channelType);
-      }
+      break;
     }
   }
 
@@ -281,7 +272,8 @@ void
 rscp_init(void)
 {
   RSCP_DEBUG("init\n");
-  RSCP_DEBUG_CONF("start of rscp config in eeprom: 0x%03X\n", RSCP_EEPROM_START);
+  RSCP_DEBUG_CONF("start of rscp config in eeprom: 0x%03X\n",
+      RSCP_EEPROM_START);
   RSCP_DEBUG_CONF("free eeprom: %d\n", RSCP_FREE_EEPROM);
   RSCP_DEBUG_CONF("version: %d\n",
               rscpEE_word(rscp_conf_header, version, RSCP_EEPROM_START));
@@ -346,13 +338,15 @@ void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *channel,
       rscp_setPortPORT(channel->port, 1);
       break;
     default:
-      RSCP_DEBUG("Invalid value for setBinaryOutputChannel of type %d", payload[0]);
+      RSCP_DEBUG("Invalid value for setBinaryOutputChannel of type %d",
+          payload[0]);
+      break;
   }
 }
 
 void rscp_handleChannelStateCommand(uint8_t* payload)
 {
-  uint16_t channelID = ntohs(*((uint16_t*)payload[0]));
+  uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
 
   RSCP_DEBUG("handleChannelStateCommand: channel=%d\n", channelID);
 
@@ -374,8 +368,8 @@ void rscp_handleChannelStateCommand(uint8_t* payload)
 
 
 void
-rscp_handleMessage(struct uip_eth_addr * src_addr, uint16_t msg_type,
-  uint16_t payload_len, uint8_t * payload)
+rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
+    uint16_t payload_len, uint8_t * payload)
 {
   RSCP_DEBUG("SRCAD: %02X:%02X:%02X:%02X:%02X:%02X\n", src_addr[0],
     src_addr[1], src_addr[2], src_addr[3], src_addr[4], src_addr[5]);
@@ -400,15 +394,15 @@ rscp_handleMessage(struct uip_eth_addr * src_addr, uint16_t msg_type,
 #warning FIXME: testcode
 //      if (RSCP_ISFORME(src_addr)) {
 //      }
-//      if(payload[2] == RSCP_UNIT_BOOLEAN &&
-//         payload[3] == 0x11)
-//      {
-//        uint16_t channelID = ntohs(*((uint16_t*)payload[0]));
-//        if(channelID > 0 && channelID <= 16) {
-//          RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
-//          rscp_togglePortPORT(channelID + 16);
-//        }
-//      }
+      if(payload[2] == RSCP_UNIT_BOOLEAN &&
+         payload[3] == 0x11)
+      {
+        uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
+        if(channelID > 0 && channelID <= 16) {
+          RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
+          rscp_togglePortPORT(channelID + 16);
+        }
+      }
       break;
 
     case RSCP_CHANNEL_STATE_CMD:
@@ -487,6 +481,90 @@ rscp_sendPeriodicTemperature(void)
 
   rscp_transmit(RSCP_CHANNEL_EVENT);
 }
+
+/*
+ * General encoding methods
+ */
+// generate integer encode/decode methods by macro expansion
+#define ENCODE_NUMBER(SIZE) int8_t rscp_encodeInt##SIZE (int##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
+  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
+    *(buffer->pos++) = (value >> shift) & 0xff; \
+  return 0; \
+} \
+int8_t rscp_encodeUInt##SIZE (uint##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
+  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
+    *(buffer->pos++) = (value >> shift) & 0xff; \
+  return 0; \
+}
+ENCODE_NUMBER(8)
+ENCODE_NUMBER(16)
+ENCODE_NUMBER(32)
+
+int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer) {
+  return rscp_encodeUInt16(channel, buffer);
+}
+
+/*
+ * Field encoding methods
+ */
+int8_t rscp_encodeBooleanField(int8_t value, rscp_payloadBuffer_t *buffer) {
+  *(buffer->pos++) = value ? 0x11 : 0x10;
+  return 0;
+}
+
+// generate integer encode/decode methods by macro expansion
+#define ENCODE_NUMBER_FIELD(SIZE, CODE) int8_t rscp_encodeInt##SIZE##Field(int##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
+  *(buffer->pos++) = CODE; \
+  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
+    *(buffer->pos++) = (value >> shift) & 0xff; \
+  return 0; \
+} \
+int8_t rscp_encodeUInt##SIZE##Field(uint##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
+  *(buffer->pos++) = CODE+1; \
+  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
+    *(buffer->pos++) = (value >> shift) & 0xff; \
+  return 0; \
+}
+ENCODE_NUMBER_FIELD(8, 0x01)
+ENCODE_NUMBER_FIELD(16, 0x03)
+ENCODE_NUMBER_FIELD(32, 0x05)
+
+// FIXME: support for float/double?
+
+int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
+  if(scale < -4 || scale > 3 || significand < -4096 || significand > 4095)
+    return -1;
+
+  *(buffer->pos++) = 0x0b;
+  *(buffer->pos++) = (scale << 5) | ((significand >> 8) & 0x1f);
+  *(buffer->pos++) = significand & 0xff;
+
+  return 0;
+}
+int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
+  if(scale < -8 || scale > 7 || significand < -524288 || significand > 524287)
+    return -1;
+
+  *(buffer->pos++) = 0x0c;
+  *(buffer->pos++) = (scale << 4) | ((significand >> 16) & 0x0f);
+  *(buffer->pos++) = (significand >> 8) & 0xff;
+  *(buffer->pos++) = significand & 0xff;
+
+  return 0;
+}
+int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
+  if(scale < -16 || scale > 15 || significand < -67108864 || significand > 67108863)
+    return -1;
+
+  *(buffer->pos++) = 0x0d;
+  *(buffer->pos++) = (scale << 3) | ((significand >> 24) & 0x07);
+  *(buffer->pos++) = (significand >> 16) & 0xff;
+  *(buffer->pos++) = (significand >> 8) & 0xff;
+  *(buffer->pos++) = significand & 0xff;
+
+  return 0;
+}
+
 #endif /* RSCP_SUPPORT */
 
 /*

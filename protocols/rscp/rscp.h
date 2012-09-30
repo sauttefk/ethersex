@@ -30,8 +30,16 @@
 #include <avr/io.h>
 #include <avr/eeprom.h>
 
-#include "rscp_net.h"
 #include "core/eeprom.h"
+#include "core/bool.h"
+#include "protocols/uip/uip.h"
+#include "protocols/uip/uip_router.h"
+#include "services/clock/clock.h"
+#include "hardware/onewire/onewire.h"
+
+#include "rscp_net.h"
+#include "rscp_io.h"
+
 
 #ifdef DEBUG_RSCP
 #include "core/debug.h"
@@ -53,8 +61,8 @@ extern uint8_t rscp_mode;
 
 void rscp_setup(void);
 void rscp_main(void);
-void rscp_handleMessage(struct uip_eth_addr * src_addr, uint16_t msg_type,
- uint16_t payload_len, uint8_t * payload);
+void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
+    uint16_t payload_len, uint8_t * payload);
 void rscp_init(void);
 void rscp_periodic(void);
 void rscp_sendHeartBeat(void);
@@ -62,6 +70,33 @@ void rscp_sendPeriodicOutputEvents(void);
 void rscp_sendPeriodicInputEvents(void);
 void rscp_sendPeriodicTemperature(void);
 
+int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeBooleanField(int8_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeUInt8Field(uint8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt16Field(uint16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt32Field(uint32_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeInt8Field(int8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt16Field(int16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt32Field(int32_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeUInt8 (uint8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt16 (uint16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt32 (uint32_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeInt8 (int8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt16 (int16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt32 (int32_t value, rscp_payloadBuffer_t *buffer);
+
+
+int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer);
 
 #define RSCP_CHANNEL_EVENT            0x1001
 #define RSCP_CHANNEL_STATE_CMD        0x2000

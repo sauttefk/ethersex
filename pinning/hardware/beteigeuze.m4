@@ -134,10 +134,9 @@ ifdef(`conf_RSCP', `
   pin(RSCP_OUTPUT14, PE6)
   pin(RSCP_OUTPUT15, PE7)
 
-#undef CONF_NUM_BUTTONS
-#define CONF_NUM_BUTTONS 33
+#define RSCP_IOS 33
 
-#define BTN_CONFIG(_x) \
+#define RSCP_IO_CONFIG(_x) \
 _x(RSCP_CONFIG_BUTTON)\
 _x(RSCP_INPUT00)\
 _x(RSCP_INPUT01)\

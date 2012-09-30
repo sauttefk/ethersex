@@ -23,12 +23,31 @@
 #include <stdio.h>
 
 #include "rscp.h"
-#include "core/bool.h"
-#include "protocols/uip/uip_router.h"
-#include "services/clock/clock.h"
 
 
 #ifdef RSCP_SUPPORT
+
+#ifdef RSCP_USE_RAW_ETHERNET
+void
+rscp_net_raw(void)
+{
+  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
+  struct rscp_message *rscp = (struct rscp_message *) &uip_buf[RSCP_RAWH_LEN];
+
+  RSCP_DEBUG_NET("received %d bytes RAW data containing %d bytes RSCP data\n",
+    uip_len, ntohs(rscp->payload_len));
+
+  uip_len = 0;
+
+  RSCP_DEBUG_NET("VERS : 0x%01X\n", rscp->version);
+  RSCP_DEBUG_NET("HDLEN: 0x%01X\n", rscp->header_len);
+  RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
+
+  rscp_handleMessage(packet->src.addr, ntohs(rscp->msg_type),
+      ntohs(rscp->payload_len), rscp->payload);
+}
+#endif /* RSCP_USE_RAW_ETHERNET */
+
 
 #ifdef RSCP_USE_UDP_ETHERNET
 void
@@ -51,9 +70,9 @@ rscp_netUdp(void)
   rscp_handleMessage(rscp->mac, ntohs(rscp->message.msg_type),
     ntohs(rscp->message.payload_len), rscp->message.payload);
 }
-
-
 #endif /* RSCP_USE_UDP_ETHERNET */
+
+
 void
 rscp_net_init(void)
 {
@@ -70,28 +89,6 @@ rscp_net_init(void)
 }
 
 
-#ifdef RSCP_USE_RAW_ETHERNET
-void
-rscp_net_raw(void)
-{
-  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
-  struct rscp_message *rscp = (struct rscp_message *) &uip_buf[RSCP_RAWH_LEN];
-
-  RSCP_DEBUG_NET("received %d bytes RAW data containing %d bytes RSCP data\n",
-    uip_len, ntohs(rscp->payload_len));
-
-  uip_len = 0;
-
-  RSCP_DEBUG_NET("VERS : 0x%01X\n", rscp->version);
-  RSCP_DEBUG_NET("HDLEN: 0x%01X\n", rscp->header_len);
-  RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
-
-  rscp_handleMessage(packet->src.addr, ntohs(rscp->msg_type), ntohs(rscp->payload_len),
-    rscp->payload);
-}
-#endif /* RSCP_USE_RAW_ETHERNET */
-
-
 rscp_networkMode_t rscp_networkMode = rscp_ModeUDP;
 //rscp_networkMode_t rscp_networkMode = rscp_ModeRawEthernet;
 
@@ -102,13 +99,15 @@ rscp_getPayloadBuffer()
 {
   switch(rscp_networkMode) {
     case rscp_ModeRawEthernet:
-      rscp_payloadBuffer.pos = rscp_payloadBuffer.start = (((rscp_message_t *) &uip_buf[RSCP_RAWH_LEN])->payload);
+      rscp_payloadBuffer.pos = rscp_payloadBuffer.start =
+          (((rscp_message_t *) &uip_buf[RSCP_RAWH_LEN])->payload);
       break;
 
     case rscp_ModeUDP:
     default:
-      rscp_payloadBuffer.pos = rscp_payloadBuffer.start = ((struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN +
-        UIP_IPUDPH_LEN])->message.payload;
+      rscp_payloadBuffer.pos = rscp_payloadBuffer.start =
+          ((struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN +
+          UIP_IPUDPH_LEN])->message.payload;
       break;
   }
 
@@ -179,90 +178,6 @@ rscp_transmit(uint16_t msg_type)
       break;
   }
 }
-
-/*
- * General encoding methods
- */
-// generate integer encode/decode methods by macro expansion
-#define ENCODE_NUMBER(SIZE) int8_t rscp_encodeInt##SIZE (int##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
-  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
-    *(buffer->pos++) = (value >> shift) & 0xff; \
-  return 0; \
-} \
-int8_t rscp_encodeUInt##SIZE (uint##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
-  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
-    *(buffer->pos++) = (value >> shift) & 0xff; \
-  return 0; \
-}
-ENCODE_NUMBER(8)
-ENCODE_NUMBER(16)
-ENCODE_NUMBER(32)
-
-int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer) {
-  return rscp_encodeUInt16(channel, buffer);
-}
-
-/*
- * Field encoding methods
- */
-int8_t rscp_encodeBooleanField(int8_t value, rscp_payloadBuffer_t *buffer) {
-  *(buffer->pos++) = value ? 0x11 : 0x10;
-  return 0;
-}
-
-// generate integer encode/decode methods by macro expansion
-#define ENCODE_NUMBER_FIELD(SIZE, CODE) int8_t rscp_encodeInt##SIZE##Field(int##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
-  *(buffer->pos++) = CODE; \
-  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
-    *(buffer->pos++) = (value >> shift) & 0xff; \
-  return 0; \
-} \
-int8_t rscp_encodeUInt##SIZE##Field(uint##SIZE##_t value, rscp_payloadBuffer_t *buffer) { \
-  *(buffer->pos++) = CODE+1; \
-  for(int shift = SIZE - 8; shift >= 0; shift -= 8) \
-    *(buffer->pos++) = (value >> shift) & 0xff; \
-  return 0; \
-}
-ENCODE_NUMBER_FIELD(8, 0x01)
-ENCODE_NUMBER_FIELD(16, 0x03)
-ENCODE_NUMBER_FIELD(32, 0x05)
-
-// FIXME: support for float/double?
-
-int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
-  if(scale < -4 || scale > 3 || significand < -4096 || significand > 4095)
-    return -1;
-
-  *(buffer->pos++) = 0x0b;
-  *(buffer->pos++) = (scale << 5) | ((significand >> 8) & 0x1f);
-  *(buffer->pos++) = significand & 0xff;
-
-  return 0;
-}
-int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
-  if(scale < -8 || scale > 7 || significand < -524288 || significand > 524287)
-    return -1;
-
-  *(buffer->pos++) = 0x0c;
-  *(buffer->pos++) = (scale << 4) | ((significand >> 16) & 0x0f);
-  *(buffer->pos++) = (significand >> 8) & 0xff;
-  *(buffer->pos++) = significand & 0xff;
-
-  return 0;
-}
-int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
-  if(scale < -16 || scale > 15 || significand < -67108864 || significand > 67108863)
-    return -1;
-
-  *(buffer->pos++) = 0x0d;
-  *(buffer->pos++) = (scale << 3) | ((significand >> 24) & 0x07);
-  *(buffer->pos++) = (significand >> 16) & 0xff;
-  *(buffer->pos++) = (significand >> 8) & 0xff;
-  *(buffer->pos++) = significand & 0xff;
-
-  return 0;
-}
-
 #endif /* RSCP_SUPPORT */
 
 /*

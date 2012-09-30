@@ -20,14 +20,10 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-#include "config.h"
-
 #ifndef _RSCP_IO_H
 #define _RSCP_IO_H
 
 #ifdef RSCP_SUPPORT
-
-#include "rscp.h"
 
 #ifdef DEBUG_RSCP_IO
 #include "core/debug.h"
@@ -37,7 +33,7 @@
 #endif
 
 
-#if !defined(CONF_NUM_BUTTONS) || !defined(BTN_CONFIG)
+#if !defined(RSCP_IOS) || !defined(RSCP_IO_CONFIG)
 #error Error in pinning configuration for buttons module. Check your pinning \
 configuration.
 #endif
@@ -62,7 +58,7 @@ typedef volatile uint8_t * const portPtrType;
 /* Enum used in the cyclic function to loop over all buttons */
 typedef enum
 {
-  BTN_CONFIG(E)
+  RSCP_IO_CONFIG(E)
 } rscp_io_t;
 
 /* Static configuration data for each input */

@@ -57,7 +57,7 @@ typedef struct rscp_message
 
 typedef struct rscp_udp_message
 {
-  uint8_t  mac[6];                    // mac address of sender
+  uint8_t mac[6];                     // mac address of sender
   rscp_message_t message;             // rscp message
 } rscp_udp_message_t;
 
