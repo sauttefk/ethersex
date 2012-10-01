@@ -1,11 +1,16 @@
 dep_bool_menu "RSCP Node" RSCP_SUPPORT
   string "Device URL" CONF_RSCP_DEVICEURL "sautter.com/beteigeuze.xml"
-  dep_bool "Raw Ethernet" RSCP_USE_RAW_ETHERNET $RSCP_SUPPORT
-  dep_bool "UDP Ethernet" RSCP_USE_UDP_ETHERNET $RSCP_SUPPORT
-  dep_bool "1wire Temperature Sensors" RSCP_OW $RSCP_SUPPORT $ONEWIRE_SUPPORT $ONEWIRE_POLLING_SUPPORT
+  dep_bool_menu "Raw Ethernet" RSCP_USE_RAW_ETHERNET $RSCP_SUPPORT $ENC28J60_SUPPORT
+    int "Ethernet Type" RSCP_ETHTYPE 17171
+  endmenu
+  dep_bool_menu "RSCP over UDP" RSCP_USE_UDP $RSCP_SUPPORT $UDP_SUPPORT $BROADCAST_SUPPORT
+    int "UDP Port Number" RSCP_UDP_PORT 17171
+  endmenu
+	dep_bool "1wire Temperature Sensors" RSCP_USE_OW $RSCP_SUPPORT $ONEWIRE_SUPPORT $ONEWIRE_POLLING_SUPPORT
   comment "Debugging Flags"
   dep_bool "RSCP" DEBUG_RSCP $RSCP_SUPPORT $DEBUG
   dep_bool "RSCP config" DEBUG_RSCP_CONF $RSCP_SUPPORT $DEBUG_RSCP
   dep_bool "RSCP io" DEBUG_RSCP_IO $RSCP_SUPPORT $DEBUG_RSCP
   dep_bool "RSCP net" DEBUG_RSCP_NET $RSCP_SUPPORT $DEBUG_RSCP
 endmenu
+

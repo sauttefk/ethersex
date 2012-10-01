@@ -20,6 +20,8 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
+#include "config.h"
+
 #ifndef _RSCP_IO_H
 #define _RSCP_IO_H
 

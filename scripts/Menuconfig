@@ -1058,31 +1058,32 @@ get_dflt_config () {
 Select the default profile you wish to load. \
 <Esc><Esc> to abort." \
 			15 70 7 \
-			defconfig	  "Etherrape"					0 \
-			Jackalope	  "Jackalope (Etherrape extension)"		0 \
-			ethersex	  "Standard Ethersex"				0 \
-			bootloader	  "Ethernet Bootloader"				0 \
-			netio		  "Pollin AVR Net-IO"				0 \
-			netio_addon	  "Pollin AVR Net-IO (w/ addon board)"		0 \
-			radig		  "Radig AVR Webmodul"				0 \
-			fimser		  "Fieldday Instant Messenger"			0 \
-			probot		  "Conrad Probot"				0 \
-			arduino_duemilanove "Arduino Duemilanove"			0 \
-			rfm12-teensy	  "RFM12 Standalone"				0 \
-			zbus-teensy	  "ZBUS Standalone"				0 \
-			usb-teensy	  "USB (Network) Standalone"			0 \
-			usb-rfm12-dongle  "USB RFM12 Dongle"				0 \
-			USBrfm12stick  "USB RFM12 Stick"				0 \
-			ehaserl		  "EH2010 Ehaserl Badge"			0 \
-			fnordlicht_servo "Fnordlicht Servo"			0 \
-			no-network	  "No Networking (USB only)"			0 \
-			JeeLinkv2	  "Jeelabs JeeLinkv2 (FTDI-ZBUS, RFM12)"	0 \
-			hr20		  "Rondostat HR20/Thermotronic Basic/Thermy"	0 \
-			lome6		  "lome6 - lights out management for ethersex"	0 \
-			alpengluehn	  "Alpengluehn 16 Channel LED Driver Hardware"	0 \
-			antares_O	  "Antares Output - AT90CAN (CANBUS, RS485, 40 Outputs, DIN rail)"	0 \
-			antares_I	  "Antares Input - AT90CAN (CANBUS, RS485, 32 Inputs, DIN rail)"	0 \
-			beteigeuze	  "Beteigeuze - AT90CAN (CANBUS, RS485, 42 I/O, ⌀ 53mm)"	0 \
+			defconfig	  "Etherrape"                                   0 \
+			Jackalope	  "Jackalope (Etherrape extension)"             0 \
+			ethersex	  "Standard Ethersex"                           0 \
+			bootloader	  "Ethernet Bootloader"                         0 \
+			netio		  "Pollin AVR Net-IO"                           0 \
+			netio_addon	  "Pollin AVR Net-IO (w/ addon board)"          0 \
+			radig		  "Radig AVR Webmodul"                          0 \
+			fimser		  "Fieldday Instant Messenger"                  0 \
+			probot		  "Conrad Probot"                               0 \
+			arduino_duemilanove "Arduino Duemilanove"                       0 \
+			rfm12-teensy	  "RFM12 Standalone"                            0 \
+			zbus-teensy	  "ZBUS Standalone"                             0 \
+			usb-teensy	  "USB (Network) Standalone"                    0 \
+			usb-rfm12-dongle  "USB RFM12 Dongle"                            0 \
+			USBrfm12stick     "USB RFM12 Stick"                             0 \
+			ehaserl		  "EH2010 Ehaserl Badge"                        0 \
+			fnordlicht_servo  "Fnordlicht Servo"                            0 \
+			no-network	  "No Networking (USB only)"                    0 \
+			JeeLinkv2	  "Jeelabs JeeLinkv2 (FTDI-ZBUS, RFM12)"        0 \
+			hr20		  "Rondostat HR20/Thermotronic Basic/Thermy"    0 \
+			lome6		  "lome6 - lights out management for ethersex"  0 \
+			alpengluehn	  "Alpengluehn 16 Channel LED Driver Hardware"  0 \
+			antares_O	  "Antares O - AT90CAN, 40 Outputs, DIN rail"   0 \
+			antares_I	  "Antares I - AT90CAN, 32 Inputs, DIN rail"    0 \
+			beteigeuze	  "Beteigeuze - AT90CAN, 42 I/O, Unterputzdose" 0 \
+			rscp_bootloader	  "RSCP Bootloader"                             0 \
 			 2>MCdialog.out
 
 		exit_status=$?

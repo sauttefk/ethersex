@@ -46,11 +46,11 @@ beteigeuze=y
 # JeeLinkv2 is not set
 # lome6 is not set
 # MicroWebServer is not set
-# netio is not set
 # netio_addon is not set
+# netio is not set
 # other is not set
-# pollin_evalboard is not set
 # pollin_evalboard_addon is not set
+# pollin_evalboard is not set
 # pollin_funkevalboard is not set
 # radig_web is not set
 # thermy is not set
@@ -703,7 +703,10 @@ CONF_VSCP_PORT=9598
 RSCP_SUPPORT=y
 CONF_RSCP_DEVICEURL="sautter.com/beteigeuze.xml"
 RSCP_USE_RAW_ETHERNET=y
-RSCP_USE_UDP_ETHERNET=y
+RSCP_ETHTYPE=17171
+RSCP_USE_UDP=y
+RSCP_UDP_PORT=17171
+RSCP_USE_OW=y
 DEBUG_RSCP=y
 DEBUG_RSCP_CONF=y
 DEBUG_RSCP_IO=y

@@ -79,11 +79,13 @@ void rscp_parseChannelDefinitions(void)
           numstates * RSCP_CHT12_STATE_SIZE;
         break;
       }
+#ifdef RSCP_USE_OW
       case RSCP_CHANNEL_OWTEMPERATURE:
       {
         p1 += RSCP_CHT30_SIZE;
         break;
       }
+#endif /* RSCP_USE_OW */
       default:
       {
         RSCP_DEBUG_CONF("could not parse channel type 0x%02x --- ABORTING\n",
@@ -233,6 +235,7 @@ void rscp_parseChannelDefinitions(void)
         }
         break;
       }
+#ifdef RSCP_USE_OW
       case RSCP_CHANNEL_OWTEMPERATURE:
       {
         RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
@@ -253,6 +256,7 @@ void rscp_parseChannelDefinitions(void)
         p1 += RSCP_CHT30_SIZE;
         break;
       }
+#endif /* RSCP_USE_OW */
       default:
         RSCP_DEBUG_CONF("could not parse channel type 0x%02x --- ABORTING\n",
           channelType);
@@ -423,7 +427,9 @@ rscp_periodic(void)
 //    rscp_sendHeartBeat();
 //    rscp_sendPeriodicOutputEvents();
 //    rscp_sendPeriodicInputEvents();
+#ifdef RSCP_USE_OW
       rscp_sendPeriodicTemperature();
+#endif /* RSCP_USE_OW */
   }
 }
 
@@ -464,6 +470,7 @@ rscp_sendPeriodicInputEvents(void)
 }
 
 
+#ifdef RSCP_USE_OW
 void
 rscp_sendPeriodicTemperature(void)
 {
@@ -481,6 +488,7 @@ rscp_sendPeriodicTemperature(void)
 
   rscp_transmit(RSCP_CHANNEL_EVENT);
 }
+#endif /* RSCP_USE_OW */
 
 /*
  * General encoding methods

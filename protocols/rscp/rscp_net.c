@@ -49,7 +49,7 @@ rscp_net_raw(void)
 #endif /* RSCP_USE_RAW_ETHERNET */
 
 
-#ifdef RSCP_USE_UDP_ETHERNET
+#ifdef RSCP_USE_UDP
 void
 rscp_netUdp(void)
 {
@@ -70,13 +70,13 @@ rscp_netUdp(void)
   rscp_handleMessage(rscp->mac, ntohs(rscp->message.msg_type),
     ntohs(rscp->message.payload_len), rscp->message.payload);
 }
-#endif /* RSCP_USE_UDP_ETHERNET */
+#endif /* RSCP_USE_UDP */
 
 
 void
 rscp_net_init(void)
 {
-#ifdef RSCP_USE_UDP_ETHERNET
+#ifdef RSCP_USE_UDP
   uip_udp_conn_t *rscp_conn;
   uip_ipaddr_t ip;
   uip_ipaddr_copy(&ip, all_ones_addr);
@@ -85,7 +85,7 @@ rscp_net_init(void)
 
   uip_udp_bind(rscp_conn, HTONS(RSCP_ETHTYPE));
   RSCP_DEBUG_NET("listening on UDP port %d\n", RSCP_ETHTYPE);
-#endif /* RSCP_USE_UDP_ETHERNET */
+#endif /* RSCP_USE_UDP */
 }
 
 
@@ -163,8 +163,8 @@ rscp_transmit(uint16_t msg_type)
       for(int i=0; i<4; i++)
         rscp_conn.ripaddr[i] = uip_hostaddr[i] | ~uip_netmask[i];
 
-      rscp_conn.rport = HTONS(RSCP_ETHTYPE);
-      rscp_conn.lport = HTONS(RSCP_ETHTYPE);
+      rscp_conn.rport = HTONS(RSCP_UDP_PORT);
+      rscp_conn.lport = HTONS(RSCP_UDP_PORT);
       uip_slen = RSCP_UDP_HEADER_LEN + payload_len;
       uip_udp_conn = &rscp_conn;
       uip_process(UIP_UDP_SEND_CONN);

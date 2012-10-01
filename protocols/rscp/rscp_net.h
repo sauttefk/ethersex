@@ -20,6 +20,8 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
+#include "config.h"
+
 #ifndef _RSCP_NET_H
 #define _RSCP_NET_H
 
@@ -66,11 +68,9 @@ typedef struct rscp_payloadBuffer {
   uint8_t  *pos;
 } rscp_payloadBuffer_t;
 
-#define RSCP_ETHTYPE                  0x4313
 #define RSCP_RAWH_LEN                 sizeof(struct uip_eth_hdr)
 #define RSCP_HEADER_LEN               offsetof(rscp_message_t, payload)
 #define RSCP_UDP_HEADER_LEN           offsetof(rscp_udp_message_t, message.payload)
-
 
 /* prototypes */
 void rscp_net_init(void);
