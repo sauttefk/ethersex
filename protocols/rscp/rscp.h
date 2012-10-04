@@ -262,7 +262,7 @@ struct __attribute__ ((packed)) chType12_t
 
 struct __attribute__ ((packed)) chType30_t
 {                               // channel type 0x30 (ow temperature)
-  uint8_t owROM[8];             // onewire ROM code
+  ow_rom_code_t owROM;          // onewire ROM code
   uint16_t interval;            // report-interval (s)
   int16_t tempHi;               // report-above (°C / 10)
   int16_t tempLo;               // report-below (°C / 10)

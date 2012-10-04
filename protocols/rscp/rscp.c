@@ -225,7 +225,7 @@ void rscp_parseChannelDefinitions(void)
             channelPort, channelFlags);
           p1 += RSCP_CHT12_PORT_SIZE;
         }
-        for (int j = 0; j < numstates; j++) {
+        for (uint8_t j = 0; j < numstates; j++) {
           uint8_t channelState =
             eeprom_read_byte((void *)(p1 + RSCP_CHT12_PORTSTATES));
           RSCP_DEBUG_CONF("complex state: %d - bits: 0x%02x\n", j,
@@ -238,15 +238,16 @@ void rscp_parseChannelDefinitions(void)
 #ifdef RSCP_USE_OW
       case RSCP_CHANNEL_OWTEMPERATURE:
       {
-        RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[0], p1),
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[1], p1),
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[2], p1),
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[3], p1),
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[4], p1),
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[5], p1),
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[6], p1),
-          rscpEE_byte(rscp_conf_channel, chType30.owROM[7], p1));
+        ow_rom_code_t owROM;
+        for (uint8_t i = 0; i < 8; ++i)
+          owROM.bytewise[i]  = rscpEE_byte(rscp_conf_channel, chType30.owROM.bytewise[i], p1);
+
+        RSCP_DEBUG_CONF("1WID: %16X\n", owROM.raw);
+
+        int8_t index = ow_find_sensor_index(&owROM);
+
+        RSCP_DEBUG_CONF("sensorindex: %d\n", index);
+
         RSCP_DEBUG_CONF("interval: %d\n", rscpEE_word(rscp_conf_channel,
           chType30.interval, p1));
         RSCP_DEBUG_CONF("tempHi: %d\n", rscpEE_word(rscp_conf_channel,
