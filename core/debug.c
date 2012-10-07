@@ -94,27 +94,35 @@ debug_uart_put(char d, FILE * stream)
   soft_uart_putchar(d);
 #else /* SOFT_UART_SUPPORT */
   while (!(usart(UCSR, A) & _BV(usart(UDRE))));
-#ifdef HAVE_RS485TE_USART1
+
+  #if (HAVE_RS485TE_USART0 == 1 || HAVE_RS485TE_USART1 == 1)
   /* enable usart transmit complete interrupt */
   usart(UCSR,B) |= _BV(usart(TXCIE));
-  /* enable RS485 transmitter */
-  PIN_SET(RS485TE_USART1);
-#endif  /* HAVE_RS485TE_USART1 */
+    #if (USE_USART == 0)
+  PIN_SET(RS485TE_USART0);  // enable RS485 transmitter for usart 0
+    #elif (USE_USART == 1)
+  PIN_SET(RS485TE_USART1);  // enable RS485 transmitter for usart 1
+    #endif
+  #endif  /* HAVE_RS485TE_USART0 == 1 || HAVE_RS485TE_USART1 == 1 */
+
   usart(UDR) = d;
 #endif /* SOFT_UART_SUPPORT */
   return 0;
 }
 
 /* interrupt routine to disable the RS485 transmitter */
-#ifdef HAVE_RS485TE_USART1
+#if (HAVE_RS485TE_USART0 == 1 || HAVE_RS485TE_USART1 == 1)
 ISR(usart(USART,_TX_vect))
 {
-  /* disable RS485 transmitter */
-  PIN_CLEAR(RS485TE_USART1);
+  #if (USE_USART == 0)
+  PIN_CLEAR(RS485TE_USART0);  // disable RS485 transmitter for usart 0
+  #elif (USE_USART == 1)
+  PIN_CLEAR(RS485TE_USART1);  // disable RS485 transmitter for usart 1
+  #endif
   /* disable usart transmit complete interrupt */
   usart(UCSR,B) &= ~(_BV(usart(TXCIE)));
 }
-#endif  /* HAVE_RS485TE_USART1 */
+#endif  /* HAVE_RS485TE_USART0 == 1 || HAVE_RS485TE_USART1 == 1 */
 
 
 void noinline
