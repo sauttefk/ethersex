@@ -9,6 +9,7 @@ dep_bool_menu "RSCP Node" RSCP_SUPPORT
 	dep_bool "1wire Temperature Sensors" RSCP_USE_OW $RSCP_SUPPORT $ONEWIRE_SUPPORT $ONEWIRE_POLLING_SUPPORT
   comment "Debugging Flags"
   dep_bool "RSCP" DEBUG_RSCP $RSCP_SUPPORT $DEBUG
+  dep_bool "  message payload" DEBUG_RSCP_PAYLOAD $RSCP_SUPPORT $DEBUG_RSCP $DEBUG_RSCP
   dep_bool "RSCP config" DEBUG_RSCP_CONF $RSCP_SUPPORT $DEBUG_RSCP
   dep_bool "RSCP io" DEBUG_RSCP_IO $RSCP_SUPPORT $DEBUG_RSCP
   dep_bool "RSCP net" DEBUG_RSCP_NET $RSCP_SUPPORT $DEBUG_RSCP

@@ -376,14 +376,16 @@ void
 rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
     uint16_t payload_len, uint8_t * payload)
 {
-  RSCP_DEBUG("SRCAD: %02X:%02X:%02X:%02X:%02X:%02X\n", src_addr[0],
-    src_addr[1], src_addr[2], src_addr[3], src_addr[4], src_addr[5]);
-  RSCP_DEBUG("TYPE : 0x%04X\n", msg_type);
-  RSCP_DEBUG("DSIZE: %d\n", payload_len);
-  RSCP_DEBUG("DATA : ");
-#ifdef DEBUG_RSCP
-  for (int i = 0; i < payload_len; i++)
-    printf_P(PSTR("%s%02X"), ((i > 0) ? ":" : ""), payload[i]);
+  RSCP_DEBUG("Message from: %02X:%02X:%02X:%02X:%02X:%02X, type: 0x%04X, size: %d\n",
+      src_addr[0], src_addr[1], src_addr[2], src_addr[3], src_addr[4], src_addr[5],
+      msg_type,
+      payload_len);
+#ifdef DEBUG_RSCP_PAYLOAD
+  for (int i = 0; i < payload_len; i++) {
+    if((i % 32) == 0)
+      RSCP_DEBUG("    ");
+    printf_P(PSTR("%s%02X"), ((i > 0) ? " " : ""), payload[i]);
+  }
   printf_P(PSTR("\n"));
 #endif /* DEBUG_RSCP */
 
