@@ -55,6 +55,62 @@
 #define RSCP_DEBUG_CONF(...)    ((void) 0)
 #endif
 
+
+/*
+ * Node state
+ */
+enum
+{
+  RSCP_NODE_STATE_STARTING,
+  RSCP_NODE_STATE_RUNNING,
+  RSCP_NODE_STATE_STOPPING,
+};
+
+typedef struct  __attribute__ ((packed))
+{
+  uint16_t port;                // port id
+  uint16_t channel;             // channel id
+  union {
+    uint8_t flags;              // bit flags
+    struct {
+      uint8_t :1;
+      uint8_t debounceDelay:4;  // the debounce delay in increments of 20ms
+      uint8_t pullup:1;         // weak pullup resistor
+      uint8_t report:1;         // report on change
+      uint8_t negate:1;         // negate polarity
+    };
+  };
+  uint8_t lastRawState:1;
+  uint8_t lastDebouncedState:1;
+  uint8_t didChangeState:1;
+  uint8_t debounceCounter:4;
+  uint8_t :1;
+} rscp_binaryInputChannel;
+
+uint16_t rscp_numBinaryInputChannels;
+rscp_binaryInputChannel *rscp_binaryInputChannels;
+
+
+typedef struct  __attribute__ ((packed))
+{
+  uint16_t port;                // port id
+  uint16_t channel;             // channel id
+  union {
+    uint8_t flags;              // bit flags
+    struct {
+      uint8_t lastState:1;
+      uint8_t :3;
+      uint8_t openDrain:1;      // open drain output
+      uint8_t openSource:1;     // open source output => combined: bipolar
+      uint8_t report:1;         // report on change
+      uint8_t negate:1;         // negate polarity
+    };
+  };
+} rscp_binaryOutputChannel;
+
+uint16_t rscp_numBinaryOutputChannels;
+rscp_binaryOutputChannel *rscp_binaryOutputChannels;
+
 #define RSCP_ISFORME(X) (!memcmp(uip_ethaddr.addr, X, 6))
 
 extern uint8_t rscp_mode;
@@ -69,6 +125,7 @@ void rscp_sendHeartBeat(void);
 void rscp_sendPeriodicOutputEvents(void);
 void rscp_sendPeriodicInputEvents(void);
 void rscp_sendPeriodicTemperature(void);
+void rscp_pollBinaryOutputChannelState(rscp_binaryOutputChannel *boc);
 
 int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
 
@@ -98,6 +155,7 @@ int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale,
 int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
     rscp_payloadBuffer_t *buffer);
 
+#define RSCP_NODE_HEARTBEAT           0x0100
 #define RSCP_CHANNEL_EVENT            0x1001
 #define RSCP_CHANNEL_STATE_CMD        0x2000
 
@@ -340,51 +398,6 @@ typedef struct
 // size of button structure
 #define RSCP_BUTTON_SIZE        (RSCP_BUTTON_REPEAT + sizeof(uint16_t))
 
-
-typedef struct  __attribute__ ((packed))
-{
-  uint16_t port;                // port id
-  uint16_t channel;             // channel id
-  union {
-    uint8_t flags;              // bit flags
-    struct {
-      uint8_t :1;
-      uint8_t debounceDelay:4;  // the debounce delay in increments of 20ms
-      uint8_t pullup:1;         // weak pullup resistor
-      uint8_t report:1;         // report on change
-      uint8_t negate:1;         // negate polarity
-    };
-  };
-  uint8_t lastRawState:1;
-  uint8_t lastDebouncedState:1;
-  uint8_t didChangeState:1;
-  uint8_t debounceCounter:4;
-  uint8_t :1;
-} rscp_binaryInputChannel;
-
-uint16_t rscp_numBinaryInputChannels;
-rscp_binaryInputChannel *rscp_binaryInputChannels;
-
-
-typedef struct  __attribute__ ((packed))
-{
-  uint16_t port;                // port id
-  uint16_t channel;             // channel id
-  union {
-    uint8_t flags;              // bit flags
-    struct {
-      uint8_t lastState:1;
-      uint8_t :3;
-      uint8_t openDrain:1;      // open drain output
-      uint8_t openSource:1;     // open source output => combined: bipolar
-      uint8_t report:1;         // report on change
-      uint8_t negate:1;         // negate polarity
-    };
-  };
-} rscp_binaryOutputChannel;
-
-uint16_t rscp_numBinaryOutputChannels;
-rscp_binaryOutputChannel *rscp_binaryOutputChannels;
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */

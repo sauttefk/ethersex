@@ -163,22 +163,24 @@ rscp_IOChannels_periodic(void)
   for (uint8_t i = 0; i < rscp_numBinaryOutputChannels; i++)
   {
     rscp_binaryOutputChannel *boc = &rscp_binaryOutputChannels[i];
-
-    /* get current value from portpin... */
-    volatile uint8_t portState =
-        *((portPtrType) pgm_read_word(&rscp_portConfig[boc->port].portIn));
-    uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[boc->port].pin);
-    uint8_t curState = (portState & bit ? 1 : 0) ^ (boc->negate ? 1 : 0);
-
-    /* current state hasn't changed since the last read... */
-    if (boc->lastState != curState)
-    {
-      boc->lastState = curState;
-      RSCP_DEBUG_IO("BinaryOutputChannel %hu changed to %hu\n", boc->channel,
-        boc->lastState);
-      rscp_txBinaryIOChannelChange(boc->channel, boc->lastState);
-    }
+    rscp_pollBinaryOutputChannelState(boc);
   }
+}
+
+void rscp_pollBinaryOutputChannelState(rscp_binaryOutputChannel *boc)  {
+	/* get current value from portpin... */
+	volatile uint8_t portState = *((portPtrType) pgm_read_word(&rscp_portConfig[boc->port].portIn));
+	uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[boc->port].pin);
+	uint8_t curState = (portState & bit ? 1 : 0) ^ (boc->negate ? 1 : 0);
+
+	/* current state hasn't changed since the last read... */
+	if (boc->lastState != curState)
+	{
+	  boc->lastState = curState;
+	  RSCP_DEBUG_IO("BinaryOutputChannel %hu changed to %hu\n", boc->channel,
+		boc->lastState);
+	  rscp_txBinaryIOChannelChange(boc->channel, boc->lastState);
+	}
 }
 #endif /* RSCP_SUPPORT */
 

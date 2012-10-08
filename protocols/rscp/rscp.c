@@ -329,24 +329,26 @@ rscp_main(void)
   // RSCP_DEBUG("bla\n");
 }
 
-void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *channel,
+void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *boc,
   uint8_t* payload) {
-  RSCP_DEBUG("setBinaryOutputChannel(%d): ", channel->channel);
+  RSCP_DEBUG("setBinaryOutputChannel(%d): ", boc->channel);
 
   switch (payload[0]) {
     case 0x10: // boolean false
       RSCP_DEBUG("off\n");
-      rscp_setPortPORT(channel->port, 0);
+      rscp_setPortPORT(boc->port, 0);
       break;
     case 0x11: // boolean true
       RSCP_DEBUG("on\n");
-      rscp_setPortPORT(channel->port, 1);
+      rscp_setPortPORT(boc->port, 1);
       break;
     default:
       RSCP_DEBUG("Invalid value for setBinaryOutputChannel of type %d",
           payload[0]);
       break;
   }
+
+  rscp_pollBinaryOutputChannelState(boc);
 }
 
 void rscp_handleChannelStateCommand(uint8_t* payload)
@@ -427,7 +429,7 @@ rscp_periodic(void)
     /* send a heartbeat packet every 60 seconds */
     rscp_heartbeatInterval = 60;
 
-//    rscp_sendHeartBeat();
+    rscp_sendHeartBeat();
 //    rscp_sendPeriodicOutputEvents();
 //    rscp_sendPeriodicInputEvents();
 #ifdef RSCP_USE_OW
@@ -441,10 +443,8 @@ void
 rscp_sendHeartBeat(void)
 {
   rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-
-#warning FIXME
-
-  rscp_transmit(RSCP_CHANNEL_EVENT);
+  rscp_encodeUInt8(RSCP_NODE_STATE_RUNNING, buffer);
+  rscp_transmit(RSCP_NODE_HEARTBEAT);
   RSCP_DEBUG("node heartbeat sent\n");
 }
 
