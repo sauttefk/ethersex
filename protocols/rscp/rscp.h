@@ -256,9 +256,7 @@ typedef struct __attribute__ ((packed))  __rscp_conf_header
 {
   uint16_t version;       // version number (currently 1)
   uint8_t mac[6];         // mac address this config is meant for
-  uint16_t channel_items; // number of channel items
   uint16_t channel_p;     // pointer to channel definitions
-  uint16_t rule_items;    // number of rule items
   uint16_t rule_p;        // pointer to rule definitions
   uint8_t name[];         // name of device (ASCII encoding, zero-terminated)
 } rscp_conf_header;
