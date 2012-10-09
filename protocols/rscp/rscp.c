@@ -141,7 +141,13 @@ void rscp_parseChannelDefinitions(void)
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
 
   void *p1 = (void *)(rscp_channel_p + RSCP_EEPROM_START);
-  do
+
+  // fetch number of channel types
+  uint16_t numChannelTypes = eeprom_read_word(p1);
+  p1 += sizeof(uint16_t);
+  RSCP_DEBUG_CONF("Number of channel types:  %u\n", numChannelTypes);
+
+  while(numChannelTypes-- > 0)
   {
     uint8_t channelType = rscpEE_byte(rscp_chList, channelType, p1);
     void* pointer = (void*) rscpEE_word(rscp_chList, channel_list_p, p1) +
@@ -151,9 +157,8 @@ void rscp_parseChannelDefinitions(void)
     if(pointer == (void*)RSCP_EEPROM_START)
       break;
 
-    RSCP_DEBUG_CONF("list traverse: 0x%04x : 0x%02x - 0x%04x - 0x%04x\n", p1,
-      channelType, pointer, items);
-
+    RSCP_DEBUG_CONF("parsing %u channels of type 0x%04x @ 0x%04x\n",
+        items, channelType, pointer);
 
     switch (channelType)
     {
@@ -195,7 +200,7 @@ void rscp_parseChannelDefinitions(void)
 
     p1 += sizeof(rscp_chList);
 
-  } while(1);
+  }
 
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
@@ -238,16 +243,10 @@ rscp_init(void)
     return;
   }
 
-  rscp_channel_items =
-    rscpEE_word(rscp_conf_header, channel_items, RSCP_EEPROM_START);
-  RSCP_DEBUG_CONF("channel items: %d\n", rscp_channel_items);
   rscp_channel_p =
     rscpEE_word(rscp_conf_header, channel_p, RSCP_EEPROM_START);
   RSCP_DEBUG_CONF("channel pointer: 0x%04X\n", rscp_channel_p);
 
-  rscp_rule_items =
-    rscpEE_word(rscp_conf_header, rule_items, RSCP_EEPROM_START);
-  RSCP_DEBUG_CONF("config items: %d\n", rscp_rule_items);
   rscp_rule_p = rscpEE_word(rscp_conf_header, rule_p, RSCP_EEPROM_START);
   RSCP_DEBUG_CONF("config pointer: 0x%04X\n", rscp_rule_p);
 

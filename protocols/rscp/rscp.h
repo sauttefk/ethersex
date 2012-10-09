@@ -262,9 +262,7 @@ typedef struct __attribute__ ((packed))  __rscp_conf_header
 } rscp_conf_header;
 
 
-uint16_t rscp_channel_items;
 uint16_t rscp_channel_p;
-uint16_t rscp_rule_items;
 uint16_t rscp_rule_p;
 
 /**
