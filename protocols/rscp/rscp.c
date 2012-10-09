@@ -144,11 +144,11 @@ void rscp_parseChannelDefinitions(void)
   do
   {
     uint8_t channelType = rscpEE_byte(rscp_chList, channelType, p1);
-    uint16_t pointer = rscpEE_word(rscp_chList, channel_list_p, p1) +
+    void* pointer = (void*) rscpEE_word(rscp_chList, channel_list_p, p1) +
       RSCP_EEPROM_START;
     uint16_t items = rscpEE_word(rscp_chList, channel_list_items, p1);
 
-    if(pointer == RSCP_EEPROM_START)
+    if(pointer == (void*)RSCP_EEPROM_START)
       break;
 
     RSCP_DEBUG_CONF("list traverse: 0x%04x : 0x%02x - 0x%04x - 0x%04x\n", p1,
@@ -159,12 +159,12 @@ void rscp_parseChannelDefinitions(void)
     {
       case RSCP_CHANNEL_BINARY_INPUT:
       {
-        rscp_parseBIC((void *)(pointer), items);
+        rscp_parseBIC(pointer, items);
         break;
       }
       case RSCP_CHANNEL_BINARY_OUTPUT:
       {
-        rscp_parseBOC((void *)(pointer), items);
+        rscp_parseBOC(pointer, items);
         break;
       }
 #if 0
@@ -181,7 +181,7 @@ void rscp_parseChannelDefinitions(void)
 #ifdef RSCP_USE_OW
       case RSCP_CHANNEL_OWTEMPERATURE:
       {
-        rscp_parseOWC((void *)(pointer), items);
+        rscp_parseOWC(pointer, items);
         break;
       }
 #endif /* RSCP_USE_OW */
