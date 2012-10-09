@@ -252,18 +252,16 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
  * header structure
  */
 
-typedef struct __attribute__ ((packed))  __rscp_conf_header
+typedef struct __attribute__ ((packed))  _rscp_conf_header
 {
-  uint16_t version;       // version number (currently 1)
-  uint8_t mac[6];         // mac address this config is meant for
-  uint16_t channel_p;     // pointer to channel definitions
-  uint16_t rule_p;        // pointer to rule definitions
-  uint8_t name[];         // name of device (ASCII encoding, zero-terminated)
+  uint16_t version;         // version number (currently 1)
+  uint8_t mac[6];           // mac address this config is meant for
+  uint16_t numChannelTypes; // number of channel types
+  void * channel_p;         // pointer to channel definitions
+  uint16_t numRules;        // number of rules
+  void * rule_p;            // pointer to rule definitions
+  uint8_t name[];           // name of device (ASCII encoding, zero-terminated)
 } rscp_conf_header;
-
-
-uint16_t rscp_channel_p;
-uint16_t rscp_rule_p;
 
 /**
  * channel structure

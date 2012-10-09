@@ -135,24 +135,47 @@ void rscp_parseOWC(void *ptr, uint16_t items)
 }
 
 
-void rscp_parseChannelDefinitions(void)
+void
+rscp_parseRuleDefinitions(void)
+{
+  void *ptr = (void *)(rscpEE_word(rscp_conf_header, rule_p,
+    RSCP_EEPROM_START) + RSCP_EEPROM_START);
+
+  RSCP_DEBUG_CONF("rule pointer: 0x%04X\n", ptr);
+
+  uint16_t numRules = rscpEE_word(rscp_conf_header, numRules,
+    RSCP_EEPROM_START);
+
+  RSCP_DEBUG_CONF("Number of rules:  %u\n", numRules);
+
+  while(numRules-- > 0)
+  {
+  }
+}
+
+
+void
+rscp_parseChannelDefinitions(void)
 {
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
 
-  void *p1 = (void *)(rscp_channel_p + RSCP_EEPROM_START);
+  void *ptr = (void *)(rscpEE_word(rscp_conf_header, channel_p,
+    RSCP_EEPROM_START) + RSCP_EEPROM_START);
 
-  // fetch number of channel types
-  uint16_t numChannelTypes = eeprom_read_word(p1);
-  p1 += sizeof(uint16_t);
+  RSCP_DEBUG_CONF("channel pointer: 0x%04X\n", ptr);
+
+  uint16_t numChannelTypes = rscpEE_word(rscp_conf_header, numChannelTypes,
+    RSCP_EEPROM_START);
+
   RSCP_DEBUG_CONF("Number of channel types:  %u\n", numChannelTypes);
 
   while(numChannelTypes-- > 0)
   {
-    uint8_t channelType = rscpEE_byte(rscp_chList, channelType, p1);
-    void* pointer = (void*) rscpEE_word(rscp_chList, channel_list_p, p1) +
+    uint8_t channelType = rscpEE_byte(rscp_chList, channelType, ptr);
+    void* pointer = (void*) rscpEE_word(rscp_chList, channel_list_p, ptr) +
       RSCP_EEPROM_START;
-    uint16_t items = rscpEE_word(rscp_chList, channel_list_items, p1);
+    uint16_t items = rscpEE_word(rscp_chList, channel_list_items, ptr);
 
     if(pointer == (void*)RSCP_EEPROM_START)
       break;
@@ -198,8 +221,7 @@ void rscp_parseChannelDefinitions(void)
       }
     };
 
-    p1 += sizeof(rscp_chList);
-
+    ptr += sizeof(rscp_chList);
   }
 
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
@@ -243,14 +265,8 @@ rscp_init(void)
     return;
   }
 
-  rscp_channel_p =
-    rscpEE_word(rscp_conf_header, channel_p, RSCP_EEPROM_START);
-  RSCP_DEBUG_CONF("channel pointer: 0x%04X\n", rscp_channel_p);
-
-  rscp_rule_p = rscpEE_word(rscp_conf_header, rule_p, RSCP_EEPROM_START);
-  RSCP_DEBUG_CONF("config pointer: 0x%04X\n", rscp_rule_p);
-
   rscp_parseChannelDefinitions();
+  rscp_parseRuleDefinitions();
 }
 
 
