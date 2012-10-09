@@ -25,245 +25,177 @@
 
 #ifdef RSCP_SUPPORT
 
-/* ---------------------------------------------------------------------------
- * global variables
- */
 
-uint8_t testid[6];
+void rscp_parseBIC(void *ptr, uint16_t items)
+{
+  rscp_binaryInputChannels =
+    malloc(items * sizeof(rscp_binaryInputChannel));
+  if (rscp_binaryInputChannels == NULL) {
+    rscp_numBinaryInputChannels = 0;
+    RSCP_DEBUG_CONF("Out of memory\n");
+    return;
+  }
+
+  rscp_numBinaryInputChannels = items;
+  memset(rscp_binaryInputChannels, 0,
+    items * sizeof(rscp_binaryInputChannel));
+  RSCP_DEBUG_CONF("Allocated %d bytes for %d binary input channels\n",
+    items * sizeof(rscp_binaryInputChannel), items);
+
+  for (uint16_t i = 0; i < items; ++i)
+  {
+    rscp_binaryInputChannels[i].channel =
+      rscpEE_word(rscp_binaryInputChannel, channel, ptr);
+    rscp_binaryInputChannels[i].port =
+      rscpEE_word(rscp_binaryInputChannel, port, ptr);
+    rscp_binaryInputChannels[i].flags =
+      rscpEE_byte(rscp_binaryInputChannel, flags, ptr);
+
+    RSCP_DEBUG_CONF("binary input: port: %d - flags: %02x -> %c%c%c\n",
+      rscp_binaryInputChannels[i].port,
+      rscp_binaryInputChannels[i].flags,
+      rscp_binaryInputChannels[i].pullup ? 'P' : 'p',
+      rscp_binaryInputChannels[i].negate ? 'N' : 'n',
+      rscp_binaryInputChannels[i].report ? 'R' : 'r');
+
+    rscp_setPortDDR(rscp_binaryInputChannels[i].port, 0);
+    rscp_setPortPORT(rscp_binaryInputChannels[i].port,
+      rscp_binaryInputChannels[i].pullup);
+
+    ptr += offsetof(rscp_binaryInputChannel, status);
+  }
+}
+
+
+void rscp_parseBOC(void *ptr, uint16_t items)
+{
+  rscp_binaryOutputChannels =
+    malloc(items * sizeof(rscp_binaryOutputChannel));
+  if (rscp_binaryOutputChannels == NULL) {
+    rscp_numBinaryOutputChannels = 0;
+    RSCP_DEBUG_CONF("Out of memory\n");
+    return;
+  }
+
+  rscp_numBinaryOutputChannels = items;
+  memset(rscp_binaryOutputChannels, 0,
+    items * sizeof(rscp_binaryOutputChannel));
+  RSCP_DEBUG_CONF("Allocated %d bytes for %d binary output channels\n",
+    items * sizeof(rscp_binaryOutputChannel), items);
+
+  for (uint16_t i = 0; i < items; ++i)
+  {
+    rscp_binaryOutputChannels[i].channel =
+      rscpEE_word(rscp_binaryOutputChannel, channel, ptr);
+    rscp_binaryOutputChannels[i].port =
+        rscpEE_word(rscp_binaryOutputChannel, port, ptr);
+    rscp_binaryOutputChannels[i].flags =
+        rscpEE_byte(rscp_binaryOutputChannel, flags, ptr);
+
+    RSCP_DEBUG_CONF("binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n",
+      rscp_binaryOutputChannels[i].port,
+      rscp_binaryOutputChannels[i].flags,
+      rscp_binaryOutputChannels[i].openDrain ? 'D' : 'd',
+      rscp_binaryOutputChannels[i].openSource ? 'S' : 's',
+      rscp_binaryOutputChannels[i].negate ? 'N' : 'n',
+      rscp_binaryOutputChannels[i].report ? 'R' : 'r');
+
+    rscp_setPortDDR(rscp_binaryOutputChannels[i].port, 1);
+    rscp_setPortPORT(rscp_binaryOutputChannels[i].port,
+      rscp_binaryOutputChannels[i].negate);
+
+    ptr += sizeof(rscp_binaryOutputChannel);
+  }
+}
+
+
+void rscp_parseOWC(void *ptr, uint16_t items)
+{
+#warning FIXME
+//  for (uint16_t i = 0; i < items; ++i)
+//  {
+//    ow_rom_code_t owROM;
+//    for (uint8_t j = 0; j < 8; ++j)
+//      owROM.bytewise[j]  = rscpEE_byte(rscp_conf_channel, chType30.owROM.bytewise[j], ptr);
+//
+//    RSCP_DEBUG_CONF("1WID: %16X\n", owROM.raw);
+//
+//    int8_t index = ow_find_sensor_index(&owROM);
+//
+//    RSCP_DEBUG_CONF("sensorindex: %d\n", index);
+//
+//    RSCP_DEBUG_CONF("interval: %d\n", rscpEE_word(rscp_conf_channel,
+//        chType30.interval, ptr));
+//    RSCP_DEBUG_CONF("tempHi: %d\n", rscpEE_word(rscp_conf_channel,
+//        chType30.tempHi, ptr));
+//    RSCP_DEBUG_CONF("tempLo: %d\n", rscpEE_word(rscp_conf_channel,
+//        chType30.tempLo, ptr));
+//    ptr += RSCP_CHT30_SIZE;
+//  }
+}
 
 
 void rscp_parseChannelDefinitions(void)
 {
-  // Phase 1: count channels in order to determine storage requirements
-  void *p1 = (void *)(rscp_channel_p + RSCP_EEPROM_START);
-  for (uint8_t i = 0; i < rscp_channel_items; i++)
-  {
-    if(p1 >= (void *)(rscp_rule_p + RSCP_EEPROM_START)) {
-      RSCP_DEBUG_CONF("channel list parser list overrun\n");
-      return;
-    }
-    uint8_t channelType = rscpEE_word(rscp_conf_channel, channelType, p1);
-    RSCP_DEBUG_CONF("pointer: %04x - chidx: %d - chantype: 0x%02x\n",
-                p1, i, channelType);
-    switch (channelType)
-    {
-      case RSCP_CHANNEL_BINARY_INPUT:
-      {
-        rscp_numBinaryInputChannels++;
-        p1 += RSCP_CHT01_SIZE;
-        break;
-      }
-      case RSCP_CHANNEL_BINARY_OUTPUT:
-      {
-        rscp_numBinaryOutputChannels++;
-        p1 += RSCP_CHT02_SIZE;
-        break;
-      }
-      case RSCP_CHANNEL_COMPLEX_INPUT:
-      {
-        uint8_t numports =
-          rscpEE_byte(rscp_conf_channel, chType11.numports, p1);
-        uint8_t numstates =
-          rscpEE_byte(rscp_conf_channel, chType11.numstates, p1);
-        p1 += RSCP_CHT11_HEADSIZE + numports * RSCP_CHT11_PORT_SIZE +
-          numstates * RSCP_CHT11_STATE_SIZE;
-        break;
-      }
-      case RSCP_CHANNEL_COMPLEX_OUTPUT:
-      {
-        uint8_t numports =
-          rscpEE_byte(rscp_conf_channel, chType12.numports, p1);
-        uint8_t numstates =
-          rscpEE_byte(rscp_conf_channel, chType12.numstates, p1);
-        p1 += RSCP_CHT12_HEADSIZE + numports * RSCP_CHT12_PORT_SIZE +
-          numstates * RSCP_CHT12_STATE_SIZE;
-        break;
-      }
-#ifdef RSCP_USE_OW
-      case RSCP_CHANNEL_OWTEMPERATURE:
-      {
-        p1 += RSCP_CHT30_SIZE;
-        break;
-      }
-#endif /* RSCP_USE_OW */
-      default:
-      {
-        RSCP_DEBUG_CONF("could not parse channel type 0x%02x --- ABORTING\n",
-          channelType);
-        return;
-      }
-    }
-  }
-
-  // Phase 2: allocate storage for channels
-  RSCP_DEBUG_CONF("Allocating %d binary input channels\n",
-    rscp_numBinaryInputChannels);
-  rscp_binaryInputChannels =
-    malloc(rscp_numBinaryInputChannels * sizeof(rscp_binaryInputChannel));
-  memset(rscp_binaryInputChannels, 0,
-    rscp_numBinaryInputChannels * sizeof(rscp_binaryInputChannel));
-
-  RSCP_DEBUG_CONF("Allocating %d binary output channels\n",
-    rscp_numBinaryOutputChannels);
-  rscp_binaryOutputChannels =
-    malloc(rscp_numBinaryOutputChannels * sizeof(rscp_binaryOutputChannel));
-  memset(rscp_binaryOutputChannels, 0,
-    rscp_numBinaryOutputChannels * sizeof(rscp_binaryOutputChannel));
-
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
 
-  // Phase 3: create channels
-  uint16_t bicIndex = 0;
-  uint16_t bocIndex = 0;
-
-  p1 = (void *)(rscp_channel_p + RSCP_EEPROM_START);
-  for (uint8_t i = 0; i < rscp_channel_items; i++)
+  void *p1 = (void *)(rscp_channel_p + RSCP_EEPROM_START);
+  do
   {
-    uint16_t channelId = rscpEE_word(rscp_conf_channel, channelId, p1);
-    uint8_t channelType = rscpEE_word(rscp_conf_channel, channelType, p1);
-    RSCP_DEBUG_CONF("pointer: %04x - chidx: %d - chanid: %d - chantype: 0x%02x\n",
-      p1, i, channelId, channelType);
+    uint8_t channelType = rscpEE_byte(rscp_chList, channelType, p1);
+    uint16_t pointer = rscpEE_word(rscp_chList, channel_list_p, p1) +
+      RSCP_EEPROM_START;
+    uint16_t items = rscpEE_word(rscp_chList, channel_list_items, p1);
+
+    if(pointer == RSCP_EEPROM_START)
+      break;
+
+    RSCP_DEBUG_CONF("list traverse: 0x%04x : 0x%02x - 0x%04x - 0x%04x\n", p1,
+      channelType, pointer, items);
+
+
     switch (channelType)
     {
       case RSCP_CHANNEL_BINARY_INPUT:
       {
-        rscp_binaryInputChannels[bicIndex].channel = channelId;
-        rscp_binaryInputChannels[bicIndex].port =
-          rscpEE_word(rscp_conf_channel, chType01.port, p1);
-        rscp_binaryInputChannels[bicIndex].flags =
-          rscpEE_byte(rscp_conf_channel, chType01.flags, p1);
-
-        RSCP_DEBUG_CONF("binary input: port:%d - flags: %02x -> %c%c%c\n",
-          rscp_binaryInputChannels[bicIndex].port,
-          rscp_binaryInputChannels[bicIndex].flags,
-          rscp_binaryInputChannels[bicIndex].pullup ? 'P' : 'p',
-          rscp_binaryInputChannels[bicIndex].negate ? 'N' : 'n',
-          rscp_binaryInputChannels[bicIndex].report ? 'R' : 'r');
-
-        rscp_setPortDDR(rscp_binaryInputChannels[bicIndex].port, 0);
-        rscp_setPortPORT(rscp_binaryInputChannels[bicIndex].port,
-          rscp_binaryInputChannels[bicIndex].pullup);
-
-        bicIndex++;
-        p1 += RSCP_CHT01_SIZE;
+        rscp_parseBIC((void *)(pointer), items);
         break;
       }
       case RSCP_CHANNEL_BINARY_OUTPUT:
       {
-        rscp_binaryOutputChannels[bocIndex].channel = channelId;
-        rscp_binaryOutputChannels[bocIndex].port =
-          rscpEE_word(rscp_conf_channel, chType02.port, p1);
-        rscp_binaryOutputChannels[bocIndex].flags =
-          rscpEE_byte(rscp_conf_channel, chType02.flags, p1);
-
-        RSCP_DEBUG_CONF("binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n",
-          rscp_binaryOutputChannels[bocIndex].port,
-          rscp_binaryOutputChannels[bocIndex].flags,
-          rscp_binaryOutputChannels[bocIndex].openDrain ? 'D' : 'd',
-          rscp_binaryOutputChannels[bocIndex].openSource ? 'S' : 's',
-          rscp_binaryOutputChannels[bocIndex].negate ? 'N' : 'n',
-          rscp_binaryOutputChannels[bocIndex].report ? 'R' : 'r');
-
-        rscp_setPortDDR(rscp_binaryOutputChannels[bocIndex].port, 1);
-        rscp_setPortPORT(rscp_binaryOutputChannels[bocIndex].port,
-          rscp_binaryOutputChannels[bocIndex].negate);
-
-        bocIndex++;
-        p1 += RSCP_CHT02_SIZE;
+        rscp_parseBOC((void *)(pointer), items);
         break;
       }
+#if 0
       case RSCP_CHANNEL_COMPLEX_INPUT:
       {
-        uint8_t channelflags =
-          rscpEE_byte(rscp_conf_channel, chType11.flags, p1);
-        uint8_t numports =
-          rscpEE_byte(rscp_conf_channel, chType11.numports, p1);
-        uint8_t numstates =
-          rscpEE_byte(rscp_conf_channel, chType11.numstates, p1);
-        RSCP_DEBUG_CONF("complex input: flags:0x%02x - ports:%d - states:%d\n",
-                    channelflags, numports, numstates);
-        p1 += RSCP_CHT11_HEADSIZE;
-        for (int j = 0; j < numports; j++) {
-          uint16_t channelPort =
-            eeprom_read_word((void *)(p1 + RSCP_CHT11_PORTID));
-          uint8_t channelFlags =
-            eeprom_read_byte((void *)(p1 + RSCP_CHT11_PORT_FLAGS));
-          RSCP_DEBUG_CONF("pointer: 0x%04x\n", p1);
-          RSCP_DEBUG_CONF("complex port: %d - port:%d - flags: 0x%02x\n", j,
-            channelPort, channelFlags);
-          p1 += RSCP_CHT11_PORT_SIZE;
-        }
-        for (int j = 0; j < numstates; j++) {
-          uint8_t channelState =
-            eeprom_read_byte((void *)(p1 + RSCP_CHT11_PORTSTATES));
-          RSCP_DEBUG_CONF("complex state: %d - bits: 0x%02x\n", j,
-            channelState);
-          RSCP_DEBUG_CONF("pointer: 0x%04x\n", p1);
-          p1 += RSCP_CHT11_STATE_SIZE;
-        }
         break;
       }
       case RSCP_CHANNEL_COMPLEX_OUTPUT:
       {
-        uint8_t channelflags =
-          rscpEE_byte(rscp_conf_channel, chType12.flags, p1);
-        uint8_t numports =
-          rscpEE_byte(rscp_conf_channel, chType12.numports, p1);
-        uint8_t numstates =
-          rscpEE_byte(rscp_conf_channel, chType12.numstates, p1);
-        RSCP_DEBUG_CONF("complex output: flags:0x%02x - ports:%d - states:%d\n",
-          channelflags, numports, numstates);
-        p1 += RSCP_CHT12_HEADSIZE;
-        for (uint16_t j = 0; j < numports; j++) {
-          uint16_t channelPort =
-            eeprom_read_word((void *)(p1 + RSCP_CHT12_PORTID));
-          uint8_t channelFlags =
-            eeprom_read_byte((void *)(p1 + RSCP_CHT12_PORT_FLAGS));
-          RSCP_DEBUG_CONF("pointer: 0x%04x\n", p1);
-          RSCP_DEBUG_CONF("complex port: %d - port:%d - flags: 0x%02x\n", j,
-            channelPort, channelFlags);
-          p1 += RSCP_CHT12_PORT_SIZE;
-        }
-        for (uint8_t j = 0; j < numstates; j++) {
-          uint8_t channelState =
-            eeprom_read_byte((void *)(p1 + RSCP_CHT12_PORTSTATES));
-          RSCP_DEBUG_CONF("complex state: %d - bits: 0x%02x\n", j,
-            channelState);
-          RSCP_DEBUG_CONF("pointer: 0x%04x\n", p1);
-          p1 += RSCP_CHT12_STATE_SIZE;
-        }
+        rscp_parseCOC((void *)(pointer), items);
         break;
       }
+#endif
 #ifdef RSCP_USE_OW
       case RSCP_CHANNEL_OWTEMPERATURE:
       {
-        ow_rom_code_t owROM;
-        for (uint8_t i = 0; i < 8; ++i)
-          owROM.bytewise[i]  = rscpEE_byte(rscp_conf_channel, chType30.owROM.bytewise[i], p1);
-
-        RSCP_DEBUG_CONF("1WID: %16X\n", owROM.raw);
-
-        int8_t index = ow_find_sensor_index(&owROM);
-
-        RSCP_DEBUG_CONF("sensorindex: %d\n", index);
-
-        RSCP_DEBUG_CONF("interval: %d\n", rscpEE_word(rscp_conf_channel,
-          chType30.interval, p1));
-        RSCP_DEBUG_CONF("tempHi: %d\n", rscpEE_word(rscp_conf_channel,
-          chType30.tempHi, p1));
-        RSCP_DEBUG_CONF("tempLo: %d\n", rscpEE_word(rscp_conf_channel,
-          chType30.tempLo, p1));
-        p1 += RSCP_CHT30_SIZE;
+        rscp_parseOWC((void *)(pointer), items);
         break;
       }
 #endif /* RSCP_USE_OW */
       default:
-        RSCP_DEBUG_CONF("could not parse channel type 0x%02x --- ABORTING\n",
+      {
+        RSCP_DEBUG_CONF("could not parse channel type 0x%02x --- SKIPPING\n",
           channelType);
-      break;
-    }
-  }
+        break;
+      }
+    };
+
+    p1 += sizeof(rscp_chList);
+
+  } while(1);
 
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
@@ -400,18 +332,23 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
 
   switch (msg_type) {
     case RSCP_CHANNEL_EVENT:
-#warning FIXME: testcode
-//      if (RSCP_ISFORME(src_addr)) {
-//      }
-//      if(payload[2] == RSCP_UNIT_BOOLEAN &&
-//         payload[3] == 0x11)
-//      {
-//        uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
-//        if(channelID > 0 && channelID <= 16) {
-//          RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
-//          rscp_togglePortPORT(channelID + 16);
-//        }
-//      }
+#warning FIXME: testcode currently not working
+#if 0
+      if (RSCP_ISFORME(src_addr)) {
+      }
+      if (payload[2] == RSCP_UNIT_BOOLEAN &&
+        payload[3] == 0x11)
+      {
+        uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
+        if (channelID - rscp_binaryInputChannels[0].channel > 0 &&
+            channelID - rscp_binaryInputChannels[0].channel <= 16) {
+          RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
+//          rscp_togglePortPORT(channelID -
+//            rscp_binaryInputChannels[0].channel +
+//            rscp_binaryOutputChannels[0].channel);
+        }
+      }
+#endif
       break;
 
     case RSCP_CHANNEL_STATE_CMD:
