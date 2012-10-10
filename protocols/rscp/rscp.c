@@ -112,26 +112,26 @@ void rscp_parseBOC(void *ptr, uint16_t items)
 void rscp_parseOWC(void *ptr, uint16_t items)
 {
 #warning FIXME
-//  for (uint16_t i = 0; i < items; ++i)
-//  {
-//    ow_rom_code_t owROM;
-//    for (uint8_t j = 0; j < 8; ++j)
-//      owROM.bytewise[j]  = rscpEE_byte(rscp_conf_channel, chType30.owROM.bytewise[j], ptr);
-//
-//    RSCP_DEBUG_CONF("1WID: %16X\n", owROM.raw);
-//
-//    int8_t index = ow_find_sensor_index(&owROM);
-//
-//    RSCP_DEBUG_CONF("sensorindex: %d\n", index);
-//
-//    RSCP_DEBUG_CONF("interval: %d\n", rscpEE_word(rscp_conf_channel,
-//        chType30.interval, ptr));
-//    RSCP_DEBUG_CONF("tempHi: %d\n", rscpEE_word(rscp_conf_channel,
-//        chType30.tempHi, ptr));
-//    RSCP_DEBUG_CONF("tempLo: %d\n", rscpEE_word(rscp_conf_channel,
-//        chType30.tempLo, ptr));
-//    ptr += RSCP_CHT30_SIZE;
-//  }
+  for (uint16_t i = 0; i < items; ++i)
+  {
+    ow_rom_code_t owROM;
+    for (uint8_t j = 0; j < 8; ++j)
+      owROM.bytewise[j]  = rscpEE_byte(chType30, owROM.bytewise[j], ptr);
+
+    RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+      owROM.bytewise[0], owROM.bytewise[1], owROM.bytewise[2],
+      owROM.bytewise[3], owROM.bytewise[4], owROM.bytewise[5],
+      owROM.bytewise[6], owROM.bytewise[7]);
+
+    int8_t index = ow_find_sensor_index(&owROM);
+
+    RSCP_DEBUG_CONF("sensorindex: %d\n", index);
+
+    RSCP_DEBUG_CONF("interval: %d\n", rscpEE_word(chType30, interval, ptr));
+    RSCP_DEBUG_CONF("tempHi: %d\n", rscpEE_word(chType30, tempHi, ptr));
+    RSCP_DEBUG_CONF("tempLo: %d\n", rscpEE_word(chType30, tempLo, ptr));
+    ptr += sizeof(chType30);
+  }
 }
 
 
@@ -373,13 +373,13 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
 }
 
 void
-rscp_periodic(void)
+rscp_periodic(void)     // 1Hz interrupt
 {
   static uint8_t rscp_heartbeatInterval = 3;
   if (--rscp_heartbeatInterval == 0)
   {
-    /* send a heartbeat packet every 60 seconds */
-    rscp_heartbeatInterval = 60;
+    /* send a heartbeat packet every 256 seconds */
+    rscp_heartbeatInterval = 0;
 
     rscp_sendHeartBeat();
 //    rscp_sendPeriodicOutputEvents();
@@ -534,6 +534,6 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payload
    -- Ethersex META --
    header(protocols/rscp/rscp.h)
    init(rscp_init)
-   timer(50, rscp_periodic())
+   timer(25, rscp_periodic())
    block(Miscelleanous)
  */
