@@ -25,6 +25,8 @@
 
 #ifdef RSCP_SUPPORT
 
+volatile uint8_t rscp_heartbeatCounter;
+
 
 void rscp_parseBIC(void *ptr, uint16_t items)
 {
@@ -265,6 +267,13 @@ rscp_init(void)
     return;
   }
 
+  // set a different heartbeat offset for each device
+  rscp_heartbeatCounter =
+      (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1] ^ uip_ethaddr.addr[2] ^
+       uip_ethaddr.addr[3] ^ uip_ethaddr.addr[4] ^ uip_ethaddr.addr[5]);
+
+  RSCP_DEBUG_CONF("hearbeat offset: %d\n", rscp_heartbeatCounter);
+
   rscp_parseChannelDefinitions();
   rscp_parseRuleDefinitions();
 }
@@ -295,8 +304,9 @@ void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *boc,
       break;
   }
 
-  rscp_pollBinaryOutputChannelState(boc);
+  rscp_pollBinaryOutputChannelState(boc); // report new state of output
 }
+
 
 void rscp_handleChannelStateCommand(uint8_t* payload)
 {
@@ -375,11 +385,10 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
 void
 rscp_periodic(void)     // 1Hz interrupt
 {
-  static uint8_t rscp_heartbeatInterval = 3;
-  if (--rscp_heartbeatInterval == 0)
+  if (--rscp_heartbeatCounter == 0)
   {
     /* send a heartbeat packet every 256 seconds */
-    rscp_heartbeatInterval = 0;
+    rscp_heartbeatCounter = 0;
 
     rscp_sendHeartBeat();
 //    rscp_sendPeriodicOutputEvents();
@@ -534,6 +543,6 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payload
    -- Ethersex META --
    header(protocols/rscp/rscp.h)
    init(rscp_init)
-   timer(25, rscp_periodic())
+   timer(50, rscp_periodic())
    block(Miscelleanous)
  */
