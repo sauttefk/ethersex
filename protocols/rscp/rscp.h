@@ -121,9 +121,16 @@ typedef struct  __attribute__ ((packed))
   uint16_t interval;             // interval
 } rscp_owChannel;
 
+typedef struct __attribute__ ((packed))
+{                               // channel type 0x30 (ow temperature)
+  uint16_t channel;             // channel id
+  ow_rom_code_t owROM;          // onewire ROM code
+  uint16_t interval;            // report-interval (s)
+} onewireTemperatureChannel;
+
 uint16_t rscp_numOwChannels;
 rscp_owChannel *rscp_owChannels;
-void *rspc_owList_p;
+onewireTemperatureChannel *rspc_owList_p;
 
 #define RSCP_ISFORME(X) (!memcmp(uip_ethaddr.addr, X, 6))
 
@@ -254,8 +261,8 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
 #define RSCP_EEPROM_START sizeof(struct eeprom_config_t)
 #define RSCP_FREE_EEPROM (E2END - sizeof(struct eeprom_config_t) - 1)
 
-#define rscpEE_byte(x, y, z) eeprom_read_byte((void *)(offsetof(x, y) + z))
-#define rscpEE_word(x, y, z) eeprom_read_word((void *)(offsetof(x, y) + z))
+#define rscpEE_byte(x, y, z) eeprom_read_byte((void *)(offsetof(x, y) + (void *)z))
+#define rscpEE_word(x, y, z) eeprom_read_word((void *)(offsetof(x, y) + (void *)z))
 
 /**
  * header structure
@@ -265,9 +272,7 @@ typedef struct __attribute__ ((packed))  _rscp_conf_header
 {
   uint16_t version;         // version number (currently 1)
   uint8_t mac[6];           // mac address this config is meant for
-  uint16_t numChannelTypes; // number of channel types
   void * channel_p;         // pointer to channel definitions
-  uint16_t numRules;        // number of rules
   void * rule_p;            // pointer to rule definitions
   uint8_t name[];           // name of device (ASCII encoding, zero-terminated)
 } rscp_conf_header;
@@ -291,6 +296,11 @@ typedef struct __attribute__ ((packed))
   uint16_t channel_list_items;  // number of channels of this type
 } rscp_chList;
 
+typedef struct __attribute__ ((packed))
+{
+  uint8_t numChannelTypes;
+  rscp_chList channelTypes[];
+} rscp_chConfig;
 
 struct __attribute__ ((packed)) chType11_t
 {                               // channel type 0x11 (complex input)
@@ -307,14 +317,6 @@ struct __attribute__ ((packed)) chType12_t
   uint8_t numstates;            // number of states to follow
 //  uint8_t ports_states[];
 };
-
-typedef struct __attribute__ ((packed))
-{                               // channel type 0x30 (ow temperature)
-  ow_rom_code_t owROM;          // onewire ROM code
-  uint16_t interval;            // report-interval (s)
-  int16_t tempHi;               // report-above (°C * 10)
-  int16_t tempLo;               // report-below (°C * 10)
-} chType30;
 
 typedef struct
 {
