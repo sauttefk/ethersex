@@ -131,9 +131,9 @@ void rscp_parseOWC(void *ptr, uint16_t items)
   for (uint16_t i = 0; i < rscp_numOwChannels; i++)
   {
 #ifdef RSCP_DEBUG_CONF
-    chType30 owItem;
+    onewireTemperatureChannel owItem;
 
-    eeprom_read_block(&owItem, ptr, sizeof(chType30));
+    eeprom_read_block(&owItem, ptr, sizeof(onewireTemperatureChannel));
 
     RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
         owItem.owROM.bytewise[0], owItem.owROM.bytewise[1],
@@ -141,14 +141,12 @@ void rscp_parseOWC(void *ptr, uint16_t items)
         owItem.owROM.bytewise[4], owItem.owROM.bytewise[5],
         owItem.owROM.bytewise[6], owItem.owROM.bytewise[7]);
     RSCP_DEBUG_CONF("interval: %d\n", owItem.interval);
-    RSCP_DEBUG_CONF("tempHi: %d\n", owItem.tempHi);
-    RSCP_DEBUG_CONF("tempLo: %d\n", owItem.tempLo);
 #endif
 
     // some initial delay for each channel;
     rscp_owChannels[i].interval = rscp_heartbeatCounter + 5 + i;
 
-    ptr += sizeof(chType30);
+    ptr += sizeof(onewireTemperatureChannel);
   }
 }
 
@@ -161,14 +159,15 @@ rscp_parseRuleDefinitions(void)
 
   RSCP_DEBUG_CONF("rule pointer: 0x%04X\n", ptr);
 
+  /*
   uint16_t numRules = rscpEE_word(rscp_conf_header, numRules,
     RSCP_EEPROM_START);
 
   RSCP_DEBUG_CONF("number of rules:  %u\n", numRules);
-
   while(numRules-- > 0)
   {
   }
+   */
 }
 
 
@@ -178,39 +177,31 @@ rscp_parseChannelDefinitions(void)
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
 
-  void *ptr = (void *)(rscpEE_word(rscp_conf_header, channel_p,
-    RSCP_EEPROM_START) + RSCP_EEPROM_START);
+  rscp_chConfig *chConfig = (rscp_chConfig *)(rscpEE_word(rscp_conf_header, channel_p, RSCP_EEPROM_START) + RSCP_EEPROM_START);
 
-  RSCP_DEBUG_CONF("channel pointer: 0x%04X\n", ptr);
+  uint8_t numChannelTypes = rscpEE_byte(rscp_chConfig, numChannelTypes, chConfig);
 
-  uint16_t numChannelTypes = rscpEE_word(rscp_conf_header, numChannelTypes,
-    RSCP_EEPROM_START);
-
-  RSCP_DEBUG_CONF("Number of channel types:  %u\n", numChannelTypes);
-
-  while(numChannelTypes-- > 0)
+  for(int i=0; i<numChannelTypes; i++)
   {
-    uint8_t channelType = rscpEE_byte(rscp_chList, channelType, ptr);
-    void* pointer = (void*) rscpEE_word(rscp_chList, channel_list_p, ptr) +
+    rscp_chList *chListEntry = &(chConfig->channelTypes[i]);
+    uint8_t channelType = rscpEE_byte(rscp_chList, channelType, chListEntry);
+    uint16_t items = rscpEE_word(rscp_chList, channel_list_items, chListEntry);
+    void* chConfigPtr = (void*) rscpEE_word(rscp_chList, channel_list_p, chListEntry) +
       RSCP_EEPROM_START;
-    uint16_t items = rscpEE_word(rscp_chList, channel_list_items, ptr);
 
-    if(pointer == (void*)RSCP_EEPROM_START)
-      break;
-
-    RSCP_DEBUG_CONF("parsing %u channels of type 0x%04x @ 0x%04x\n",
-        items, channelType, pointer);
+    RSCP_DEBUG_CONF("parsing %u channels of type 0x%02x @ 0x%04x\n",
+        items, channelType, chConfigPtr);
 
     switch (channelType)
     {
       case RSCP_CHANNEL_BINARY_INPUT:
       {
-        rscp_parseBIC(pointer, items);
+        rscp_parseBIC(chConfigPtr, items);
         break;
       }
       case RSCP_CHANNEL_BINARY_OUTPUT:
       {
-        rscp_parseBOC(pointer, items);
+        rscp_parseBOC(chConfigPtr, items);
         break;
       }
 #if 0
@@ -220,14 +211,14 @@ rscp_parseChannelDefinitions(void)
       }
       case RSCP_CHANNEL_COMPLEX_OUTPUT:
       {
-        rscp_parseCOC((void *)(pointer), items);
+        rscp_parseCOC((void *)(chConfigPtr), items);
         break;
       }
 #endif
 #ifdef RSCP_USE_OW
       case RSCP_CHANNEL_OWTEMPERATURE:
       {
-        rscp_parseOWC(pointer, items);
+        rscp_parseOWC(chConfigPtr, items);
         break;
       }
 #endif /* RSCP_USE_OW */
@@ -238,8 +229,6 @@ rscp_parseChannelDefinitions(void)
         break;
       }
     };
-
-    ptr += sizeof(rscp_chList);
   }
 
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
@@ -458,10 +447,10 @@ rscp_sendPeriodicTemperature(void)
   {
     if (rscp_owChannels[i].interval-- == 0)
     {
-      chType30 owItem;
+      onewireTemperatureChannel owItem;
 
-      eeprom_read_block(&owItem, rspc_owList_p + i * sizeof(chType30),
-          sizeof(chType30));
+      eeprom_read_block(&owItem, &(rspc_owList_p[i]),
+          sizeof(onewireTemperatureChannel));
 
       rscp_owChannels[i].interval = owItem.interval;
 
@@ -471,13 +460,11 @@ rscp_sendPeriodicTemperature(void)
       {
         rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
 
-        rscp_encodeChannel(i, buffer);
+        rscp_encodeChannel(owItem.channel, buffer);
 
         // set unit and value
         rscp_encodeUInt8(RSCP_UNIT_TEMPERATURE, buffer);
         rscp_encodeDecimal16Field(owSensor->temp, -1, buffer);
-
-        RSCP_DEBUG("temp %d\n", owSensor->temp);
 
         rscp_transmit(RSCP_CHANNEL_EVENT);
       }
