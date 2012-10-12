@@ -291,6 +291,11 @@ typedef struct __attribute__ ((packed))
   uint16_t channel_list_items;  // number of channels of this type
 } rscp_chList;
 
+typedef struct __attribute__ ((packed))
+{
+  uint16_t numChannelTypes;
+  rscp_chList channelTypes[];
+} rscp_chConfig;
 
 struct __attribute__ ((packed)) chType11_t
 {                               // channel type 0x11 (complex input)
