@@ -116,6 +116,15 @@ typedef struct  __attribute__ ((packed))
 uint16_t rscp_numBinaryOutputChannels;
 rscp_binaryOutputChannel *rscp_binaryOutputChannels;
 
+typedef struct  __attribute__ ((packed))
+{
+  uint16_t interval;             // interval
+} rscp_owChannel;
+
+uint16_t rscp_numOwChannels;
+rscp_owChannel *rscp_owChannels;
+void *rspc_owList_p;
+
 #define RSCP_ISFORME(X) (!memcmp(uip_ethaddr.addr, X, 6))
 
 extern uint8_t rscp_mode;
