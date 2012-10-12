@@ -13,6 +13,7 @@
 *.layout
 *.exe
 *.bin
+*.log
 subdir.mk
 Debug/*
 ethersex.bin
