@@ -46,11 +46,11 @@ antares_O=y
 # JeeLinkv2 is not set
 # lome6 is not set
 # MicroWebServer is not set
-# netio is not set
 # netio_addon is not set
+# netio is not set
 # other is not set
-# pollin_evalboard is not set
 # pollin_evalboard_addon is not set
+# pollin_evalboard is not set
 # pollin_funkevalboard is not set
 # radig_web is not set
 # thermy is not set
@@ -167,7 +167,7 @@ VFS_INLINE_INLINESVG_SUPPORT=y
 #
 # Network
 #
-CONF_HOSTNAME="e6-beteigeuze"
+CONF_HOSTNAME="e6-antares-o"
 NET_MAX_FRAME_LENGTH=1500
 ENC28J60_SUPPORT=y
 CONF_ENC_MAC="ba:db:10:0d:00:01"
@@ -245,7 +245,7 @@ UDP_SUPPORT=y
 BROADCAST_SUPPORT=y
 ICMP_SUPPORT=y
 DNS_SUPPORT=y
-CONF_DNS_SERVER="192.168.1.1"
+CONF_DNS_SERVER="192.168.2.1"
 # BOOTP_SUPPORT is not set
 # BOOTP_TO_EEPROM_SUPPORT is not set
 # DHCP_SUPPORT is not set
@@ -435,8 +435,8 @@ ONEWIRE_DETECT_SUPPORT=y
 # ONEWIRE_DS2450_SUPPORT is not set
 ONEWIRE_DETECT_ECMD_SUPPORT=y
 ONEWIRE_POLLING_SUPPORT=y
-OW_DISCOVER_DELAY=375
-OW_READ_DELAY=37
+OW_DISCOVER_INTERVAL=1500
+OW_POLLING_INTERVAL=3000
 ONEWIRE_ECMD_LIST_VALUES_SUPPORT=y
 # ONEWIRE_NAMING_SUPPORT is not set
 OW_SENSORS_COUNT=10

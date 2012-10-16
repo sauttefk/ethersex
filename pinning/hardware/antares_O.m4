@@ -4,6 +4,18 @@ pin(RS485TE_USART1, PD4, OUTPUT)
 #define DEBUG_USE_USART 1
 
 
+/* infrared support */
+ifdef(`conf_IRMP_RX', `dnl
+  #define IRMP_USE_TIMER0
+  #define IRMP_RX_LOW_ACTIVE
+  pin(IRMP_RX, PG4)
+  ifdef(`conf_STATUSLED_IRMP_RX', `dnl
+    #define IRMP_RX_LED_LOW_ACTIVE
+    pin(STATUSLED_IRMP_RX, PD0, OUTPUT)
+  ')dnl
+')dnl
+
+
 ifdef(`conf_IRMP', `dnl
 pin(IRMP_RX, PD0)
 #define IRMP_USE_TIMER0
