@@ -36,6 +36,7 @@
 #include "protocols/uip/uip_router.h"
 #include "services/clock/clock.h"
 #include "hardware/onewire/onewire.h"
+#include "hardware/ir/irmp/irmp.h"
 
 #include "rscp_net.h"
 #include "rscp_io.h"

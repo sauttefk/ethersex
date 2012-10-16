@@ -388,6 +388,18 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
 }
 
 void
+rscp_sendPeriodicIrmpEvents(void)
+{
+  irmp_data_t irmp_data;
+  while (irmp_read(&irmp_data))
+  {
+    RSCP_DEBUG("%02" PRIu8 ":%04" PRIX16 ":%04" PRIX16 ":%02" PRIX8 "\n",
+        irmp_data.protocol, irmp_data.address, irmp_data.command,
+        irmp_data.flags);
+  }
+}
+
+void
 rscp_periodic(void)     // 1Hz interrupt
 {
   if (--rscp_heartbeatCounter == 0)
@@ -403,7 +415,6 @@ rscp_periodic(void)     // 1Hz interrupt
   rscp_sendPeriodicTemperature();
 #endif /* RSCP_USE_OW */
 }
-
 
 void
 rscp_sendHeartBeat(void)
@@ -573,5 +584,6 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payload
    header(protocols/rscp/rscp.h)
    init(rscp_init)
    timer(50, rscp_periodic())
+   timer(1, rscp_sendPeriodicIrmpEvents())
    block(Miscelleanous)
  */
