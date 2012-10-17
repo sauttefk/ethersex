@@ -264,6 +264,13 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
 #define rscpEE_byte(x, y, z) eeprom_read_byte((void *)(offsetof(x, y) + (void *)z))
 #define rscpEE_word(x, y, z) eeprom_read_word((void *)(offsetof(x, y) + (void *)z))
 
+#define rscpEEReadByte(x) eeprom_read_byte((void*)&(x))
+#define rscpEEReadWord(x) eeprom_read_word((void*)&(x))
+#define rscpEEReadDWord(x) eeprom_read_dword((void*)&(x))
+#define rscpEEWriteByte(x, w) eeprom_write_byte((void*)&(x), w)
+#define rscpEEWriteWord(x, w) eeprom_write_word((void*)&(x), w)
+#define rscpEEWriteDWord(x, w) eeprom_write_dword((void*)&(x), w)
+
 /**
  * header structure
  */
@@ -276,6 +283,21 @@ typedef struct __attribute__ ((packed))  _rscp_conf_header
   void * rule_p;            // pointer to rule definitions
   uint8_t name[];           // name of device (ASCII encoding, zero-terminated)
 } rscp_conf_header;
+
+#define RSCP_CONFIG_NONE       0
+#define RSCP_CONFIG_VALID      1
+#define RSCP_CONFIG_INVALID    2
+#define RSCP_CONFIG_UPDATE     3
+
+typedef struct __attribute__ ((packed))
+{
+  uint8_t status;      // last known status of configuration
+  uint16_t length;     // length of configuration data
+  uint32_t crc32;      // the CRC32 (as used in ZIP/GZip) of the configuration data
+  rscp_conf_header *p; // offset of configuration from start of EEPROM
+} rscp_configuration;
+
+rscp_configuration *rscpConfiguration;
 
 /**
  * channel structure

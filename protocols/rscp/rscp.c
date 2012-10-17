@@ -22,11 +22,11 @@
 
 #include <stdio.h>
 #include "rscp.h"
+#include "crc32.h"
 
 #ifdef RSCP_SUPPORT
 
 volatile uint8_t rscp_heartbeatCounter;
-
 
 void rscp_parseBIC(void *ptr, uint16_t items)
 {
@@ -243,11 +243,38 @@ void
 rscp_init(void)
 {
   RSCP_DEBUG("init\n");
-  RSCP_DEBUG_CONF("start of rscp config in eeprom: 0x%03X\n",
-      RSCP_EEPROM_START);
   RSCP_DEBUG_CONF("free eeprom: %d\n", RSCP_FREE_EEPROM);
-  RSCP_DEBUG_CONF("version: %d\n",
-              rscpEE_word(rscp_conf_header, version, RSCP_EEPROM_START));
+
+  rscpConfiguration = (rscp_configuration*) RSCP_EEPROM_START;
+  RSCP_DEBUG_CONF("start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
+
+  uint8_t status = rscpEEReadByte(rscpConfiguration->status);
+  if(status != RSCP_CONFIG_VALID) {
+    RSCP_DEBUG_CONF("configuration is missing or invalid\n");
+    rscp_initiateConfigDownload();
+    return;
+  }
+
+  // verify configuration CRC
+  uint16_t length = rscpEEReadWord(rscpConfiguration->length);
+  void *p = (void*)rscpEEReadWord(rscpConfiguration->p);
+  uint32_t crc = crc32init();
+  while(length-- > 0) {
+    crc32update(crc, rscpEEReadByte(p));
+    p++;
+  }
+  crc32finish(crc);
+
+  uint32_t expected = rscpEEReadDWord(rscpConfiguration->crc32);
+  if(expected != crc) {
+    RSCP_DEBUG_CONF("Configuration CRC32 %04x doesn't match the expected %04x", crc, expected);
+    rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_INVALID);
+    rscp_initiateConfigDownload();
+    return;
+  }
+
+  // we're good to go
+  RSCP_DEBUG_CONF("version: %d\n", rscpEE_word(rscp_conf_header, version, RSCP_EEPROM_START));
   RSCP_DEBUG_CONF("mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
              rscpEE_byte(rscp_conf_header, mac[0], RSCP_EEPROM_START),
              rscpEE_byte(rscp_conf_header, mac[1], RSCP_EEPROM_START),
@@ -283,6 +310,16 @@ rscp_init(void)
   rscp_parseRuleDefinitions();
 }
 
+typedef struct {
+  uint8_t inProgress;
+  uint8_t txID;
+} rscp_configDownload;
+
+static rscp_configDownload configDownload;
+
+void rscp_initiateConfigDownload() {
+
+}
 
 void
 rscp_main(void)
