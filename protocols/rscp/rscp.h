@@ -148,6 +148,7 @@ void rscp_sendPeriodicOutputEvents(void);
 void rscp_sendPeriodicInputEvents(void);
 void rscp_sendPeriodicTemperature(void);
 void rscp_pollBinaryOutputChannelState(rscp_binaryOutputChannel *boc);
+void rscp_sendPeriodicIrmpEvents(void);
 
 int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
 

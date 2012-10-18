@@ -393,6 +393,14 @@ rscp_sendPeriodicIrmpEvents(void)
   irmp_data_t irmp_data;
   while (irmp_read(&irmp_data))
   {
+    rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+    rscp_encodeChannel(0xffff, buffer);
+    rscp_encodeUInt8(irmp_data.protocol, buffer);
+    rscp_encodeUInt16(irmp_data.address, buffer);
+    rscp_encodeUInt16(irmp_data.command, buffer);
+    rscp_encodeUInt8(irmp_data.flags, buffer);
+    rscp_transmit(RSCP_CHANNEL_EVENT);
+
     RSCP_DEBUG("%02" PRIu8 ":%04" PRIX16 ":%04" PRIX16 ":%02" PRIX8 "\n",
         irmp_data.protocol, irmp_data.address, irmp_data.command,
         irmp_data.flags);
