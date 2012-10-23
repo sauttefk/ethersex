@@ -146,7 +146,6 @@ void rscp_periodic(void);
 void rscp_sendHeartBeat(void);
 void rscp_sendPeriodicOutputEvents(void);
 void rscp_sendPeriodicInputEvents(void);
-void rscp_sendPeriodicTemperature(void);
 void rscp_pollBinaryOutputChannelState(rscp_binaryOutputChannel *boc);
 void rscp_sendPeriodicIrmpEvents(void);
 

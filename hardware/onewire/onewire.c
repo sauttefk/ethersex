@@ -54,7 +54,7 @@ ow_global_t ow_global;
 
 #ifdef ONEWIRE_POLLING_SUPPORT
 /* perform an initial bus discovery on startup */
-uint16_t ow_discover_interval = 1; // minimal initial delay
+uint16_t ow_discover_interval = 3; // minimal initial delay
 #endif
 
 #if defined(ONEWIRE_POLLING_SUPPORT) || defined(ONEWIRE_NAMING_SUPPORT)
