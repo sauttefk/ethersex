@@ -26,7 +26,7 @@
 #ifdef RSCP_SUPPORT
 
 /* local prototypes */
-void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t status);
+void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state);
 
 /* local variables */
 volatile uint8_t rscp_heartbeatCounter;
@@ -289,9 +289,9 @@ rscp_init(void)
 }
 
 void
-hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t status)
+hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
 {
-  debug_printf("Temperature %d status %d\n", ow_sensor->temp, status);
+  debug_printf("Temperature %d state %d\n", ow_sensor->temp, state);
 }
 
 void
@@ -469,11 +469,6 @@ rscp_sendPeriodicInputEvents(void)
 
 
 #ifdef RSCP_USE_OW
-
-/* private prototypes */
-void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t status);
-
-
 void
 rscp_sendPeriodicTemperature(void)
 {
