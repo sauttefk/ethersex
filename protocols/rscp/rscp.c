@@ -25,6 +25,10 @@
 
 #ifdef RSCP_SUPPORT
 
+/* local prototypes */
+void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t status);
+
+/* local variables */
 volatile uint8_t rscp_heartbeatCounter;
 
 
@@ -181,7 +185,7 @@ rscp_parseChannelDefinitions(void)
 
   uint8_t numChannelTypes = rscpEE_byte(rscp_chConfig, numChannelTypes, chConfig);
 
-  for(int i=0; i<numChannelTypes; i++)
+  for(uint8_t i = 0; i < numChannelTypes; i++)
   {
     rscp_chList *chListEntry = &(chConfig->channelTypes[i]);
     uint8_t channelType = rscpEE_byte(rscp_chList, channelType, chListEntry);
@@ -277,12 +281,18 @@ rscp_init(void)
       (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1] ^ uip_ethaddr.addr[2] ^
        uip_ethaddr.addr[3] ^ uip_ethaddr.addr[4] ^ uip_ethaddr.addr[5]);
 
-  RSCP_DEBUG_CONF("hearbeat offset: %d\n", rscp_heartbeatCounter);
+  RSCP_DEBUG_CONF("heartbeat offset: %d\n", rscp_heartbeatCounter);
 
   rscp_parseChannelDefinitions();
   rscp_parseRuleDefinitions();
+  hook_ow_poll_register(hook_ow_poll_handler);
 }
 
+void
+hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t status)
+{
+  debug_printf("Temperature %d status %d\n", ow_sensor->temp, status);
+}
 
 void
 rscp_main(void)
@@ -420,7 +430,7 @@ rscp_periodic(void)     // 1Hz interrupt
 //    rscp_sendPeriodicInputEvents();
   }
 #ifdef RSCP_USE_OW
-  rscp_sendPeriodicTemperature();
+//  rscp_sendPeriodicTemperature();
 #endif /* RSCP_USE_OW */
 }
 
@@ -459,6 +469,11 @@ rscp_sendPeriodicInputEvents(void)
 
 
 #ifdef RSCP_USE_OW
+
+/* private prototypes */
+void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t status);
+
+
 void
 rscp_sendPeriodicTemperature(void)
 {
