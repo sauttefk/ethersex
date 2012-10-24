@@ -125,7 +125,8 @@ void rscp_parseOWC(void *ptr, uint16_t items)
   {
     onewireTemperatureChannel owItem;
 
-    eeprom_read_block(&owItem, ptr, sizeof(onewireTemperatureChannel));
+    eeprom_read_block(&owItem, &(rspc_owList_p[i]),
+        sizeof(onewireTemperatureChannel));
 
     RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
         owItem.owROM.bytewise[0], owItem.owROM.bytewise[1],
@@ -133,8 +134,6 @@ void rscp_parseOWC(void *ptr, uint16_t items)
         owItem.owROM.bytewise[4], owItem.owROM.bytewise[5],
         owItem.owROM.bytewise[6], owItem.owROM.bytewise[7]);
     RSCP_DEBUG_CONF("interval: %d\n", owItem.interval);
-
-    ptr += sizeof(onewireTemperatureChannel);
   }
 #endif
 }
@@ -170,7 +169,7 @@ rscp_parseChannelDefinitions(void)
 
   uint8_t numChannelTypes = rscpEE_byte(rscp_chConfig, numChannelTypes, chConfig);
 
-  for(uint8_t i = 0; i < numChannelTypes; i++)
+  for (uint8_t i = 0; i < numChannelTypes; i++)
   {
     rscp_chList *chListEntry = &(chConfig->channelTypes[i]);
     uint8_t channelType = rscpEE_byte(rscp_chList, channelType, chListEntry);
