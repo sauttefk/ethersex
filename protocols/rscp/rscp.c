@@ -311,13 +311,28 @@ rscp_init(void)
 }
 
 typedef struct {
-  uint8_t inProgress;
+
+} rscp_globalState;
+static rscp_globalState globalState;
+
+typedef enum downloadState {
+  DS_NONE,
+  DS_INITIATING,
+  DS_IN_PROGRESS
+};
+typedef struct {
+  enum downloadState state;
   uint8_t txID;
 } rscp_configDownload;
 
 static rscp_configDownload configDownload;
 
 void rscp_initiateConfigDownload() {
+  if(configDownload.state != DS_NONE) {
+    RSCP_DEBUG("Config download already in progress");
+    return;
+  }
+
 
 }
 
