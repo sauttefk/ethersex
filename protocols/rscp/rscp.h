@@ -36,6 +36,7 @@
 #include "protocols/uip/uip_router.h"
 #include "services/clock/clock.h"
 #include "hardware/onewire/onewire.h"
+#include "hardware/ir/irmp/irmp.h"
 
 #include "rscp_net.h"
 #include "rscp_io.h"
@@ -145,8 +146,8 @@ void rscp_periodic(void);
 void rscp_sendHeartBeat(void);
 void rscp_sendPeriodicOutputEvents(void);
 void rscp_sendPeriodicInputEvents(void);
-void rscp_sendPeriodicTemperature(void);
 void rscp_pollBinaryOutputChannelState(rscp_binaryOutputChannel *boc);
+void rscp_sendPeriodicIrmpEvents(void);
 
 int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
 

@@ -4,23 +4,25 @@ pin(RS485TE_USART1, PD4, OUTPUT)
 #define DEBUG_USE_USART 1
 
 
-ifdef(`conf_IRMP', `dnl
-pin(IRMP_RX, PD0)
-#define IRMP_USE_TIMER0
-#define IRMP_RX_LOW_ACTIVE
-undef IRMP_RX_LED_LOW_ACTIVE
-pin(STATUSLED_IRMP_RX, PD7, OUTPUT)
-pin(IRMP_TX, PC2) dnl OC2/OC2A
-#undef IRMP_TX_LED_LOW_ACTIVE
-#pin(STATUSLED_IRMP_TX, PD7, OUTPUT)
-')
+/* infrared support */
+ifdef(`conf_IRMP_RX', `dnl
+  #define IRMP_USE_TIMER0
+  #define IRMP_RX_LOW_ACTIVE
+  pin(IRMP_RX, PD0)
+  ifdef(`conf_STATUSLED_IRMP_RX', `dnl
+    #define IRMP_RX_LED_LOW_ACTIVE
+    pin(STATUSLED_IRMP_RX, PG3, OUTPUT)
+  ')dnl
+')dnl
 
 
+/* heartbeat LED */
 ifdef(`conf_STATUSLED_HB_ACT', `dnl
   pin(STATUSLED_HB_ACT, PG3, OUTPUT)
 ')dnl
 
 
+/* onewire */
 ifdef(`conf_ONEWIRE', `dnl
   /* onewire port range */
   ONEWIRE_PORT_RANGE(PG4, PG4)
@@ -35,67 +37,6 @@ ifdef(`conf_HD44780', `
   pin(HD44780_D5, PB5)
   pin(HD44780_D6, PB6)
   pin(HD44780_D7, PB7)
-')
-
-
-ifdef(`conf_VSCP', `
-  pin(VSCP_CONFIG_BUTTON, PD7)
-  pin(VSCP_INPUT00, PA0)
-  pin(VSCP_INPUT01, PA1)
-  pin(VSCP_INPUT02, PA2)
-  pin(VSCP_INPUT03, PA3)
-  pin(VSCP_INPUT04, PA4)
-  pin(VSCP_INPUT05, PA5)
-  pin(VSCP_INPUT06, PA6)
-  pin(VSCP_INPUT07, PA7)
-  pin(VSCP_INPUT08, PF0)
-  pin(VSCP_INPUT09, PF1)
-  pin(VSCP_INPUT10, PF2)
-  pin(VSCP_INPUT11, PF3)
-  pin(VSCP_INPUT12, PF4)
-  pin(VSCP_INPUT13, PF5)
-  pin(VSCP_INPUT14, PF6)
-  pin(VSCP_INPUT15, PF7)
-  pin(VSCP_OUTPUT00, PC0)
-  pin(VSCP_OUTPUT01, PC1)
-  pin(VSCP_OUTPUT02, PC2)
-  pin(VSCP_OUTPUT03, PC3)
-  pin(VSCP_OUTPUT04, PC4)
-  pin(VSCP_OUTPUT05, PC5)
-  pin(VSCP_OUTPUT06, PC6)
-  pin(VSCP_OUTPUT07, PC7)
-  pin(VSCP_OUTPUT08, PE0)
-  pin(VSCP_OUTPUT09, PE1)
-  pin(VSCP_OUTPUT10, PE2)
-  pin(VSCP_OUTPUT11, PE3)
-  pin(VSCP_OUTPUT12, PE4)
-  pin(VSCP_OUTPUT13, PE5)
-  pin(VSCP_OUTPUT14, PE6)
-  pin(VSCP_OUTPUT15, PE7)
-
-ifdef(`conf_BUTTONS_INPUT', `dnl
-#undef CONF_NUM_BUTTONS
-#define CONF_NUM_BUTTONS 17
-
-#define BTN_CONFIG(_x) \
-_x(VSCP_CONFIG_BUTTON)\
-_x(VSCP_INPUT00)\
-_x(VSCP_INPUT01)\
-_x(VSCP_INPUT02)\
-_x(VSCP_INPUT03)\
-_x(VSCP_INPUT04)\
-_x(VSCP_INPUT05)\
-_x(VSCP_INPUT06)\
-_x(VSCP_INPUT07)\
-_x(VSCP_INPUT08)\
-_x(VSCP_INPUT09)\
-_x(VSCP_INPUT10)\
-_x(VSCP_INPUT11)\
-_x(VSCP_INPUT12)\
-_x(VSCP_INPUT13)\
-_x(VSCP_INPUT14)\
-_x(VSCP_INPUT15)
-')dnl
 ')
 
 

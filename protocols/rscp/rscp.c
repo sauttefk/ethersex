@@ -26,6 +26,10 @@
 
 #ifdef RSCP_SUPPORT
 
+/* local prototypes */
+void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state);
+
+/* local variables */
 volatile uint8_t rscp_heartbeatCounter;
 
 void rscp_parseBIC(void *ptr, uint16_t items)
@@ -113,27 +117,16 @@ void rscp_parseBOC(void *ptr, uint16_t items)
 
 void rscp_parseOWC(void *ptr, uint16_t items)
 {
-  rscp_owChannels =
-    malloc(items * sizeof(rscp_owChannel));
-  if (rscp_owChannels == NULL) {
-    rscp_numOwChannels = 0;
-    RSCP_DEBUG_CONF("out of memory\n");
-    return;
-  }
-
   rspc_owList_p = ptr;
   rscp_numOwChannels = items;
-  memset(rscp_owChannels, 0,
-    items * sizeof(rscp_owChannel));
-  RSCP_DEBUG_CONF("allocated %d bytes for %d onewire channels\n",
-    items * sizeof(rscp_owChannels), items);
 
+#ifdef RSCP_DEBUG_CONF
   for (uint16_t i = 0; i < rscp_numOwChannels; i++)
   {
-#ifdef RSCP_DEBUG_CONF
     onewireTemperatureChannel owItem;
 
-    eeprom_read_block(&owItem, ptr, sizeof(onewireTemperatureChannel));
+    eeprom_read_block(&owItem, &(rspc_owList_p[i]),
+        sizeof(onewireTemperatureChannel));
 
     RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
         owItem.owROM.bytewise[0], owItem.owROM.bytewise[1],
@@ -141,13 +134,8 @@ void rscp_parseOWC(void *ptr, uint16_t items)
         owItem.owROM.bytewise[4], owItem.owROM.bytewise[5],
         owItem.owROM.bytewise[6], owItem.owROM.bytewise[7]);
     RSCP_DEBUG_CONF("interval: %d\n", owItem.interval);
-#endif
-
-    // some initial delay for each channel;
-    rscp_owChannels[i].interval = rscp_heartbeatCounter + 5 + i;
-
-    ptr += sizeof(onewireTemperatureChannel);
   }
+#endif
 }
 
 
@@ -181,7 +169,7 @@ rscp_parseChannelDefinitions(void)
 
   uint8_t numChannelTypes = rscpEE_byte(rscp_chConfig, numChannelTypes, chConfig);
 
-  for(int i=0; i<numChannelTypes; i++)
+  for (uint8_t i = 0; i < numChannelTypes; i++)
   {
     rscp_chList *chListEntry = &(chConfig->channelTypes[i]);
     uint8_t channelType = rscpEE_byte(rscp_chList, channelType, chListEntry);
@@ -304,11 +292,60 @@ rscp_init(void)
       (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1] ^ uip_ethaddr.addr[2] ^
        uip_ethaddr.addr[3] ^ uip_ethaddr.addr[4] ^ uip_ethaddr.addr[5]);
 
-  RSCP_DEBUG_CONF("hearbeat offset: %d\n", rscp_heartbeatCounter);
+  RSCP_DEBUG_CONF("heartbeat offset: %d\n", rscp_heartbeatCounter);
 
   rscp_parseChannelDefinitions();
   rscp_parseRuleDefinitions();
+#ifdef RSCP_USE_OW
+  hook_ow_poll_register(hook_ow_poll_handler);
+#endif /* RSCP_USE_OW */
 }
+
+
+#ifdef RSCP_USE_OW
+void
+hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
+{
+  RSCP_DEBUG("Temperature %d state %d\n", ow_sensor->temp, state);
+
+  for (uint16_t i = 0; i < rscp_numOwChannels; i++)
+  {
+    onewireTemperatureChannel owItem;
+
+    eeprom_read_block(&owItem, &(rspc_owList_p[i]),
+        sizeof(onewireTemperatureChannel));
+    if (owItem.owROM.raw == ow_sensor->ow_rom_code.raw)
+    {
+      if (state == OW_CONVERT)
+      {
+        RSCP_DEBUG("oneWire channel %d set interval %ds\n", owItem.channel,
+            owItem.interval);
+        ow_sensor->polling_delay = owItem.interval;
+      }
+      else if (state == OW_READY)
+      {
+        RSCP_DEBUG("oneWire channel %d ready\n", owItem.channel);
+        rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+
+        rscp_encodeChannel(owItem.channel, buffer);
+
+        // set unit and value
+        rscp_encodeUInt8(RSCP_UNIT_TEMPERATURE, buffer);
+        rscp_encodeDecimal16Field(ow_sensor->temp, -1, buffer);
+
+        rscp_transmit(RSCP_CHANNEL_EVENT);
+      }
+      return;
+    }
+  }
+  RSCP_DEBUG("no channel definition for oneWire: "
+      "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
+      ow_sensor->ow_rom_code.bytewise[0], ow_sensor->ow_rom_code.bytewise[1],
+      ow_sensor->ow_rom_code.bytewise[2], ow_sensor->ow_rom_code.bytewise[3],
+      ow_sensor->ow_rom_code.bytewise[4], ow_sensor->ow_rom_code.bytewise[5],
+      ow_sensor->ow_rom_code.bytewise[6], ow_sensor->ow_rom_code.bytewise[7]);
+}
+#endif /* RSCP_USE_OW */
 
 typedef struct {
 
@@ -440,6 +477,26 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
 }
 
 void
+rscp_sendPeriodicIrmpEvents(void)
+{
+  irmp_data_t irmp_data;
+  while (irmp_read(&irmp_data))
+  {
+    rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+    rscp_encodeChannel(0xffff, buffer);
+    rscp_encodeUInt8(irmp_data.protocol, buffer);
+    rscp_encodeUInt16(irmp_data.address, buffer);
+    rscp_encodeUInt16(irmp_data.command, buffer);
+    rscp_encodeUInt8(irmp_data.flags, buffer);
+    rscp_transmit(RSCP_CHANNEL_EVENT);
+
+    RSCP_DEBUG("%02" PRIu8 ":%04" PRIX16 ":%04" PRIX16 ":%02" PRIX8 "\n",
+        irmp_data.protocol, irmp_data.address, irmp_data.command,
+        irmp_data.flags);
+  }
+}
+
+void
 rscp_periodic(void)     // 1Hz interrupt
 {
   if (--rscp_heartbeatCounter == 0)
@@ -451,11 +508,7 @@ rscp_periodic(void)     // 1Hz interrupt
 //    rscp_sendPeriodicOutputEvents();
 //    rscp_sendPeriodicInputEvents();
   }
-#ifdef RSCP_USE_OW
-  rscp_sendPeriodicTemperature();
-#endif /* RSCP_USE_OW */
 }
-
 
 void
 rscp_sendHeartBeat(void)
@@ -489,51 +542,6 @@ rscp_sendPeriodicInputEvents(void)
   rscp_transmit(RSCP_CHANNEL_EVENT);
   RSCP_DEBUG("node input data sent\n");
 }
-
-
-#ifdef RSCP_USE_OW
-void
-rscp_sendPeriodicTemperature(void)
-{
-  for (uint16_t i = 0; i < rscp_numOwChannels; i++)
-  {
-    if (rscp_owChannels[i].interval-- == 0)
-    {
-      onewireTemperatureChannel owItem;
-
-      eeprom_read_block(&owItem, &(rspc_owList_p[i]),
-          sizeof(onewireTemperatureChannel));
-
-      rscp_owChannels[i].interval = owItem.interval;
-
-      ow_sensor_t *owSensor = ow_find_sensor(&owItem.owROM);
-
-      if (owSensor != NULL)
-      {
-        rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-
-        rscp_encodeChannel(owItem.channel, buffer);
-
-        // set unit and value
-        rscp_encodeUInt8(RSCP_UNIT_TEMPERATURE, buffer);
-        rscp_encodeDecimal16Field(owSensor->temp, -1, buffer);
-
-        rscp_transmit(RSCP_CHANNEL_EVENT);
-      }
-      else
-      {
-        RSCP_DEBUG("warning oneWire sensor not present: "
-            "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
-            owItem.owROM.bytewise[0], owItem.owROM.bytewise[1],
-            owItem.owROM.bytewise[2], owItem.owROM.bytewise[3],
-            owItem.owROM.bytewise[4], owItem.owROM.bytewise[5],
-            owItem.owROM.bytewise[6], owItem.owROM.bytewise[7]);
-      }
-    }
-  }
-
-}
-#endif /* RSCP_USE_OW */
 
 /*
  * General encoding methods
@@ -625,5 +633,6 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payload
    header(protocols/rscp/rscp.h)
    init(rscp_init)
    timer(50, rscp_periodic())
+   timer(1, rscp_sendPeriodicIrmpEvents())
    block(Miscelleanous)
  */
