@@ -26,17 +26,6 @@
 
 #ifdef RSCP_SUPPORT
 
-#ifdef DEBUG_BUTTONS_INPUT
-  /*  For providing the actual name of the buttons for debug output */
-  #define STR(_v)  const char _v##_str[] PROGMEM = #_v;
-  #define STRLIST(_v) _v##_str,
-  #define GET_BUTTON_NAME(i) ((PGM_P)pgm_read_word(&buttonNames[i]))
-
-  /* This creates an array of string in ROM which hold the button names. */
-  RSCP_IO_CONFIG(STR);
-  PGM_P const buttonNames[RSCP_IOS] PROGMEM = { RSCP_IO_CONFIG(STRLIST) };
-#endif
-
 const ioConfig_t rscp_portConfig[RSCP_IOS] PROGMEM = { RSCP_IO_CONFIG(C) };
 
 

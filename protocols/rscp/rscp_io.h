@@ -81,12 +81,5 @@ uint8_t rscp_togglePortPORT(uint16_t portID);
 uint8_t rscp_getPortPIN(uint16_t portID);
 
 
-#ifdef DEBUG_BUTTONS_INPUT
-#include "core/debug.h"
-#define BUTTONDEBUG(a...)  debug_printf("button: " a)
-#else
-#define BUTTONDEBUG(a...)
-#endif
-
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_IO_H */
