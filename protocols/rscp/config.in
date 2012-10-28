@@ -6,7 +6,7 @@ dep_bool_menu "RSCP Node" RSCP_SUPPORT
   dep_bool_menu "RSCP over UDP" RSCP_USE_UDP $RSCP_SUPPORT $UDP_SUPPORT $BROADCAST_SUPPORT
     int "UDP Port Number" RSCP_UDP_PORT 17171
   endmenu
-	dep_bool "1wire Temperature Sensors" RSCP_USE_OW $RSCP_SUPPORT $ONEWIRE_SUPPORT $ONEWIRE_POLLING_SUPPORT
+	dep_bool "1wire Temperature Sensors" RSCP_USE_OW $RSCP_SUPPORT $ONEWIRE_SUPPORT $ONEWIRE_POLLING_SUPPORT $ONEWIRE_HOOK_SUPPORT
   comment "Debugging Flags"
   dep_bool "RSCP" DEBUG_RSCP $RSCP_SUPPORT $DEBUG
   dep_bool "  message payload" DEBUG_RSCP_PAYLOAD $RSCP_SUPPORT $DEBUG_RSCP $DEBUG_RSCP
