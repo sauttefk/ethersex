@@ -424,6 +424,7 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
   }
 }
 
+#ifdef IRMP_SUPPORT
 void
 rscp_sendPeriodicIrmpEvents(void)
 {
@@ -443,6 +444,7 @@ rscp_sendPeriodicIrmpEvents(void)
         irmp_data.flags);
   }
 }
+#endif
 
 void
 rscp_periodic(void)     // 1Hz interrupt
@@ -581,6 +583,6 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payload
    header(protocols/rscp/rscp.h)
    init(rscp_init)
    timer(50, rscp_periodic())
-   timer(1, rscp_sendPeriodicIrmpEvents())
+   ifdef(`conf_IRMP',`timer(1, rscp_sendPeriodicIrmpEvents())')
    block(Miscelleanous)
  */
