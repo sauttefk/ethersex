@@ -7,7 +7,9 @@
 
 #include "mtime.h"
 
-typedef void (*timer_callback)(void *user);
+typedef struct timer timer;
+
+typedef void (*timer_callback)(timer *timer, void *user);
 
 typedef enum {
   TIMER_IDLE = 0,
@@ -16,10 +18,10 @@ typedef enum {
   TIMER_EXPIRED
 } timer_state;
 
-typedef struct {
+typedef struct timer_private {
   mtime next_fire;
   mtime interval;
-  timer_callback *callback;
+  timer_callback callback;
   void *user;
   timer *next;
 } timer_private;
@@ -27,17 +29,23 @@ typedef struct {
 /*
  * A definition of a timer allowing one-shot and repeated schedules.
  */
-typedef struct {
+typedef struct timer {
   timer_state state;
   uint8_t stuff[sizeof(timer_private)];
 } timer;
 
-uint8_t timer_init(timer *t, timer_callback *cb, void *user);
-uint8_t timer_schedule_after_msecs(timer *t, uint32_t milliseconds);
-uint8_t timer_schedule_after_mtime(timer *t, mtime time);
-uint8_t timer_schedule_repeating_msecs(timer *t, uint32_t initial, uint32_t interval);
-uint8_t timer_schedule_repeating_mtime(timer *t, mtime initial, mtime interval);
+void timer_init(timer *t, timer_callback *cb, void *user);
 
-uint8_t timer_cancel(timer *t);
+void timer_schedule_at_mtime(timer *t, mtime *time);
+
+void timer_schedule_after_msecs(timer *t, uint32_t milliseconds);
+void timer_schedule_after_mtime(timer *t, mtime *delay);
+
+void timer_schedule_repeating_msecs(timer *t, uint32_t delay, uint32_t interval);
+void timer_schedule_repeating_mtime(timer *t, mtime *delay, mtime *interval);
+
+void timer_cancel(timer *t);
+
+void timer_periodic(void);
 
 #endif /* TIMER_H_ */

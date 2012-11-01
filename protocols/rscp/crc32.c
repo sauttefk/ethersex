@@ -4,7 +4,7 @@ uint32_t crc32init(void) {
   return 0xffffffff;
 }
 
-__inline__ uint32_t _crc32update(uint32_t crc, const uint8_t byte)
+uint32_t _crc32update(uint32_t crc, const uint8_t byte)
 {
   // crc = crc ^ byte;
   asm(
