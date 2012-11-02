@@ -231,7 +231,7 @@ void
 rscp_init(void)
 {
   RSCP_DEBUG("init\n");
-  RSCP_DEBUG_CONF("free eeprom: %d\n", RSCP_FREE_EEPROM);
+  RSCP_DEBUG_CONF("xfree eeprom: %d\n", RSCP_FREE_EEPROM);
 
   rscpConfiguration = (rscp_configuration*) RSCP_EEPROM_START;
   RSCP_DEBUG_CONF("start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
