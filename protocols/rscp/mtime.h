@@ -1,5 +1,7 @@
 /*
- * timestamp.h
+ * mtime.h
+ *
+ * Time-keeping with millisecond-resolution.
  */
 
 #ifndef MTIME_H_
@@ -8,6 +10,7 @@
 #include <stdint.h>
 #include "core/periodic.h"
 
+// The relationship between mtime and the periodic timer
 #define MTIME_MILLIS_PER_TICK (1000 / HZ)
 
 /*

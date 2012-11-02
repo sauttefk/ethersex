@@ -19,6 +19,7 @@ void timer_init(timer *t, timer_callback cb, void *user) {
   TP(t)->callback = cb;
   TP(t)->user = user;
   TP(t)->next = user;
+  t->state = TIMER_IDLE;
 }
 
 void _timer_schedule(timer *t) {
@@ -52,6 +53,8 @@ void timer_schedule_at_mtime(timer *t, mtime *time) {
 
   timer_cancel(t);
   _timer_schedule(t);
+
+  t->state = TIMER_SCHEDULED;
 }
 
 void timer_schedule_after_msecs(timer *t, uint32_t milliseconds) {
@@ -70,16 +73,22 @@ void timer_schedule_after_mtime(timer *t, mtime *delay) {
 
   timer_cancel(t);
   _timer_schedule(t);
+
+  t->state = TIMER_SCHEDULED;
 }
 
 void timer_schedule_repeating_msecs(timer *t, uint32_t initial, uint32_t interval) {
   timer_schedule_after_msecs(t, initial);
   mtime_from_milliseconds(&(TP(t)->interval), interval);
+
+  t->state = TIMER_SCHEDULED_REPEATING;
 }
 
 void timer_schedule_repeating_mtime(timer *t, mtime *initial, mtime *interval) {
   timer_schedule_after_mtime(t, initial);
   TP(t)->interval = *interval;
+
+  t->state = TIMER_SCHEDULED_REPEATING;
 }
 
 void timer_cancel(timer *t) {
@@ -89,6 +98,8 @@ void timer_cancel(timer *t) {
   if(t == timer_chain) {
     timer_chain = TP(timer_chain)->next;
     TP(t)->next = 0;
+    t->state = TIMER_CANCELED;
+
     TIMER_DEBUG("canceled first timer, next is now %hx\n", timer_chain);
     return;
   }
@@ -100,6 +111,8 @@ void timer_cancel(timer *t) {
   if(TP(p)->next == t) {
     TP(p)->next = TP(t)->next;
     TP(t)->next = 0;
+    t->state = TIMER_CANCELED;
+
     TIMER_DEBUG("canceled %hx between %hx and %hx \n", t, p, TP(p)->next);
   } else
     TIMER_DEBUG("timer %hx to be canceled not found\n", t);
@@ -130,7 +143,8 @@ void timer_periodic() {
       timer_chain = TP(toFire)->next;
 
       // re-add if scheduled at interval
-      if(TP(toFire)->interval.seconds != 0 || TP(toFire)->interval.millis != 0) {
+      uint8_t repeating = TP(toFire)->interval.seconds != 0 || TP(toFire)->interval.millis != 0;
+      if(repeating) {
         TP(toFire)->next_fire = now;
         mtime_add(&(TP(toFire)->next_fire), &(TP(toFire)->interval));
         TIMER_DEBUG("re-scheduling at %lu.%hu\n", TP(toFire)->next_fire.seconds, TP(toFire)->next_fire.millis);
@@ -139,6 +153,9 @@ void timer_periodic() {
 
       // fire
       (TP(toFire)->callback)(toFire, TP(toFire)->user);
+
+      if(!repeating)
+        toFire->state = TIMER_EXPIRED;
 
       TIMER_DEBUG("fired %hx with callback %hx, next to fire is now %hx@%lu.%hu\n",
           toFire, TP(toFire)->callback,

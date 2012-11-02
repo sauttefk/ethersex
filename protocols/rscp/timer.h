@@ -33,6 +33,9 @@ typedef enum {
   TIMER_CANCELED
 } timer_state;
 
+/*
+ * The private fields of a timer. Keep your grubby fingers off of these.
+ */
 typedef struct timer_private {
   mtime next_fire;
   mtime interval;
