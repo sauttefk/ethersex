@@ -60,7 +60,7 @@
 /*
  * Node state
  */
-enum
+enum rscp_nodeState
 {
   RSCP_NODE_STATE_STARTING,
   RSCP_NODE_STATE_RUNNING,
@@ -133,9 +133,9 @@ uint16_t rscp_numOwChannels;
 rscp_owChannel *rscp_owChannels;
 onewireTemperatureChannel *rspc_owList_p;
 
-#define RSCP_ISFORME(X) (!memcmp(uip_ethaddr.addr, X, 6))
+uint8_t txidCounter;
 
-extern uint8_t rscp_mode;
+#define RSCP_ISFORME(X) (!memcmp(uip_ethaddr.addr, X, 6))
 
 void rscp_setup(void);
 void rscp_main(void);
@@ -169,6 +169,7 @@ int8_t rscp_encodeInt8 (int8_t value, rscp_payloadBuffer_t *buffer);
 int8_t rscp_encodeInt16 (int16_t value, rscp_payloadBuffer_t *buffer);
 int8_t rscp_encodeInt32 (int32_t value, rscp_payloadBuffer_t *buffer);
 
+int8_t rscp_encodeRaw(void *data, uint16_t length, rscp_payloadBuffer_t *buffer);
 
 int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale,
     rscp_payloadBuffer_t *buffer);
@@ -179,7 +180,17 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
 
 #define RSCP_NODE_HEARTBEAT           0x0100
 #define RSCP_CHANNEL_EVENT            0x1001
+#define RSCP_FILE_TRANSFER_REQUEST    0x1010
+#define RSCP_FILE_TRANSFER_RESPONSE   0x1011
+#define RSCP_FILE_TRANSFER_DATA       0x1012
+#define RSCP_FILE_TRANSFER_ACK        0x1013
+#define RSCP_FILE_TRANSFER_ERROR      0x1014
 #define RSCP_CHANNEL_STATE_CMD        0x2000
+
+#define RSCP_FT_STATUS_DATA_FOLLOWS   0
+#define RSCP_FT_STATUS_NOT_FOUND      1
+#define RSCP_FT_STATUS_NOT_MODIFIED   2
+#define RSCP_FT_STATUS_FAILED         3
 
 #define RSCP_UNIT_COUNT               0x01  // Counter
 #define RSCP_UNIT_VOLTAGE             0x02  // Voltage (V)
