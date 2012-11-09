@@ -34,52 +34,41 @@ void rscp_initiateConfigDownload();
 /* local variables */
 volatile uint8_t rscp_heartbeatCounter;
 
-void rscp_parseBIC(void *ptr, uint16_t items)
-{
-  rscp_binaryInputChannels =
-    malloc(items * sizeof(rscp_binaryInputChannel));
-  if (rscp_binaryInputChannels == NULL) {
+static void parseBIC(void *ptr, uint16_t items) {
+  rscp_binaryInputChannels = malloc(items * sizeof(rscp_binaryInputChannel));
+  if (rscp_binaryInputChannels == NULL ) {
     rscp_numBinaryInputChannels = 0;
     RSCP_DEBUG_CONF("Out of memory\n");
     return;
   }
 
   rscp_numBinaryInputChannels = items;
-  memset(rscp_binaryInputChannels, 0,
-    items * sizeof(rscp_binaryInputChannel));
-  RSCP_DEBUG_CONF("Allocated %d bytes for %d binary input channels\n",
-    items * sizeof(rscp_binaryInputChannel), items);
+  memset(rscp_binaryInputChannels, 0, items * sizeof(rscp_binaryInputChannel));
+  RSCP_DEBUG_CONF(
+      "Allocated %d bytes for %d binary input channels\n", items * sizeof(rscp_binaryInputChannel), items);
 
-  for (uint16_t i = 0; i < items; ++i)
-  {
+  for (uint16_t i = 0; i < items; ++i) {
     rscp_binaryInputChannels[i].channel =
-      rscpEE_word(rscp_binaryInputChannel, channel, ptr);
+        rscpEE_word(rscp_binaryInputChannel, channel, ptr);
     rscp_binaryInputChannels[i].port =
-      rscpEE_word(rscp_binaryInputChannel, port, ptr);
+        rscpEE_word(rscp_binaryInputChannel, port, ptr);
     rscp_binaryInputChannels[i].flags =
-      rscpEE_byte(rscp_binaryInputChannel, flags, ptr);
+        rscpEE_byte(rscp_binaryInputChannel, flags, ptr);
 
-    RSCP_DEBUG_CONF("binary input: port: %d - flags: %02x -> %c%c%c\n",
-      rscp_binaryInputChannels[i].port,
-      rscp_binaryInputChannels[i].flags,
-      rscp_binaryInputChannels[i].pullup ? 'P' : 'p',
-      rscp_binaryInputChannels[i].negate ? 'N' : 'n',
-      rscp_binaryInputChannels[i].report ? 'R' : 'r');
+    RSCP_DEBUG_CONF(
+        "binary input: port: %d - flags: %02x -> %c%c%c\n", rscp_binaryInputChannels[i].port, rscp_binaryInputChannels[i].flags, rscp_binaryInputChannels[i].pullup ? 'P' : 'p', rscp_binaryInputChannels[i].negate ? 'N' : 'n', rscp_binaryInputChannels[i].report ? 'R' : 'r');
 
     rscp_setPortDDR(rscp_binaryInputChannels[i].port, 0);
     rscp_setPortPORT(rscp_binaryInputChannels[i].port,
-      rscp_binaryInputChannels[i].pullup);
+        rscp_binaryInputChannels[i].pullup);
 
     ptr += offsetof(rscp_binaryInputChannel, status);
   }
 }
 
-
-void rscp_parseBOC(void *ptr, uint16_t items)
-{
-  rscp_binaryOutputChannels =
-    malloc(items * sizeof(rscp_binaryOutputChannel));
-  if (rscp_binaryOutputChannels == NULL) {
+static void parseBOC(void *ptr, uint16_t items) {
+  rscp_binaryOutputChannels = malloc(items * sizeof(rscp_binaryOutputChannel));
+  if (rscp_binaryOutputChannels == NULL ) {
     rscp_numBinaryOutputChannels = 0;
     RSCP_DEBUG_CONF("out of memory\n");
     return;
@@ -87,113 +76,90 @@ void rscp_parseBOC(void *ptr, uint16_t items)
 
   rscp_numBinaryOutputChannels = items;
   memset(rscp_binaryOutputChannels, 0,
-    items * sizeof(rscp_binaryOutputChannel));
-  RSCP_DEBUG_CONF("allocated %d bytes for %d binary output channels\n",
-    items * sizeof(rscp_binaryOutputChannel), items);
+      items * sizeof(rscp_binaryOutputChannel));
+  RSCP_DEBUG_CONF(
+      "allocated %d bytes for %d binary output channels\n", items * sizeof(rscp_binaryOutputChannel), items);
 
-  for (uint16_t i = 0; i < items; ++i)
-  {
+  for (uint16_t i = 0; i < items; ++i) {
     rscp_binaryOutputChannels[i].channel =
-      rscpEE_word(rscp_binaryOutputChannel, channel, ptr);
+        rscpEE_word(rscp_binaryOutputChannel, channel, ptr);
     rscp_binaryOutputChannels[i].port =
         rscpEE_word(rscp_binaryOutputChannel, port, ptr);
     rscp_binaryOutputChannels[i].flags =
         rscpEE_byte(rscp_binaryOutputChannel, flags, ptr);
 
-    RSCP_DEBUG_CONF("binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n",
-      rscp_binaryOutputChannels[i].port,
-      rscp_binaryOutputChannels[i].flags,
-      rscp_binaryOutputChannels[i].openDrain ? 'D' : 'd',
-      rscp_binaryOutputChannels[i].openSource ? 'S' : 's',
-      rscp_binaryOutputChannels[i].negate ? 'N' : 'n',
-      rscp_binaryOutputChannels[i].report ? 'R' : 'r');
+    RSCP_DEBUG_CONF(
+        "binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n", rscp_binaryOutputChannels[i].port, rscp_binaryOutputChannels[i].flags, rscp_binaryOutputChannels[i].openDrain ? 'D' : 'd', rscp_binaryOutputChannels[i].openSource ? 'S' : 's', rscp_binaryOutputChannels[i].negate ? 'N' : 'n', rscp_binaryOutputChannels[i].report ? 'R' : 'r');
 
     rscp_setPortDDR(rscp_binaryOutputChannels[i].port, 1);
     rscp_setPortPORT(rscp_binaryOutputChannels[i].port,
-      rscp_binaryOutputChannels[i].negate);
+        rscp_binaryOutputChannels[i].negate);
 
     ptr += sizeof(rscp_binaryOutputChannel);
   }
 }
 
-
-void rscp_parseOWC(void *ptr, uint16_t items)
-{
+static void parseOWC(void *ptr, uint16_t items) {
   rspc_owList_p = ptr;
   rscp_numOwChannels = items;
 
 #ifdef RSCP_DEBUG_CONF
-  for (uint16_t i = 0; i < rscp_numOwChannels; i++)
-  {
+  for (uint16_t i = 0; i < rscp_numOwChannels; i++) {
     onewireTemperatureChannel owItem;
 
     eeprom_read_block(&owItem, &(rspc_owList_p[i]),
         sizeof(onewireTemperatureChannel));
 
-    RSCP_DEBUG_CONF("1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
-        owItem.owROM.bytewise[0], owItem.owROM.bytewise[1],
-        owItem.owROM.bytewise[2], owItem.owROM.bytewise[3],
-        owItem.owROM.bytewise[4], owItem.owROM.bytewise[5],
-        owItem.owROM.bytewise[6], owItem.owROM.bytewise[7]);
+    RSCP_DEBUG_CONF(
+        "1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n", owItem.owROM.bytewise[0], owItem.owROM.bytewise[1], owItem.owROM.bytewise[2], owItem.owROM.bytewise[3], owItem.owROM.bytewise[4], owItem.owROM.bytewise[5], owItem.owROM.bytewise[6], owItem.owROM.bytewise[7]);
     RSCP_DEBUG_CONF("interval: %d\n", owItem.interval);
   }
 #endif
 }
 
-
-static void
-rscp_parseRuleDefinitions(void)
-{
-  void *ptr = (void *)(rscpEE_word(rscp_conf_header, rule_p,
-    RSCP_EEPROM_START) + RSCP_EEPROM_START);
+static void parseRuleDefinitions(void) {
+  void *ptr = (void *) (rscpEE_word(rscp_conf_header, rule_p,
+      RSCP_EEPROM_START) + RSCP_EEPROM_START);
 
   RSCP_DEBUG_CONF("rule pointer: 0x%04X\n", ptr);
 
   /*
-  uint16_t numRules = rscpEE_word(rscp_conf_header, numRules,
-    RSCP_EEPROM_START);
+   uint16_t numRules = rscpEE_word(rscp_conf_header, numRules,
+   RSCP_EEPROM_START);
 
-  RSCP_DEBUG_CONF("number of rules:  %u\n", numRules);
-  while(numRules-- > 0)
-  {
-  }
+   RSCP_DEBUG_CONF("number of rules:  %u\n", numRules);
+   while(numRules-- > 0)
+   {
+   }
    */
 }
 
-
-void
-rscp_parseChannelDefinitions(void)
-{
+static void parseChannelDefinitions(void) {
   RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
   RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
 
-  rscp_chConfig *chConfig = (rscp_chConfig *)(rscpEE_word(rscp_conf_header, channel_p, RSCP_EEPROM_START) + RSCP_EEPROM_START);
+  rscp_conf_header *conf = (rscp_conf_header*) rscpEEReadWord(rscpConfiguration->p);
+  rscp_chConfig *chConfig = (rscp_chConfig*) (((void*)conf) + rscpEEReadWord(conf->channel_p));
+  uint8_t numChannelTypes = rscpEEReadByte(chConfig->numChannelTypes);
 
-  uint8_t numChannelTypes = rscpEE_byte(rscp_chConfig, numChannelTypes, chConfig);
-
-  for (uint8_t i = 0; i < numChannelTypes; i++)
-  {
+  for (uint8_t i = 0; i < numChannelTypes; i++) {
     rscp_chList *chListEntry = &(chConfig->channelTypes[i]);
-    uint8_t channelType = rscpEE_byte(rscp_chList, channelType, chListEntry);
-    uint16_t items = rscpEE_word(rscp_chList, channel_list_items, chListEntry);
-    void* chConfigPtr = (void*) rscpEE_word(rscp_chList, channel_list_p, chListEntry) +
-      RSCP_EEPROM_START;
+    uint8_t channelType = rscpEEReadByte(chListEntry->channelType);
+    uint16_t items = rscpEEReadByte(chListEntry->channel_list_items);
+    void* chConfigPtr = (((void*)conf) + rscpEEReadWord(chListEntry->channel_list_p));
 
-    RSCP_DEBUG_CONF("parsing %u channels of type 0x%02x @ 0x%04x\n",
-        items, channelType, chConfigPtr);
+    RSCP_DEBUG_CONF(
+        "parsing %u channels of type 0x%02x @ 0x%04x\n", items, channelType, chConfigPtr);
 
-    switch (channelType)
-    {
-      case RSCP_CHANNEL_BINARY_INPUT:
-      {
-        rscp_parseBIC(chConfigPtr, items);
-        break;
-      }
-      case RSCP_CHANNEL_BINARY_OUTPUT:
-      {
-        rscp_parseBOC(chConfigPtr, items);
-        break;
-      }
+    switch (channelType) {
+    case RSCP_CHANNEL_BINARY_INPUT: {
+      parseBIC(chConfigPtr, items);
+      break;
+    }
+    case RSCP_CHANNEL_BINARY_OUTPUT: {
+      parseBOC(chConfigPtr, items);
+      break;
+    }
 #if 0
       case RSCP_CHANNEL_COMPLEX_INPUT:
       {
@@ -208,16 +174,15 @@ rscp_parseChannelDefinitions(void)
 #ifdef RSCP_USE_OW
       case RSCP_CHANNEL_OWTEMPERATURE:
       {
-        rscp_parseOWC(chConfigPtr, items);
+        parseOWC(chConfigPtr, items);
         break;
       }
 #endif /* RSCP_USE_OW */
-      default:
-      {
-        RSCP_DEBUG_CONF("could not parse channel type 0x%02x --- SKIPPING\n",
-          channelType);
-        break;
-      }
+    default: {
+      RSCP_DEBUG_CONF(
+          "could not parse channel type 0x%02x --- SKIPPING\n", channelType);
+      break;
+    }
     };
   }
 
@@ -226,33 +191,34 @@ rscp_parseChannelDefinitions(void)
 }
 
 static uint32_t calcConfigCRC() {
+
   // verify configuration CRC
   uint16_t length = rscpEEReadWord(rscpConfiguration->length);
-  void *p = (void*)rscpEEReadWord(rscpConfiguration->p);
+  uint8_t *p = (uint8_t*) rscpEEReadWord(rscpConfiguration->p);
+  // printf_P(PSTR("Config header @%04X, pointer @%04X, config @%04X:\n"), rscpConfiguration, &(rscpConfiguration->p), p);
   uint32_t crc = crc32init();
-  while(length-- > 0) {
-    crc32update(crc, rscpEEReadByte(p));
+  while (length-- > 0) {
+    uint8_t b =  eeprom_read_byte(p);
+    crc32update(crc, b);
+    // printf_P(PSTR("%02X"), b);
     p++;
   }
   crc32finish(crc);
+  // printf_P(PSTR("\n"));
   return crc;
 }
 
 /* ----------------------------------------------------------------------------
  * initialization of RSCP
  */
-void
-rscp_init(void)
-{
-  RSCP_DEBUG("init\n");
-  RSCP_DEBUG_CONF("xfree eeprom: %d\n", RSCP_FREE_EEPROM);
-
+void rscp_init(void) {
   rscpConfiguration = (rscp_configuration*) RSCP_EEPROM_START;
-  RSCP_DEBUG_CONF("start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
+  RSCP_DEBUG_CONF(
+      "Initializing. Start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
 
   uint8_t status = rscpEEReadByte(rscpConfiguration->status);
-  if(status != RSCP_CONFIG_VALID) {
-    RSCP_DEBUG_CONF("configuration is missing or invalid\n");
+  if (status != RSCP_CONFIG_VALID) {
+    RSCP_DEBUG_CONF("Configuration is missing or invalid.\n");
     rscp_initiateConfigDownload();
     return;
   }
@@ -260,53 +226,58 @@ rscp_init(void)
   // Verify config CRC
   uint32_t crc = calcConfigCRC();
   uint32_t expected = rscpEEReadDWord(rscpConfiguration->crc32);
-  if(expected != crc) {
-    RSCP_DEBUG_CONF("Configuration CRC32 %04x doesn't match the expected %04x", crc, expected);
+  if (expected != crc) {
+    RSCP_DEBUG_CONF(
+        "Configuration CRC32 %04x doesn't match the expected %04x", crc, expected);
     rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_INVALID);
     rscp_initiateConfigDownload();
     return;
   }
 
   // we're good to go
-  RSCP_DEBUG_CONF("version: %d\n", rscpEE_word(rscp_conf_header, version, RSCP_EEPROM_START));
-  RSCP_DEBUG_CONF("mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
-             rscpEE_byte(rscp_conf_header, mac[0], RSCP_EEPROM_START),
-             rscpEE_byte(rscp_conf_header, mac[1], RSCP_EEPROM_START),
-             rscpEE_byte(rscp_conf_header, mac[2], RSCP_EEPROM_START),
-             rscpEE_byte(rscp_conf_header, mac[3], RSCP_EEPROM_START),
-             rscpEE_byte(rscp_conf_header, mac[4], RSCP_EEPROM_START),
-             rscpEE_byte(rscp_conf_header, mac[5], RSCP_EEPROM_START));
+  uint16_t version = rscpEEReadWord(rscpConfiguration->p->version);
+  RSCP_DEBUG_CONF(
+      "version: %hd, mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
+      version,
+      rscpEEReadByte(rscpConfiguration->p->mac[0]),
+      rscpEEReadByte(rscpConfiguration->p->mac[1]),
+      rscpEEReadByte(rscpConfiguration->p->mac[2]),
+      rscpEEReadByte(rscpConfiguration->p->mac[3]),
+      rscpEEReadByte(rscpConfiguration->p->mac[4]),
+      rscpEEReadByte(rscpConfiguration->p->mac[5])
+  );
 
-  if (rscpEE_word(rscp_conf_header, version, RSCP_EEPROM_START) != 1)
-  {
+  if (version != 1) {
     RSCP_DEBUG_CONF("this firmware only supports rscp config version 1\n");
     return;
   }
-  if (rscpEE_byte(rscp_conf_header, mac[0], RSCP_EEPROM_START) != uip_ethaddr.addr[0] ||
-      rscpEE_byte(rscp_conf_header, mac[1], RSCP_EEPROM_START) != uip_ethaddr.addr[1] ||
-      rscpEE_byte(rscp_conf_header, mac[2], RSCP_EEPROM_START) != uip_ethaddr.addr[2] ||
-      rscpEE_byte(rscp_conf_header, mac[3], RSCP_EEPROM_START) != uip_ethaddr.addr[3] ||
-      rscpEE_byte(rscp_conf_header, mac[4], RSCP_EEPROM_START) != uip_ethaddr.addr[4] ||
-      rscpEE_byte(rscp_conf_header, mac[5], RSCP_EEPROM_START) != uip_ethaddr.addr[5])
-  {
+
+  uint8_t matching = 0;
+  for(int i=0; i<6; i++)
+    if(rscpEEReadByte(rscpConfiguration->p->mac[i]) == uip_ethaddr.addr[i])
+      matching++;
+  if(matching < 6) {
     RSCP_DEBUG_CONF("the config does not match this device's mac address\n");
+    rscp_initiateConfigDownload();
     return;
   }
 
   // set a different heartbeat offset for each device
-  rscp_heartbeatCounter =
-      (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1] ^ uip_ethaddr.addr[2] ^
-       uip_ethaddr.addr[3] ^ uip_ethaddr.addr[4] ^ uip_ethaddr.addr[5]);
+  rscp_heartbeatCounter = (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1]
+      ^ uip_ethaddr.addr[2] ^ uip_ethaddr.addr[3] ^ uip_ethaddr.addr[4]
+      ^ uip_ethaddr.addr[5]);
 
   RSCP_DEBUG_CONF("heartbeat offset: %d\n", rscp_heartbeatCounter);
 
-  rscp_parseChannelDefinitions();
-  rscp_parseRuleDefinitions();
+  parseChannelDefinitions();
+  parseRuleDefinitions();
 #ifdef RSCP_USE_OW
   hook_ow_poll_register(hook_ow_poll_handler);
 #endif /* RSCP_USE_OW */
-}
 
+  // init configuration up-to-date check for good measure
+  rscp_initiateConfigDownload();
+}
 
 #ifdef RSCP_USE_OW
 void
@@ -353,14 +324,12 @@ hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
 }
 #endif /* RSCP_USE_OW */
 
-typedef enum downloadState {
-  DS_NONE = 0,
-  DS_INITIATING,
-  DS_IN_PROGRESS
-};
 typedef struct {
-  enum downloadState state;
+  enum {
+    DS_NONE = 0, DS_INITIATING, DS_IN_PROGRESS
+  } state;
   uint8_t txID;
+  uint8_t nextBlockNumber;
   uint16_t offset;
   uint16_t remaining;
   uint16_t blockSize;
@@ -372,11 +341,10 @@ typedef struct {
 
 static rscp_configDownload configDownload;
 
-static void doInitiateConfigDownload() {
-  configDownload.txID = txidCounter++;
-
-  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-  rscp_encodeUInt32(0, buffer); // CRC
+static void sendConfigDownloadRequest() {
+ rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+  rscp_encodeUInt32(rscpEEReadByte(rscpConfiguration->status) == RSCP_CONFIG_VALID
+      ?rscpEEReadDWord(rscpConfiguration->crc32) : 0, buffer); // CRC
   rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
   rscp_encodeUInt16(configDownload.blockSize, buffer); // packet size
   rscp_encodeRaw("CONF", 4, buffer); // file name
@@ -388,11 +356,13 @@ static void doInitiateConfigDownload() {
 }
 
 static void configDownloadTimedOut(timer *t, void *user) {
-  switch(configDownload.state) {
+  switch (configDownload.state) {
+  default:
+    break; // should not happen
   case DS_INITIATING:
-    if(configDownload.retrys-- > 0) {
+    if (configDownload.retrys-- > 0) {
       RSCP_DEBUG("No response to config download init message - retrying\n");
-      doInitiateConfigDownload();
+      sendConfigDownloadRequest();
     } else {
       configDownload.state = DS_NONE;
       RSCP_DEBUG("No response to config download init message - giving up\n");
@@ -407,11 +377,12 @@ static void configDownloadTimedOut(timer *t, void *user) {
     rscp_encodeRaw("Timed out", 9, buffer); // message
     rscp_encodeUInt8(0, buffer);
     rscp_transmit(RSCP_FILE_TRANSFER_ERROR);
+    break;
   }
 }
 
 void rscp_initiateConfigDownload() {
-  if(configDownload.state != DS_NONE) {
+  if (configDownload.state != DS_NONE) {
     RSCP_DEBUG("Config download already in progress\n");
     return;
   }
@@ -419,44 +390,41 @@ void rscp_initiateConfigDownload() {
   configDownload.state = DS_INITIATING;
   configDownload.retrys = 15;
   configDownload.blockSize = 32;
+  configDownload.txID = txidCounter++;
 
   timer_init(&(configDownload.timer), &configDownloadTimedOut, 0);
-  doInitiateConfigDownload();
+  sendConfigDownloadRequest();
 
   RSCP_DEBUG("config download request sent\n");
 }
 
-void
-rscp_main(void)
-{
+void rscp_main(void) {
   // RSCP_DEBUG("bla\n");
 }
 
 void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *boc,
-  uint8_t* payload) {
+    uint8_t* payload) {
   RSCP_DEBUG("setBinaryOutputChannel(%d): ", boc->channel);
 
   switch (payload[0]) {
-    case 0x10: // boolean false
-      RSCP_DEBUG("off\n");
-      rscp_setPortPORT(boc->port, 0);
-      break;
-    case 0x11: // boolean true
-      RSCP_DEBUG("on\n");
-      rscp_setPortPORT(boc->port, 1);
-      break;
-    default:
-      RSCP_DEBUG("Invalid value for setBinaryOutputChannel of type %d",
-          payload[0]);
-      break;
+  case 0x10: // boolean false
+    RSCP_DEBUG("off\n");
+    rscp_setPortPORT(boc->port, 0);
+    break;
+  case 0x11: // boolean true
+    RSCP_DEBUG("on\n");
+    rscp_setPortPORT(boc->port, 1);
+    break;
+  default:
+    RSCP_DEBUG(
+        "Invalid value for setBinaryOutputChannel of type %d", payload[0]);
+    break;
   }
 
   rscp_pollBinaryOutputChannelState(boc); // report new state of output
 }
 
-
-void rscp_handleChannelStateCommand(uint8_t* payload)
-{
+void rscp_handleChannelStateCommand(uint8_t* payload) {
   uint16_t channelID = ntohs(((uint16_t*)payload)[0]);
 
   RSCP_DEBUG("handleChannelStateCommand: channel=%d\n", channelID);
@@ -468,27 +436,23 @@ void rscp_handleChannelStateCommand(uint8_t* payload)
   // search for matching channel...
   // ...in binary output channels
   for (uint16_t i = 0; i < rscp_numBinaryOutputChannels; i++)
-    if (rscp_binaryOutputChannels[i].channel == channelID)
-    {
-      rscp_setBinaryOutputChannel(&(rscp_binaryOutputChannels[i]), &(payload[2]));
+    if (rscp_binaryOutputChannels[i].channel == channelID) {
+      rscp_setBinaryOutputChannel(&(rscp_binaryOutputChannels[i]),
+          &(payload[2]));
       return;
     }
 
   // ...more channel types
 }
 
-void
-rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
-    uint16_t payload_len, uint8_t * payload)
-{
-  RSCP_DEBUG("Message from: %02X:%02X:%02X:%02X:%02X:%02X, type: 0x%04X, size: %d\n",
-      src_addr[0], src_addr[1], src_addr[2], src_addr[3], src_addr[4], src_addr[5],
-      msg_type,
-      payload_len);
+void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
+    uint16_t payload_len, uint8_t * payload) {
+  RSCP_DEBUG(
+      "Message from: %02X:%02X:%02X:%02X:%02X:%02X, type: 0x%04X, size: %d\n", src_addr[0], src_addr[1], src_addr[2], src_addr[3], src_addr[4], src_addr[5], msg_type, payload_len);
 #ifdef DEBUG_RSCP_PAYLOAD
   for (int i = 0; i < payload_len; i++) {
     if((i % 32) == 0)
-      RSCP_DEBUG("    ");
+    RSCP_DEBUG("    ");
     printf_P(PSTR("%s%02X"), ((i > 0) ? " " : ""), payload[i]);
   }
   printf_P(PSTR("\n"));
@@ -496,99 +460,122 @@ rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
 
   // Is this a command? Check whether this is even for me.
   if ((msg_type & 0xf000) == 0x2000 && !RSCP_ISFORME(payload)) {
-    RSCP_DEBUG("Command to %02X:%02X:%02X:%02X:%02X:%02X isn't for me\n",
-      payload[0], payload[1], payload[2], payload[3], payload[4], payload[5]);
+    RSCP_DEBUG(
+        "Command to %02X:%02X:%02X:%02X:%02X:%02X isn't for me\n", payload[0], payload[1], payload[2], payload[3], payload[4], payload[5]);
     return;
   }
 
   switch (msg_type) {
-    case RSCP_CHANNEL_EVENT:
+  case RSCP_CHANNEL_EVENT:
 #warning FIXME: testcode currently not working
 #if 0
-      if (RSCP_ISFORME(src_addr)) {
-      }
-      if (payload[2] == RSCP_UNIT_BOOLEAN &&
+    if (RSCP_ISFORME(src_addr)) {
+    }
+    if (payload[2] == RSCP_UNIT_BOOLEAN &&
         payload[3] == 0x11)
-      {
-        uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
-        if (channelID - rscp_binaryInputChannels[0].channel > 0 &&
-            channelID - rscp_binaryInputChannels[0].channel <= 16) {
-          RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
+    {
+      uint16_t channelID = ntohs(*((uint16_t *)&payload[0]));
+      if (channelID - rscp_binaryInputChannels[0].channel > 0 &&
+          channelID - rscp_binaryInputChannels[0].channel <= 16) {
+        RSCP_DEBUG("** MATCH ** channel %d\n", channelID);
 //          rscp_togglePortPORT(channelID -
 //            rscp_binaryInputChannels[0].channel +
 //            rscp_binaryOutputChannels[0].channel);
-        }
       }
-#endif
-      break;
-
-    case RSCP_CHANNEL_STATE_CMD:
-      rscp_handleChannelStateCommand(&(payload[6]));
-      break;
-
-    case RSCP_FILE_TRANSFER_RESPONSE: {
-        uint8_t txID = payload[0];
-        uint8_t status = payload[1];
-        uint32_t length = *((uint32_t*)&(payload[2]));
-        if(configDownload.state == DS_INITIATING && configDownload.txID == txID) {
-          timer_cancel(&(configDownload.timer));
-
-          switch(status) {
-          case RSCP_FT_STATUS_DATA_FOLLOWS:
-            configDownload.state = DS_IN_PROGRESS;
-            configDownload.remaining = length;
-            configDownload.offset = 0;
-            rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_UPDATE);
-            timer_schedule_after_msecs(&(configDownload.timer), 5000);
-            RSCP_DEBUG("Config download started: %ld bytes expected", length);
-            break;
-          case RSCP_FT_STATUS_NOT_MODIFIED:
-            RSCP_DEBUG("Config was unchanged: %d", status);
-            configDownload.state = DS_NONE;
-            break;
-          default:
-            RSCP_DEBUG("Config download failed: %d", status);
-            configDownload.state = DS_NONE;
-            break;
-          }
-        }
-        RSCP_DEBUG("Unexpected file transfer response: tx=%d, status=%d", txID, status);
-        break;
     }
+#endif
+    break;
 
-    case RSCP_FILE_TRANSFER_DATA: {
-        uint8_t txID = payload[0];
-        if(configDownload.state == DS_IN_PROGRESS && configDownload.txID == txID) {
-          uint16_t blockLength = configDownload.remaining < configDownload.blockSize ?
+  case RSCP_CHANNEL_STATE_CMD:
+    rscp_handleChannelStateCommand(&(payload[6]));
+    break;
+
+  case RSCP_FILE_TRANSFER_RESPONSE: {
+    uint8_t txID = payload[0];
+    uint8_t status = payload[1];
+    if (configDownload.state == DS_INITIATING && configDownload.txID == txID) {
+      uint32_t length = ntohl(*((uint32_t*)&(payload[2])));
+      timer_cancel(&(configDownload.timer));
+
+      switch (status) {
+      case RSCP_FT_STATUS_DATA_FOLLOWS:
+        configDownload.state = DS_IN_PROGRESS;
+        configDownload.remaining = length;
+        configDownload.offset = 0;
+        configDownload.nextBlockNumber = 0;
+        configDownload.crc32 = ntohl(*((uint32_t*)&(payload[6])));
+        rscpEEWriteWord(rscpConfiguration->length, length);
+        rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_UPDATE);
+        timer_schedule_after_msecs(&(configDownload.timer), 10000);
+        RSCP_DEBUG("Config download started: tx=%hhd, length=%ld, crc=%lx\n", configDownload.txID, length, configDownload.crc32);
+        break;
+      case RSCP_FT_STATUS_NOT_MODIFIED:
+        RSCP_DEBUG("Config is up to date\n", status);
+        configDownload.state = DS_NONE;
+        break;
+      default:
+        RSCP_DEBUG("Config download unexpected status: %d\n", status);
+        configDownload.state = DS_NONE;
+        break;
+      }
+    } else
+      RSCP_DEBUG(
+          "Unexpected file transfer response: tx=%d, status=%d\n", txID, status);
+    break;
+  }
+
+  case RSCP_FILE_TRANSFER_DATA: {
+    uint8_t txID = payload[0];
+    if (configDownload.state == DS_IN_PROGRESS && configDownload.txID == txID) {
+      uint8_t blockNumber = payload[1];
+      uint16_t blockLength =
+          configDownload.remaining < configDownload.blockSize ?
               configDownload.remaining : configDownload.blockSize;
 
-          RSCP_DEBUG("Got file transfer block of length %d @ %d\n", blockLength, configDownload.offset);
+      // check block number and allow for block number wraparound
+      if (blockNumber == configDownload.nextBlockNumber
+          || (blockNumber == 0 && configDownload.nextBlockNumber == 0xff)) {
+        configDownload.nextBlockNumber = blockNumber + 1;
 
-          eeprom_write_block(&(payload[1]), ((void*)rscpConfiguration->p) + configDownload.offset, blockLength);
-          configDownload.remaining -= blockLength;
-          configDownload.offset += blockLength;
+        timer_schedule_after_msecs(&(configDownload.timer), 10000);
 
-          // send ACK
-          rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-          rscp_encodeUInt8(configDownload.txID, buffer);
-          rscp_transmit(RSCP_FILE_TRANSFER_ACK);
+        uint8_t *dst = (uint8_t*) rscpEEReadWord(rscpConfiguration->p) + configDownload.offset;
+        uint8_t *src = payload+2;
+        RSCP_DEBUG("Got file transfer block #%d of length %d @%d -> @%04x\n",
+            blockNumber, blockLength, configDownload.offset, dst);
+        for(int i=0; i<blockLength; i++)
+          eeprom_write_byte(dst++, *(src++));
+        configDownload.remaining -= blockLength;
+        configDownload.offset += blockLength;
 
-          // done yet?
-          if(configDownload.remaining <= 0) {
-            uint32_t actual = calcConfigCRC();
-            if(actual == configDownload.crc32) {
-              RSCP_DEBUG("Downloaded configuration is valid\n");
-              rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_VALID);
-              rscp_init(); // re-initialize
-            } else {
-              RSCP_DEBUG("Downloaded configuration CRC mismatch: %ld != %ld\n", actual, configDownload.crc32);
-              rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_VALID);
-            }
+        // send ACK
+        rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+        rscp_encodeUInt8(configDownload.txID, buffer);
+        rscp_encodeUInt8(blockNumber, buffer);
+        rscp_transmit(RSCP_FILE_TRANSFER_ACK);
+
+        // done yet?
+        if (configDownload.remaining <= 0) {
+          timer_cancel(&(configDownload.timer));
+          configDownload.state = DS_NONE;
+          uint32_t actual = calcConfigCRC();
+          if (actual == configDownload.crc32) {
+            RSCP_DEBUG("Downloaded configuration is valid\n");
+            rscpEEWriteDWord(rscpConfiguration->crc32, actual);
+            rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_VALID);
+            rscp_init(); // re-initialize
+          } else {
+            RSCP_DEBUG(
+                "Downloaded configuration CRC mismatch: %lx != %lx\n", actual, configDownload.crc32);
+            rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_VALID);
           }
         }
-        RSCP_DEBUG("Unexpected file transfer data: tx=%d", txID, status);
-        break;
-      }
+      } else
+        RSCP_DEBUG("Data block out of sequence: got=%d, expected=%d\n", blockNumber, configDownload.nextBlockNumber);
+    } else
+      RSCP_DEBUG("Unexpected file transfer data: state=%d, tx=%d\n", configDownload.state, txID, status);
+    break;
+  }
   }
 }
 
@@ -614,11 +601,9 @@ rscp_sendPeriodicIrmpEvents(void)
 }
 #endif
 
-void
-rscp_periodic(void)     // 1Hz interrupt
+void rscp_periodic(void)     // 1Hz interrupt
 {
-  if (--rscp_heartbeatCounter == 0)
-  {
+  if (--rscp_heartbeatCounter == 0) {
     /* send a heartbeat packet every 256 seconds */
     rscp_heartbeatCounter = 0;
 
@@ -628,19 +613,14 @@ rscp_periodic(void)     // 1Hz interrupt
   }
 }
 
-void
-rscp_sendHeartBeat(void)
-{
+void rscp_sendHeartBeat(void) {
   rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
   rscp_encodeUInt8(RSCP_NODE_STATE_RUNNING, buffer);
   rscp_transmit(RSCP_NODE_HEARTBEAT);
   RSCP_DEBUG("node heartbeat sent\n");
 }
 
-
-void
-rscp_sendPeriodicOutputEvents(void)
-{
+void rscp_sendPeriodicOutputEvents(void) {
   rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
 
 #warning FIXME
@@ -649,10 +629,7 @@ rscp_sendPeriodicOutputEvents(void)
   RSCP_DEBUG("node output data sent\n");
 }
 
-
-void
-rscp_sendPeriodicInputEvents(void)
-{
+void rscp_sendPeriodicInputEvents(void) {
   rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
 
 #warning FIXME
@@ -716,8 +693,9 @@ ENCODE_NUMBER_FIELD(32, 0x05)
 
 // FIXME: support for float/double?
 
-int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
-  if(scale < -4 || scale > 3 || significand < -4096 || significand > 4095)
+int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer) {
+  if (scale < -4 || scale > 3 || significand < -4096 || significand > 4095)
     return -1;
 
   *(buffer->pos++) = 0x0b;
@@ -726,8 +704,9 @@ int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale, rscp_payload
 
   return 0;
 }
-int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
-  if(scale < -8 || scale > 7 || significand < -524288 || significand > 524287)
+int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer) {
+  if (scale < -8 || scale > 7 || significand < -524288 || significand > 524287)
     return -1;
 
   *(buffer->pos++) = 0x0c;
@@ -737,8 +716,10 @@ int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale, rscp_payload
 
   return 0;
 }
-int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payloadBuffer_t *buffer) {
-  if(scale < -16 || scale > 15 || significand < -67108864 || significand > 67108863)
+int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer) {
+  if (scale < -16 || scale > 15 || significand < -67108864
+      || significand > 67108863)
     return -1;
 
   *(buffer->pos++) = 0x0d;
@@ -753,10 +734,10 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale, rscp_payload
 #endif /* RSCP_SUPPORT */
 
 /*
-   -- Ethersex META --
-   header(protocols/rscp/rscp.h)
-   init(rscp_init)
-   timer(50, rscp_periodic())
-   ifdef(`conf_IRMP',`timer(1, rscp_sendPeriodicIrmpEvents())')
-   block(Miscelleanous)
+ -- Ethersex META --
+ header(protocols/rscp/rscp.h)
+ init(rscp_init)
+ timer(50, rscp_periodic())
+ ifdef(`conf_IRMP',`timer(1, rscp_sendPeriodicIrmpEvents())')
+ block(Miscelleanous)
  */

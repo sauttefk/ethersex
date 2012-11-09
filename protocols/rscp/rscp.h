@@ -41,6 +41,7 @@
 #include "rscp_net.h"
 #include "rscp_io.h"
 
+#include "mtime.h"
 
 #ifdef DEBUG_RSCP
 #include "core/debug.h"
@@ -287,7 +288,7 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
  * header structure
  */
 
-typedef struct __attribute__ ((packed))  _rscp_conf_header
+typedef struct __attribute__ ((packed))
 {
   uint16_t version;         // version number (currently 1)
   uint8_t mac[6];           // mac address this config is meant for
@@ -310,6 +311,16 @@ typedef struct __attribute__ ((packed))
 } rscp_configuration;
 
 rscp_configuration *rscpConfiguration;
+
+#define NUM_SEGMENT_CONTROLLERS 4
+typedef struct __attribute__ ((packed)) {
+  enum {
+    STOPPED = 0, RUNNING
+  } state;
+  struct uip_eth_addr address;
+  mtime lastSeen;
+} segmentController;
+segmentController segmentControllers[NUM_SEGMENT_CONTROLLERS];
 
 /**
  * channel structure
