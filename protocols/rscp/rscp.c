@@ -28,7 +28,10 @@
 #ifdef RSCP_SUPPORT
 
 /* local prototypes */
+#ifdef RSCP_USE_OW
 void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state);
+#endif
+
 void rscp_initiateConfigDownload();
 
 /* local variables */
@@ -99,6 +102,7 @@ static void parseBOC(void *ptr, uint16_t items) {
   }
 }
 
+#ifdef RSCP_USE_OW
 static void parseOWC(void *ptr, uint16_t items) {
   rspc_owList_p = ptr;
   rscp_numOwChannels = items;
@@ -116,6 +120,7 @@ static void parseOWC(void *ptr, uint16_t items) {
   }
 #endif
 }
+#endif
 
 static void parseRuleDefinitions(void) {
   void *ptr = (void *) (rscpEE_word(rscp_conf_header, rule_p,
@@ -461,13 +466,16 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
   }
   case rscp_ModeUDP: {
     u8_t *a = srcAddr->u.ipNodeAddress.macAddress.addr;
-    uip_ipaddr_t *i = srcAddr->u.ipNodeAddress.ipAddress;
+    uip_ipaddr_t *i = &(srcAddr->u.ipNodeAddress.ipAddress);
     RSCP_DEBUG(
         "Message from: %d.%d.%d.%d (%02X:%02X:%02X:%02X:%02X:%02X), type: 0x%04X, size: %d\n",
         uip_ipaddr1(i), uip_ipaddr2(i), uip_ipaddr3(i), uip_ipaddr4(i),
         a[0], a[1], a[2], a[3], a[4], a[5], msg_type, payload_len);
     break;
   }
+  default:
+    RSCP_DEBUG("Unsupported address type %d\n", srcAddr->type);
+    break;
   }
 #endif
 #ifdef DEBUG_RSCP_PAYLOAD
