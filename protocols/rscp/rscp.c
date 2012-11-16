@@ -27,6 +27,9 @@
 
 #ifdef RSCP_SUPPORT
 
+// the interval at which we check whether there's a more recent configuration available
+#define CONFIG_CHECK_INTERVAL 60000
+
 /* local prototypes */
 #ifdef RSCP_USE_OW
 void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state);
@@ -213,75 +216,86 @@ static uint32_t calcConfigCRC() {
   return crc;
 }
 
+static timer configCheckTimer;
+static void periodicConfigCheck(timer *t, void *user) {
+  RSCP_DEBUG("Periodic config check\n");
+  initiateConfigDownload();
+  timer_schedule_after_msecs(&configCheckTimer, CONFIG_CHECK_INTERVAL);
+}
+
 /* ----------------------------------------------------------------------------
  * initialization of RSCP
  */
 void rscp_init(void) {
+  timer_init(&configCheckTimer, &periodicConfigCheck, 0);
+
   rscpConfiguration = (rscp_configuration*) RSCP_EEPROM_START;
   RSCP_DEBUG_CONF(
       "Initializing. Start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
 
+  // verify config status in eeprom
   uint8_t status = rscpEEReadByte(rscpConfiguration->status);
-  if (status != rscp_configValid) {
-    RSCP_DEBUG_CONF("Configuration is missing or invalid.\n");
-    initiateConfigDownload();
-    return;
-  }
+  if (status == rscp_configValid) {
+    // Verify config CRC
+    uint32_t crc = calcConfigCRC();
+    uint32_t expected = rscpEEReadDWord(rscpConfiguration->crc32);
+    if (expected == crc) {
+      // config integrity is Ok
+      uint16_t version = rscpEEReadWord(rscpConfiguration->p->version);
+      RSCP_DEBUG_CONF(
+          "version: %hd, mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
+          version,
+          rscpEEReadByte(rscpConfiguration->p->mac[0]),
+          rscpEEReadByte(rscpConfiguration->p->mac[1]),
+          rscpEEReadByte(rscpConfiguration->p->mac[2]),
+          rscpEEReadByte(rscpConfiguration->p->mac[3]),
+          rscpEEReadByte(rscpConfiguration->p->mac[4]),
+          rscpEEReadByte(rscpConfiguration->p->mac[5])
+      );
 
-  // Verify config CRC
-  uint32_t crc = calcConfigCRC();
-  uint32_t expected = rscpEEReadDWord(rscpConfiguration->crc32);
-  if (expected != crc) {
-    RSCP_DEBUG_CONF(
-        "Configuration CRC32 %04x doesn't match the expected %04x", crc, expected);
-    rscpEEWriteByte(rscpConfiguration->status, rscp_configInvalid);
-    initiateConfigDownload();
-    return;
-  }
+      // can we use this version?
+      if (version == 1) {
+        uint8_t matching = 0;
+        for(int i=0; i<6; i++)
+          if(rscpEEReadByte(rscpConfiguration->p->mac[i]) == uip_ethaddr.addr[i])
+            matching++;
 
-  // we're good to go
-  uint16_t version = rscpEEReadWord(rscpConfiguration->p->version);
-  RSCP_DEBUG_CONF(
-      "version: %hd, mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
-      version,
-      rscpEEReadByte(rscpConfiguration->p->mac[0]),
-      rscpEEReadByte(rscpConfiguration->p->mac[1]),
-      rscpEEReadByte(rscpConfiguration->p->mac[2]),
-      rscpEEReadByte(rscpConfiguration->p->mac[3]),
-      rscpEEReadByte(rscpConfiguration->p->mac[4]),
-      rscpEEReadByte(rscpConfiguration->p->mac[5])
-  );
+        // is the configuration for this device?
+        if(matching == 6) {
+          // we're ready to go!
+          // set a different heartbeat offset for each device
+          rscp_heartbeatCounter = (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1]
+              ^ uip_ethaddr.addr[2] ^ uip_ethaddr.addr[3] ^ uip_ethaddr.addr[4]
+              ^ uip_ethaddr.addr[5]);
 
-  if (version != 1) {
-    RSCP_DEBUG_CONF("this firmware only supports rscp config version 1\n");
-    return;
-  }
+          RSCP_DEBUG_CONF("heartbeat offset: %d\n", rscp_heartbeatCounter);
 
-  uint8_t matching = 0;
-  for(int i=0; i<6; i++)
-    if(rscpEEReadByte(rscpConfiguration->p->mac[i]) == uip_ethaddr.addr[i])
-      matching++;
-  if(matching < 6) {
-    RSCP_DEBUG_CONF("the config does not match this device's mac address\n");
-    initiateConfigDownload();
-    return;
-  }
-
-  // set a different heartbeat offset for each device
-  rscp_heartbeatCounter = (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1]
-      ^ uip_ethaddr.addr[2] ^ uip_ethaddr.addr[3] ^ uip_ethaddr.addr[4]
-      ^ uip_ethaddr.addr[5]);
-
-  RSCP_DEBUG_CONF("heartbeat offset: %d\n", rscp_heartbeatCounter);
-
-  parseChannelDefinitions();
-  parseRuleDefinitions();
+          parseChannelDefinitions();
+          parseRuleDefinitions();
 #ifdef RSCP_USE_OW
-  hook_ow_poll_register(hook_ow_poll_handler);
+          hook_ow_poll_register(hook_ow_poll_handler);
 #endif /* RSCP_USE_OW */
 
-  // init configuration up-to-date check for good measure
-  initiateConfigDownload();
+          timer_schedule_after_msecs(&configCheckTimer, CONFIG_CHECK_INTERVAL);
+        } else {
+          RSCP_DEBUG_CONF("the config does not match this device's mac address\n");
+        }
+      } else {
+        RSCP_DEBUG_CONF("this firmware only supports rscp config version 1\n");
+      }
+    } else {
+      RSCP_DEBUG_CONF(
+          "Configuration CRC32 %04x doesn't match the expected %04x", crc, expected);
+      // mark as invalid, so we don't try to verify it again
+      rscpEEWriteByte(rscpConfiguration->status, status);
+    }
+  } else {
+    RSCP_DEBUG_CONF("Configuration is missing or invalid.\n");
+  }
+
+  // if we ended up here, sonething's not quite right with the configuration.
+  // try to get a new one ASAP.
+  timer_schedule_after_msecs(&configCheckTimer, 500);
 }
 
 #ifdef RSCP_USE_OW
