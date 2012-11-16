@@ -32,7 +32,7 @@
 void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state);
 #endif
 
-void rscp_initiateConfigDownload();
+static void initiateConfigDownload();
 
 /* local variables */
 volatile uint8_t rscp_heartbeatCounter;
@@ -222,9 +222,9 @@ void rscp_init(void) {
       "Initializing. Start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
 
   uint8_t status = rscpEEReadByte(rscpConfiguration->status);
-  if (status != RSCP_CONFIG_VALID) {
+  if (status != rscp_configValid) {
     RSCP_DEBUG_CONF("Configuration is missing or invalid.\n");
-    rscp_initiateConfigDownload();
+    initiateConfigDownload();
     return;
   }
 
@@ -234,8 +234,8 @@ void rscp_init(void) {
   if (expected != crc) {
     RSCP_DEBUG_CONF(
         "Configuration CRC32 %04x doesn't match the expected %04x", crc, expected);
-    rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_INVALID);
-    rscp_initiateConfigDownload();
+    rscpEEWriteByte(rscpConfiguration->status, rscp_configInvalid);
+    initiateConfigDownload();
     return;
   }
 
@@ -263,7 +263,7 @@ void rscp_init(void) {
       matching++;
   if(matching < 6) {
     RSCP_DEBUG_CONF("the config does not match this device's mac address\n");
-    rscp_initiateConfigDownload();
+    initiateConfigDownload();
     return;
   }
 
@@ -281,7 +281,7 @@ void rscp_init(void) {
 #endif /* RSCP_USE_OW */
 
   // init configuration up-to-date check for good measure
-  rscp_initiateConfigDownload();
+  initiateConfigDownload();
 }
 
 #ifdef RSCP_USE_OW
@@ -348,7 +348,7 @@ static rscp_configDownload configDownload;
 
 static void sendConfigDownloadRequest() {
  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-  rscp_encodeUInt32(rscpEEReadByte(rscpConfiguration->status) == RSCP_CONFIG_VALID
+  rscp_encodeUInt32(rscpEEReadByte(rscpConfiguration->status) == rscp_configValid
       ?rscpEEReadDWord(rscpConfiguration->crc32) : 0, buffer); // CRC
   rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
   rscp_encodeUInt16(configDownload.blockSize, buffer); // packet size
@@ -376,6 +376,7 @@ static void configDownloadTimedOut(timer *t, void *user) {
   case DS_IN_PROGRESS:
     RSCP_DEBUG("Config download timed out receiving data\n");
     configDownload.state = DS_NONE;
+    rscpEEWriteByte(rscpConfiguration->status, rscp_configInvalid);
 
     rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
     rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
@@ -386,7 +387,7 @@ static void configDownloadTimedOut(timer *t, void *user) {
   }
 }
 
-void rscp_initiateConfigDownload() {
+static void initiateConfigDownload() {
   if (configDownload.state != DS_NONE) {
     RSCP_DEBUG("Config download already in progress\n");
     return;
@@ -534,7 +535,7 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
         configDownload.nextBlockNumber = 0;
         configDownload.crc32 = ntohl(*((uint32_t*)&(payload[6])));
         rscpEEWriteWord(rscpConfiguration->length, length);
-        rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_UPDATE);
+        rscpEEWriteByte(rscpConfiguration->status, rscp_configUpdating);
         timer_schedule_after_msecs(&(configDownload.timer), 10000);
         RSCP_DEBUG("Config download started: tx=%hhd, length=%ld, crc=%lx\n", configDownload.txID, length, configDownload.crc32);
         break;
@@ -591,12 +592,12 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
           if (actual == configDownload.crc32) {
             RSCP_DEBUG("Downloaded configuration is valid\n");
             rscpEEWriteDWord(rscpConfiguration->crc32, actual);
-            rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_VALID);
+            rscpEEWriteByte(rscpConfiguration->status, rscp_configValid);
             rscp_init(); // re-initialize
           } else {
             RSCP_DEBUG(
                 "Downloaded configuration CRC mismatch: %lx != %lx\n", actual, configDownload.crc32);
-            rscpEEWriteByte(rscpConfiguration->status, RSCP_CONFIG_VALID);
+            rscpEEWriteByte(rscpConfiguration->status, rscp_configInvalid);
           }
         }
       } else
@@ -634,23 +635,24 @@ rscp_sendPeriodicIrmpEvents(void)
 }
 #endif
 
+static void sendHeartBeat(void) {
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+  rscp_encodeUInt8(rscpEEReadByte(rscpConfiguration->status), buffer);
+  rscp_encodeInt32(rscpEEReadDWord(rscpConfiguration->crc32), buffer);
+  rscp_transmit(RSCP_NODE_HEARTBEAT);
+  RSCP_DEBUG("node heartbeat sent\n");
+}
+
 void rscp_periodic(void)     // 1Hz interrupt
 {
   if (--rscp_heartbeatCounter == 0) {
     /* send a heartbeat packet every 256 seconds */
     rscp_heartbeatCounter = 0;
 
-    rscp_sendHeartBeat();
+    sendHeartBeat();
 //    rscp_sendPeriodicOutputEvents();
 //    rscp_sendPeriodicInputEvents();
   }
-}
-
-void rscp_sendHeartBeat(void) {
-  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-  rscp_encodeUInt8(RSCP_NODE_STATE_RUNNING, buffer);
-  rscp_transmit(RSCP_NODE_HEARTBEAT);
-  RSCP_DEBUG("node heartbeat sent\n");
 }
 
 void rscp_sendPeriodicOutputEvents(void) {

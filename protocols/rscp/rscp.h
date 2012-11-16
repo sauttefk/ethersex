@@ -58,16 +58,6 @@
 #endif
 
 
-/*
- * Node state
- */
-enum rscp_nodeState
-{
-  RSCP_NODE_STATE_STARTING,
-  RSCP_NODE_STATE_RUNNING,
-  RSCP_NODE_STATE_STOPPING,
-};
-
 typedef struct  __attribute__ ((packed))
 {
   uint16_t channel;             // channel id
@@ -144,7 +134,6 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     uint16_t payload_len, uint8_t * payload);
 void rscp_init(void);
 void rscp_periodic(void);
-void rscp_sendHeartBeat(void);
 void rscp_sendPeriodicOutputEvents(void);
 void rscp_sendPeriodicInputEvents(void);
 void rscp_pollBinaryOutputChannelState(rscp_binaryOutputChannel *boc);
@@ -298,14 +287,16 @@ typedef struct __attribute__ ((packed))
   uint8_t name[];           // name of device (ASCII encoding, zero-terminated)
 } rscp_conf_header;
 
-#define RSCP_CONFIG_NONE       0
-#define RSCP_CONFIG_VALID      1
-#define RSCP_CONFIG_INVALID    2
-#define RSCP_CONFIG_UPDATE     3
+typedef enum rscp_configStatus {
+  rscp_noConfiguration = 0,
+  rscp_configValid,
+  rscp_configInvalid,
+  rscp_configUpdating
+} rscp_configStatus;
 
 typedef struct __attribute__ ((packed))
 {
-  uint8_t status;      // last known status of configuration
+  rscp_configStatus status;      // last known status of configuration
   uint16_t length;     // length of configuration data
   uint32_t crc32;      // the CRC32 (as used in ZIP/GZip) of the configuration data
   rscp_conf_header *p; // offset of configuration from start of EEPROM
