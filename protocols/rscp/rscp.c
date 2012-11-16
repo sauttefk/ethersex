@@ -35,8 +35,6 @@
 void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state);
 #endif
 
-static void initiateConfigDownload();
-
 /* local variables */
 volatile uint8_t rscp_heartbeatCounter;
 
@@ -216,6 +214,82 @@ static uint32_t calcConfigCRC() {
   return crc;
 }
 
+
+typedef struct {
+  enum {
+    DS_NONE = 0, DS_INITIATING, DS_IN_PROGRESS
+  } state;
+  uint8_t txID;
+  uint8_t nextBlockNumber;
+  uint16_t offset;
+  uint16_t remaining;
+  uint16_t blockSize;
+  uint32_t crc32;
+
+  timer timer;
+  uint8_t retrys;
+} rscp_configDownload;
+
+static rscp_configDownload configDownload;
+
+static void sendConfigDownloadRequest() {
+ rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+  rscp_encodeUInt32(rscpEEReadByte(rscpConfiguration->status) == rscp_configValid
+      ?rscpEEReadDWord(rscpConfiguration->crc32) : 0, buffer); // CRC
+  rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
+  rscp_encodeUInt16(configDownload.blockSize, buffer); // packet size
+  rscp_encodeRaw("CONF", 4, buffer); // file name
+  rscp_encodeUInt8(0, buffer);
+
+  rscp_transmit(RSCP_FILE_TRANSFER_REQUEST);
+
+  timer_schedule_after_msecs(&(configDownload.timer), 2000);
+}
+
+static void configDownloadTimedOut(timer *t, void *user) {
+  switch (configDownload.state) {
+  default:
+    break; // should not happen
+  case DS_INITIATING:
+    if (configDownload.retrys-- > 0) {
+      RSCP_DEBUG("No response to config download init message - retrying\n");
+      sendConfigDownloadRequest();
+    } else {
+      configDownload.state = DS_NONE;
+      RSCP_DEBUG("No response to config download init message - giving up\n");
+    }
+    break;
+  case DS_IN_PROGRESS:
+    RSCP_DEBUG("Config download timed out receiving data\n");
+    configDownload.state = DS_NONE;
+    rscpEEWriteByte(rscpConfiguration->status, rscp_configInvalid);
+
+    rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+    rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
+    rscp_encodeRaw("Timed out", 9, buffer); // message
+    rscp_encodeUInt8(0, buffer);
+    rscp_transmit(RSCP_FILE_TRANSFER_ERROR);
+    break;
+  }
+}
+
+static void initiateConfigDownload() {
+  if (configDownload.state != DS_NONE) {
+    RSCP_DEBUG("Config download already in progress\n");
+    return;
+  }
+
+  configDownload.state = DS_INITIATING;
+  configDownload.retrys = 15;
+  configDownload.blockSize = 32;
+  configDownload.txID = txidCounter++;
+
+  timer_init(&(configDownload.timer), &configDownloadTimedOut, 0);
+  sendConfigDownloadRequest();
+
+  RSCP_DEBUG("config download request sent\n");
+}
+
 static timer configCheckTimer;
 static void periodicConfigCheck(timer *t, void *user) {
   RSCP_DEBUG("Periodic config check\n");
@@ -342,81 +416,6 @@ hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
       ow_sensor->ow_rom_code.bytewise[6], ow_sensor->ow_rom_code.bytewise[7]);
 }
 #endif /* RSCP_USE_OW */
-
-typedef struct {
-  enum {
-    DS_NONE = 0, DS_INITIATING, DS_IN_PROGRESS
-  } state;
-  uint8_t txID;
-  uint8_t nextBlockNumber;
-  uint16_t offset;
-  uint16_t remaining;
-  uint16_t blockSize;
-  uint32_t crc32;
-
-  timer timer;
-  uint8_t retrys;
-} rscp_configDownload;
-
-static rscp_configDownload configDownload;
-
-static void sendConfigDownloadRequest() {
- rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-  rscp_encodeUInt32(rscpEEReadByte(rscpConfiguration->status) == rscp_configValid
-      ?rscpEEReadDWord(rscpConfiguration->crc32) : 0, buffer); // CRC
-  rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
-  rscp_encodeUInt16(configDownload.blockSize, buffer); // packet size
-  rscp_encodeRaw("CONF", 4, buffer); // file name
-  rscp_encodeUInt8(0, buffer);
-
-  rscp_transmit(RSCP_FILE_TRANSFER_REQUEST);
-
-  timer_schedule_after_msecs(&(configDownload.timer), 2000);
-}
-
-static void configDownloadTimedOut(timer *t, void *user) {
-  switch (configDownload.state) {
-  default:
-    break; // should not happen
-  case DS_INITIATING:
-    if (configDownload.retrys-- > 0) {
-      RSCP_DEBUG("No response to config download init message - retrying\n");
-      sendConfigDownloadRequest();
-    } else {
-      configDownload.state = DS_NONE;
-      RSCP_DEBUG("No response to config download init message - giving up\n");
-    }
-    break;
-  case DS_IN_PROGRESS:
-    RSCP_DEBUG("Config download timed out receiving data\n");
-    configDownload.state = DS_NONE;
-    rscpEEWriteByte(rscpConfiguration->status, rscp_configInvalid);
-
-    rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-    rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
-    rscp_encodeRaw("Timed out", 9, buffer); // message
-    rscp_encodeUInt8(0, buffer);
-    rscp_transmit(RSCP_FILE_TRANSFER_ERROR);
-    break;
-  }
-}
-
-static void initiateConfigDownload() {
-  if (configDownload.state != DS_NONE) {
-    RSCP_DEBUG("Config download already in progress\n");
-    return;
-  }
-
-  configDownload.state = DS_INITIATING;
-  configDownload.retrys = 15;
-  configDownload.blockSize = 32;
-  configDownload.txID = txidCounter++;
-
-  timer_init(&(configDownload.timer), &configDownloadTimedOut, 0);
-  sendConfigDownloadRequest();
-
-  RSCP_DEBUG("config download request sent\n");
-}
 
 void rscp_main(void) {
   // RSCP_DEBUG("bla\n");
