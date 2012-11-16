@@ -140,7 +140,7 @@ uint8_t txidCounter;
 
 void rscp_setup(void);
 void rscp_main(void);
-void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
+void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     uint16_t payload_len, uint8_t * payload);
 void rscp_init(void);
 void rscp_periodic(void);
@@ -180,6 +180,7 @@ int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
     rscp_payloadBuffer_t *buffer);
 
 #define RSCP_NODE_HEARTBEAT           0x0100
+#define RSCP_SEGMENT_CTRL_HEARTBEAT   0x0101
 #define RSCP_CHANNEL_EVENT            0x1001
 #define RSCP_FILE_TRANSFER_REQUEST    0x1010
 #define RSCP_FILE_TRANSFER_RESPONSE   0x1011
@@ -317,7 +318,7 @@ typedef struct __attribute__ ((packed)) {
   enum {
     STOPPED = 0, RUNNING
   } state;
-  struct uip_eth_addr address;
+  uip_ipaddr_t address;
   mtime lastSeen;
 } segmentController;
 segmentController segmentControllers[NUM_SEGMENT_CONTROLLERS];

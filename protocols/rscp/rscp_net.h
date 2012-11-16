@@ -43,7 +43,8 @@
 
 typedef enum rscp_networkMode {
   rscp_ModeRawEthernet,
-  rscp_ModeUDP
+  rscp_ModeUDP,
+  rscp_ModeCAN,
 } rscp_networkMode_t;
 
 /* structs */
@@ -59,7 +60,7 @@ typedef struct rscp_message
 
 typedef struct rscp_udp_message
 {
-  uint8_t mac[6];                     // mac address of sender
+  struct uip_eth_addr mac;            // mac address of sender
   rscp_message_t message;             // rscp message
 } rscp_udp_message_t;
 
@@ -67,6 +68,28 @@ typedef struct rscp_payloadBuffer {
   uint8_t  *start;
   uint8_t  *pos;
 } rscp_payloadBuffer_t;
+
+typedef struct rscp_ipNodeAddress {
+  struct uip_eth_addr macAddress;
+  uip_ipaddr_t ipAddress;
+} rscp_ipNodeAddress;
+
+typedef struct rscp_ethNodeAddress {
+  struct uip_eth_addr macAddress;
+} rscp_ethNodeAddress;
+
+typedef struct rscp_canNodeAddress {
+  uint8_t canAddress;
+} rscp_canNodeAddress;
+
+typedef struct rscp_nodeAddress {
+  rscp_networkMode_t type;
+  union u {
+    rscp_ipNodeAddress ipNodeAddress;
+    rscp_ethNodeAddress ethNodeAddress;
+    rscp_canNodeAddress canNodeAddress;
+  } u;
+} rscp_nodeAddress;
 
 #define RSCP_RAWH_LEN                 sizeof(struct uip_eth_hdr)
 #define RSCP_HEADER_LEN               offsetof(rscp_message_t, payload)

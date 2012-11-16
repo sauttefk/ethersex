@@ -445,10 +445,31 @@ void rscp_handleChannelStateCommand(uint8_t* payload) {
   // ...more channel types
 }
 
-void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
+static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr, uint8_t *payload) {
+  struct uip_eth_addr *controllerAddress;
+}
+
+void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     uint16_t payload_len, uint8_t * payload) {
-  RSCP_DEBUG(
-      "Message from: %02X:%02X:%02X:%02X:%02X:%02X, type: 0x%04X, size: %d\n", src_addr[0], src_addr[1], src_addr[2], src_addr[3], src_addr[4], src_addr[5], msg_type, payload_len);
+#ifdef RSCP_DEBUG
+  switch(srcAddr->type) {
+  case rscp_ModeRawEthernet: {
+    u8_t *a = srcAddr->u.ethNodeAddress.macAddress.addr;
+    RSCP_DEBUG(
+        "Message from: %02X:%02X:%02X:%02X:%02X:%02X, type: 0x%04X, size: %d\n", a[0], a[1], a[2], a[3], a[4], a[5], msg_type, payload_len);
+    break;
+  }
+  case rscp_ModeUDP: {
+    u8_t *a = srcAddr->u.ipNodeAddress.macAddress.addr;
+    uip_ipaddr_t *i = srcAddr->u.ipNodeAddress.ipAddress;
+    RSCP_DEBUG(
+        "Message from: %d.%d.%d.%d (%02X:%02X:%02X:%02X:%02X:%02X), type: 0x%04X, size: %d\n",
+        uip_ipaddr1(i), uip_ipaddr2(i), uip_ipaddr3(i), uip_ipaddr4(i),
+        a[0], a[1], a[2], a[3], a[4], a[5], msg_type, payload_len);
+    break;
+  }
+  }
+#endif
 #ifdef DEBUG_RSCP_PAYLOAD
   for (int i = 0; i < payload_len; i++) {
     if((i % 32) == 0)
@@ -469,7 +490,7 @@ void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
   case RSCP_CHANNEL_EVENT:
 #warning FIXME: testcode currently not working
 #if 0
-    if (RSCP_ISFORME(src_addr)) {
+    if (RSCP_ISFORME(srcMAC)) {
     }
     if (payload[2] == RSCP_UNIT_BOOLEAN &&
         payload[3] == 0x11)
@@ -574,6 +595,10 @@ void rscp_handleMessage(uint8_t * src_addr, uint16_t msg_type,
         RSCP_DEBUG("Data block out of sequence: got=%d, expected=%d\n", blockNumber, configDownload.nextBlockNumber);
     } else
       RSCP_DEBUG("Unexpected file transfer data: state=%d, tx=%d\n", configDownload.state, txID, status);
+    break;
+  }
+  case RSCP_SEGMENT_CTRL_HEARTBEAT: {
+    handleSegmentControllerHeartbeat(srcAddr, payload);
     break;
   }
   }
