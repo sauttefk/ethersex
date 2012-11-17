@@ -169,15 +169,22 @@ int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale,
 int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
     rscp_payloadBuffer_t *buffer);
 
+// *********************************************
+// Message Types
+#define RSCP_CHANNEL_EVENT            0x0001
+#define RSCP_CHANNEL_REPORT           0x0002
+
 #define RSCP_NODE_HEARTBEAT           0x0100
 #define RSCP_SEGMENT_CTRL_HEARTBEAT   0x0101
-#define RSCP_CHANNEL_EVENT            0x1001
-#define RSCP_FILE_TRANSFER_REQUEST    0x1010
-#define RSCP_FILE_TRANSFER_RESPONSE   0x1011
-#define RSCP_FILE_TRANSFER_DATA       0x1012
-#define RSCP_FILE_TRANSFER_ACK        0x1013
-#define RSCP_FILE_TRANSFER_ERROR      0x1014
-#define RSCP_CHANNEL_STATE_CMD        0x2000
+
+#define RSCP_CHANNEL_STATE_CMD        0x8001
+
+#define RSCP_FILE_TRANSFER_REQUEST    0x8110
+#define RSCP_FILE_TRANSFER_RESPONSE   0x8111
+#define RSCP_FILE_TRANSFER_DATA       0x8112
+#define RSCP_FILE_TRANSFER_ACK        0x8113
+#define RSCP_FILE_TRANSFER_ERROR      0x8114
+// *********************************************
 
 #define RSCP_FT_STATUS_DATA_FOLLOWS   0
 #define RSCP_FT_STATUS_NOT_FOUND      1
@@ -310,7 +317,7 @@ typedef struct __attribute__ ((packed)) {
   enum {
     STOPPED = 0, RUNNING
   } state;
-  uip_ipaddr_t address;
+  rscp_nodeAddress address;
   mtime lastSeen;
 } segmentController;
 segmentController segmentControllers[NUM_SEGMENT_CONTROLLERS];

@@ -76,10 +76,12 @@ typedef struct rscp_ipNodeAddress {
 
 typedef struct rscp_ethNodeAddress {
   struct uip_eth_addr macAddress;
+  uint8_t padding[4];
 } rscp_ethNodeAddress;
 
 typedef struct rscp_canNodeAddress {
   uint8_t canAddress;
+  uint8_t padding[9];
 } rscp_canNodeAddress;
 
 typedef struct rscp_nodeAddress {

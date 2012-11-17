@@ -204,7 +204,7 @@ static uint32_t calcConfigCRC() {
   // printf_P(PSTR("Config header @%04X, pointer @%04X, config @%04X:\n"), rscpConfiguration, &(rscpConfiguration->p), p);
   uint32_t crc = crc32init();
   while (length-- > 0) {
-    uint8_t b =  eeprom_read_byte(p);
+    uint8_t b = eeprom_read_byte(p);
     crc32update(crc, b);
     // printf_P(PSTR("%02X"), b);
     p++;
@@ -213,7 +213,6 @@ static uint32_t calcConfigCRC() {
   // printf_P(PSTR("\n"));
   return crc;
 }
-
 
 typedef struct {
   enum {
@@ -243,7 +242,7 @@ static void sendConfigDownloadRequest() {
 
   rscp_transmit(RSCP_FILE_TRANSFER_REQUEST);
 
-  timer_schedule_after_msecs(&(configDownload.timer), 2000);
+  timer_schedule_after_msecs(&(configDownload.timer), 1000);
 }
 
 static void configDownloadTimedOut(timer *t, void *user) {
@@ -303,6 +302,9 @@ static void periodicConfigCheck(timer *t, void *user) {
 void rscp_init(void) {
   timer_init(&configCheckTimer, &periodicConfigCheck, 0);
 
+  memset(segmentControllers, 0,
+      sizeof(segmentController) * NUM_SEGMENT_CONTROLLERS);
+
   rscpConfiguration = (rscp_configuration*) RSCP_EEPROM_START;
   RSCP_DEBUG_CONF(
       "Initializing. Start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
@@ -335,7 +337,7 @@ void rscp_init(void) {
             matching++;
 
         // is the configuration for this device?
-        if(matching == 6) {
+        if (matching == 6) {
           // we're ready to go!
           // set a different heartbeat offset for each device
           rscp_heartbeatCounter = (uip_ethaddr.addr[0] ^ uip_ethaddr.addr[1]
@@ -464,14 +466,43 @@ void rscp_handleChannelStateCommand(uint8_t* payload) {
   // ...more channel types
 }
 
-static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr, uint8_t *payload) {
-  struct uip_eth_addr *controllerAddress;
+static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
+    uint8_t *payload) {
+  uint8_t state = payload[0];
+  bool found = false;
+  for (int i = 0; i < NUM_SEGMENT_CONTROLLERS; i++)
+    if (memcmp(srcAddr, &(segmentControllers[i]), sizeof(segmentController))
+        == 0) {
+      RSCP_DEBUG("Got heartbeat from known controller at index %d\n", i);
+      if (state == RUNNING) {
+        // found existing segment controller - move it to the head of the list
+        if (i != 0)
+          memmove(segmentControllers, &(segmentControllers[1]), sizeof(segmentController) * i);
+        found = true;
+        // fall out
+      } else {
+        // else don't bother moving it, just record the new state
+        segmentControllers[i].state = state;
+        mtime_get_current(&(segmentControllers[i].lastSeen));
+        return;
+      }
+    }
+
+  if(!found) {
+    RSCP_DEBUG("Got heartbeat from new segment controller\n");
+    // not found - make room at head of list
+    memmove(segmentControllers, &(segmentControllers[1]),
+        sizeof(segmentController) * (NUM_SEGMENT_CONTROLLERS - 1));
+  }
+  mtime_get_current(&(segmentControllers[0].lastSeen));
+  segmentControllers[0].address = *srcAddr;
+  segmentControllers[0].state = state;
 }
 
 void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     uint16_t payload_len, uint8_t * payload) {
 #ifdef RSCP_DEBUG
-  switch(srcAddr->type) {
+  switch (srcAddr->type) {
   case rscp_ModeRawEthernet: {
     u8_t *a = srcAddr->u.ethNodeAddress.macAddress.addr;
     RSCP_DEBUG(
