@@ -25,11 +25,18 @@ void timer_init(timer *t, timer_callback cb, void *user) {
 void _timer_schedule(timer *t) {
   timer *p;
 
-
   if(!timer_chain) {
     timer_chain = t;
     TP(t)->next = (timer*) 0;
     TIMER_DEBUG("scheduling: %hx@%lu.%hu as root\n", t, TP(t)->next_fire.seconds, TP(t)->next_fire.millis);
+    return;
+  }
+
+  if(mtime_compare(&(TP(timer_chain)->next_fire), &(TP(t)->next_fire)) >= 0) {
+    TP(t)->next = timer_chain;
+    timer_chain = t;
+    TIMER_DEBUG("scheduling: %hx@%lu.%hu as new root\n",
+        t, TP(t)->next_fire.seconds, TP(t)->next_fire.millis);
     return;
   }
 
@@ -134,10 +141,12 @@ void timer_periodic() {
 
     mtime *nextFireAt = &(TP(timer_chain)->next_fire);
 
-    TIMER_DEBUG("now: %lu.%hu, first timer: %hx@%lu.%hu\n", now.seconds, now.millis, timer_chain, nextFireAt->seconds, nextFireAt->millis);
+    // TIMER_DEBUG("now: %lu.%hu, first timer: %hx@%lu.%hu\n", now.seconds, now.millis, timer_chain, nextFireAt->seconds, nextFireAt->millis);
 
     if(nextFireAt->seconds < now.seconds || (nextFireAt->seconds == now.seconds && nextFireAt->millis <= now.millis)) {
       timer *toFire = timer_chain;
+
+      TIMER_DEBUG("firing %hx with callback %hx...\n", toFire, TP(toFire)->callback);
 
       // remove from chain
       timer_chain = TP(toFire)->next;
@@ -157,8 +166,8 @@ void timer_periodic() {
       if(!repeating)
         toFire->state = TIMER_EXPIRED;
 
-      TIMER_DEBUG("fired %hx with callback %hx, next to fire is now %hx@%lu.%hu\n",
-          toFire, TP(toFire)->callback,
+      TIMER_DEBUG("... done firing %hx, next to fire is now %hx@%lu.%hu\n",
+          toFire,
           timer_chain, timer_chain ? TP(timer_chain)->next_fire.seconds : 0, timer_chain ? TP(timer_chain)->next_fire.millis : 0);
 
     } else
