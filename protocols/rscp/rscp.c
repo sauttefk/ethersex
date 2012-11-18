@@ -470,10 +470,9 @@ static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
     uint8_t *payload) {
   uint8_t state = payload[0];
   bool found = false;
-  for (int i = 0; i < NUM_SEGMENT_CONTROLLERS; i++)
-    if (memcmp(srcAddr, &(segmentControllers[i]), sizeof(segmentController))
+  for (int i = 0; i < NUM_SEGMENT_CONTROLLERS; i++) {
+    if (memcmp(srcAddr, &(segmentControllers[i].address), sizeof(rscp_nodeAddress))
         == 0) {
-      RSCP_DEBUG("Got heartbeat from known controller at index %d\n", i);
       if (state == RUNNING) {
         // found existing segment controller - move it to the head of the list
         if (i != 0)
@@ -487,9 +486,9 @@ static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
         return;
       }
     }
+  }
 
   if(!found) {
-    RSCP_DEBUG("Got heartbeat from new segment controller\n");
     // not found - make room at head of list
     memmove(segmentControllers, &(segmentControllers[1]),
         sizeof(segmentController) * (NUM_SEGMENT_CONTROLLERS - 1));
@@ -497,6 +496,10 @@ static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
   mtime_get_current(&(segmentControllers[0].lastSeen));
   segmentControllers[0].address = *srcAddr;
   segmentControllers[0].state = state;
+
+  // if the SC is up and we don't have a config yet, go for a download.
+  if(state == RUNNING && rscpEEReadByte(rscpConfiguration->status) != rscp_configValid)
+    initiateConfigDownload();
 }
 
 void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
