@@ -103,5 +103,35 @@ void rscp_net_raw(void);
 rscp_payloadBuffer_t* rscp_getPayloadBuffer();
 void rscp_transmit(uint16_t messageType);
 
+
+int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeBooleanField(int8_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeUInt8Field(uint8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt16Field(uint16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt32Field(uint32_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeInt8Field(int8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt16Field(int16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt32Field(int32_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeUInt8 (uint8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt16 (uint16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeUInt32 (uint32_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeInt8 (int8_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt16 (int16_t value, rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeInt32 (int32_t value, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeRaw(void *data, uint16_t length, rscp_payloadBuffer_t *buffer);
+
+int8_t rscp_encodeDecimal16Field(int16_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer);
+int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
+    rscp_payloadBuffer_t *buffer);
+
 #endif /* _RSCP_NET_H */
 
