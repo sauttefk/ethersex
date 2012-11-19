@@ -654,7 +654,7 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
         rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
         rscp_encodeUInt8(configDownload.txID, buffer);
         rscp_encodeUInt8(blockNumber, buffer);
-        rscp_transmit(RSCP_FILE_TRANSFER_ACK, &srcAddr);
+        rscp_transmit(RSCP_FILE_TRANSFER_ACK, srcAddr);
 
         // done yet?
         if (configDownload.remaining <= 0) {
