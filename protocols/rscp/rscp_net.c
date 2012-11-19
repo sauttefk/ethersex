@@ -153,10 +153,6 @@ void rscp_transmit(uint16_t msg_type, rscp_nodeAddress *dstAddress) {
     uip_ipaddr_copy(BUF->destipaddr,
         dstAddress ? dstAddress->u.ipNodeAddress.ipAddress : all_ones_addr);
 
-    uip_ipaddr_t *i = &(dstAddress->u.ipNodeAddress.ipAddress);
-    uint8_t *a = uip_ethaddr.addr;
-    uint8_t *b = rscp_udp_message->mac.addr;
-
     rscp_message = &(rscp_udp_message->message);
     break;
   }
