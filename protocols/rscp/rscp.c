@@ -698,7 +698,7 @@ rscp_sendPeriodicIrmpEvents(void)
     rscp_encodeUInt16(irmp_data.address, buffer);
     rscp_encodeUInt16(irmp_data.command, buffer);
     rscp_encodeUInt8(irmp_data.flags, buffer);
-    rscp_transmit(RSCP_CHANNEL_EVENT);
+    rscp_transmit(RSCP_CHANNEL_EVENT, 0);
 
     RSCP_DEBUG("%02" PRIu8 ":%04" PRIX16 ":%04" PRIX16 ":%02" PRIX8 "\n",
         irmp_data.protocol, irmp_data.address, irmp_data.command,
