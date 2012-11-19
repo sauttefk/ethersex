@@ -97,7 +97,7 @@ rscp_txBinaryIOChannelChange (uint16_t channel, uint8_t state)
   rscp_encodeUInt8(RSCP_UNIT_BOOLEAN, buffer);
   rscp_encodeBooleanField(state, buffer);
 
-  rscp_transmit(RSCP_CHANNEL_EVENT);
+  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
 }
 
 

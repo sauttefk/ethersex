@@ -42,6 +42,10 @@ void rscp_net_raw(void) {
   RSCP_DEBUG_NET("HDLEN: 0x%01X\n", rscp->header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
+  // discard messages sent by myself
+  if(memcmp(uip_ethaddr.addr, packet->src.addr, 6) == 0)
+    return;
+
   srcAddress.type = rscp_ModeRawEthernet;
   memcpy(srcAddress.u.ethNodeAddress.macAddress.addr, packet->src.addr,
       sizeof(srcAddress.u.ethNodeAddress.macAddress));
@@ -52,13 +56,14 @@ void rscp_net_raw(void) {
 #endif /* RSCP_USE_RAW_ETHERNET */
 
 #ifdef RSCP_USE_UDP
-#define BUF ((struct uip_udpip_hdr *) (uip_appdata - UIP_IPUDPH_LEN))
+
+#define BUF ((struct uip_udpip_hdr *) (&uip_buf[UIP_LLH_LEN]))
 
 void rscp_netUdp(void) {
   if (!uip_newdata())
     return;
 
-  struct rscp_udp_message *rscp = (struct rscp_udp_message *) uip_appdata;
+  struct rscp_udp_message *rscp = (struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN];
 
   RSCP_DEBUG_NET(
       "received %d bytes UDP data containing %d bytes RSCP data\n", uip_len, ntohs(rscp->message.payload_len));
@@ -69,10 +74,14 @@ void rscp_netUdp(void) {
   RSCP_DEBUG_NET("HDLEN: 0x%02X\n", rscp->message.header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->message.timestamp));
 
+  // discard messages sent by myself
+  if(memcmp(uip_ethaddr.addr, rscp->mac.addr, 6) == 0)
+    return;
+
   srcAddress.type = rscp_ModeUDP;
   memcpy(srcAddress.u.ipNodeAddress.macAddress.addr, rscp->mac.addr,
       sizeof(srcAddress.u.ipNodeAddress.macAddress));
-  memcpy(srcAddress.u.ipNodeAddress.ipAddress, BUF ->srcipaddr,
+  memcpy(srcAddress.u.ipNodeAddress.ipAddress, BUF->srcipaddr,
       sizeof(srcAddress.u.ipNodeAddress.ipAddress));
 
   rscp_handleMessage(&srcAddress, ntohs(rscp->message.msg_type),
@@ -117,7 +126,7 @@ rscp_getPayloadBuffer() {
       return &rscp_payloadBuffer;
     }
 
-void rscp_transmit(uint16_t msg_type) {
+void rscp_transmit(uint16_t msg_type, rscp_nodeAddress *dstAddress) {
   struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
   rscp_message_t *rscp_message;
   rscp_udp_message_t *rscp_udp_message;
@@ -126,19 +135,32 @@ void rscp_transmit(uint16_t msg_type) {
   switch (rscp_networkMode) {
   case rscp_ModeRawEthernet:
     rscp_message = (struct rscp_message *) &uip_buf[RSCP_RAWH_LEN];
+    if(!dstAddress)
+      memset(packet->dest.addr, 0xFF, 6);
+    else
+      memcpy(packet->dest.addr, dstAddress->u.ethNodeAddress.macAddress.addr, 6);
     break;
 
     case rscp_ModeUDP:
     default:
     rscp_udp_message =
-    (struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN];
+        (struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN + UIP_IPUDPH_LEN];
+
+    // propagate our mac address as the node address in the packet
     memcpy(rscp_udp_message->mac.addr, uip_ethaddr.addr, 6);
+
+    // set destination address
+    uip_ipaddr_copy(BUF->destipaddr,
+        dstAddress ? dstAddress->u.ipNodeAddress.ipAddress : all_ones_addr);
+
+    uip_ipaddr_t *i = &(dstAddress->u.ipNodeAddress.ipAddress);
+    uint8_t *a = uip_ethaddr.addr;
+    uint8_t *b = rscp_udp_message->mac.addr;
 
     rscp_message = &(rscp_udp_message->message);
     break;
   }
 
-  memset(packet->dest.addr, 0xFF, 6);                   // broadcast
   memcpy(packet->src.addr, uip_ethaddr.addr, 6);        // our mac
 
   rscp_message->version = 0x0;

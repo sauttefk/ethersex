@@ -101,7 +101,7 @@ typedef struct rscp_nodeAddress {
 void rscp_net_init(void);
 void rscp_net_raw(void);
 rscp_payloadBuffer_t* rscp_getPayloadBuffer();
-void rscp_transmit(uint16_t messageType);
+void rscp_transmit(uint16_t messageType, rscp_nodeAddress *dst);
 
 
 int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);

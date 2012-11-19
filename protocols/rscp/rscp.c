@@ -224,6 +224,8 @@ typedef struct {
   uint16_t remaining;
   uint16_t blockSize;
   uint32_t crc32;
+  segmentController segmentController;
+  bool downloadDeferred;
 
   timer timer;
   uint8_t retrys;
@@ -232,7 +234,12 @@ typedef struct {
 static rscp_configDownload configDownload;
 
 static void sendConfigDownloadRequest() {
- rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+  uint32_t myCRC = rscpEEReadByte(rscpConfiguration->status) == rscp_configValid
+      ?rscpEEReadDWord(rscpConfiguration->crc32) : 0;
+
+  RSCP_DEBUG("Download request, my CRC: %08lx\n", myCRC);
+
   rscp_encodeUInt32(rscpEEReadByte(rscpConfiguration->status) == rscp_configValid
       ?rscpEEReadDWord(rscpConfiguration->crc32) : 0, buffer); // CRC
   rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
@@ -240,7 +247,7 @@ static void sendConfigDownloadRequest() {
   rscp_encodeRaw("CONF", 4, buffer); // file name
   rscp_encodeUInt8(0, buffer);
 
-  rscp_transmit(RSCP_FILE_TRANSFER_REQUEST);
+  rscp_transmit(RSCP_FILE_TRANSFER_REQUEST, &(configDownload.segmentController.address));
 
   timer_schedule_after_msecs(&(configDownload.timer), 1000);
 }
@@ -267,7 +274,7 @@ static void configDownloadTimedOut(timer *t, void *user) {
     rscp_encodeUInt8(configDownload.txID, buffer); // transaction-ID
     rscp_encodeRaw("Timed out", 9, buffer); // message
     rscp_encodeUInt8(0, buffer);
-    rscp_transmit(RSCP_FILE_TRANSFER_ERROR);
+    rscp_transmit(RSCP_FILE_TRANSFER_ERROR, &(configDownload.segmentController.address));
     break;
   }
 }
@@ -278,10 +285,23 @@ static void initiateConfigDownload() {
     return;
   }
 
+  // choose segment controller
+  int i=0;
+  // FIXME: check last seen as well
+  while(i<NUM_SEGMENT_CONTROLLERS && segmentControllers[i].state != RUNNING)
+    i++;
+  if(i>= NUM_SEGMENT_CONTROLLERS) {
+    RSCP_DEBUG("No segment controller available/up\n");
+    configDownload.downloadDeferred = true;
+    return;
+  }
+
+  configDownload.segmentController = segmentControllers[i];
   configDownload.state = DS_INITIATING;
   configDownload.retrys = 15;
-  configDownload.blockSize = 32;
+  configDownload.blockSize = 512;
   configDownload.txID = txidCounter++;
+  configDownload.downloadDeferred = false;
 
   timer_init(&(configDownload.timer), &configDownloadTimedOut, 0);
   sendConfigDownloadRequest();
@@ -498,7 +518,8 @@ static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
   segmentControllers[0].state = state;
 
   // if the SC is up and we don't have a config yet, go for a download.
-  if(state == RUNNING && rscpEEReadByte(rscpConfiguration->status) != rscp_configValid)
+  if(state == RUNNING &&
+      (rscpEEReadByte(rscpConfiguration->status) != rscp_configValid || configDownload.downloadDeferred))
     initiateConfigDownload();
 }
 
@@ -590,6 +611,10 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
         RSCP_DEBUG("Config is up to date\n", status);
         configDownload.state = DS_NONE;
         break;
+      case RSCP_FT_STATUS_NOT_FOUND: // huh?
+        RSCP_DEBUG("Config not found\n", status);
+        configDownload.state = DS_NONE;
+        break;
       default:
         RSCP_DEBUG("Config download unexpected status: %d\n", status);
         configDownload.state = DS_NONE;
@@ -629,7 +654,7 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
         rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
         rscp_encodeUInt8(configDownload.txID, buffer);
         rscp_encodeUInt8(blockNumber, buffer);
-        rscp_transmit(RSCP_FILE_TRANSFER_ACK);
+        rscp_transmit(RSCP_FILE_TRANSFER_ACK, &srcAddr);
 
         // done yet?
         if (configDownload.remaining <= 0) {
@@ -686,7 +711,7 @@ static void sendHeartBeat(void) {
   rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
   rscp_encodeUInt8(rscpEEReadByte(rscpConfiguration->status), buffer);
   rscp_encodeInt32(rscpEEReadDWord(rscpConfiguration->crc32), buffer);
-  rscp_transmit(RSCP_NODE_HEARTBEAT);
+  rscp_transmit(RSCP_NODE_HEARTBEAT, 0);
   RSCP_DEBUG("node heartbeat sent\n");
 }
 
@@ -707,7 +732,7 @@ void rscp_sendPeriodicOutputEvents(void) {
 
 #warning FIXME
 
-  rscp_transmit(RSCP_CHANNEL_EVENT);
+  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
   RSCP_DEBUG("node output data sent\n");
 }
 
@@ -716,7 +741,7 @@ void rscp_sendPeriodicInputEvents(void) {
 
 #warning FIXME
 
-  rscp_transmit(RSCP_CHANNEL_EVENT);
+  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
   RSCP_DEBUG("node input data sent\n");
 }
 
