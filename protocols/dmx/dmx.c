@@ -38,6 +38,12 @@ generate_usart_init_8N2()
 volatile uint8_t dmx_index;
 volatile uint8_t dmx_txlen;
 
+#include "core/debug.h"
+
+#define DMX_BAUD_BREAK  80000
+#define UBRR_BREAK      (((F_CPU) + 4UL * (DMX_BAUD_BREAK)) / (8UL * (DMX_BAUD_BREAK)) -1UL)
+#define UBRR_DMX        (((F_CPU) + 4UL * (BAUD)) / (8UL * (BAUD)) -1UL)
+
 /**
  * Init DMX
  */
@@ -49,7 +55,7 @@ dmx_init(void)
   PIN_CLEAR(RS485TE_USART0);      // disable RS485 transmitter for usart 0
   DDR_CONFIG_OUT(RS485TE_USART0);
 #elif (USE_USART == 1  && defined(HAVE_RS485TE_USART1))
-  PIN_CLEAR(RS485TE_USART1);      // disable RS485 transmitter for usart 1
+  PIN_SET(RS485TE_USART1);      // disable RS485 transmitter for usart 1
   DDR_CONFIG_OUT(RS485TE_USART1);
 #else
   #warning no RS485 transmit enable pin for DMX defined
@@ -59,7 +65,14 @@ dmx_init(void)
   /* Clear the buffers */
   dmx_txlen = DMX_STORAGE_CHANNELS;
   dmx_index = 0;
-  PIN_CLEAR(STATUSLED_HB_ACT);
+
+  /* start a new dmx packet */
+  usart(UCSR,B) = _BV(usart(TXEN));   // enable usart
+  usart(UCSR,A) |= _BV(usart(TXC));   // reset transmit complete flag
+  usart(UDR) = 0;                     // send startbyte (not always 0!)
+  usart(UCSR,B) |= _BV(usart(TXCIE)); // enable usart interrupt
+
+  debug_printf("UBRR_BREAK: %ld, UBRR_DMX: %ld\n", UBRR_BREAK, UBRR_DMX);
 }
 
 /**
@@ -68,7 +81,6 @@ dmx_init(void)
 void
 dmx_tx_start(void)
 {
-  PIN_SET(RSCP_OUTPUT18);
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
   {
 #if (USE_USART == 0)
@@ -84,9 +96,9 @@ dmx_tx_start(void)
     PIN_SET(RS485TE_USART1);          // enable RS485 transmitter for usart 1
 #endif
     PIN_CLEAR(TXD1);                  // generate a break signal on usart 1
-    _delay_us(10000);
+    _delay_us(88);
     PIN_SET(TXD1);                    // make after break
-    _delay_us(12);
+    _delay_us(8);
 #endif
 
     /* start a new dmx packet */
@@ -95,7 +107,6 @@ dmx_tx_start(void)
     usart(UDR) = 0;                     // send startbyte (not always 0!)
     usart(UCSR,B) |= _BV(usart(TXCIE)); // enable usart interrupt
   }
-  PIN_CLEAR(RSCP_OUTPUT18);
 }
 
 void
@@ -108,44 +119,81 @@ dmx_tx_stop(void)
 #if (USE_USART == 0 && defined(HAVE_RS485TE_USART0))
     PIN_CLEAR(RS485TE_USART0);        // disable RS485 transmitter for usart 0
 #elif (USE_USART == 1  && defined(HAVE_RS485TE_USART1))
-//    PIN_CLEAR(RS485TE_USART1);        // disable RS485 transmitter for usart 1
+    PIN_CLEAR(RS485TE_USART1);        // disable RS485 transmitter for usart 1
 #endif
     dmx_index = 0;                    // reset output channel index
   }
 }
 
-#include "core/debug.h"
 /**
  * Send DMX-packet
  */
 void
 dmx_periodic(void)
 {
-  PIN_SET(RSCP_OUTPUT16);
-  PIN_SET(RSCP_OUTPUT17);
-  wdt_kick();
-  if(dmx_index == 0) {
-    dmx_tx_start();
-  }
+//  wdt_kick();
+//  if(dmx_index == 0) {
+//    dmx_tx_start();
+//  }
 }
 
 ISR(usart(USART,_TX_vect))
 {
-  /* Send the rest */
-  if(dmx_index < dmx_txlen) {
-    if(usart(UCSR, A) & _BV(usart(UDRE))) {
-      usart(UDR) = get_dmx_channel(DMX_OUTPUT_UNIVERSE, dmx_index++);
-      PIN_TOGGLE(RSCP_OUTPUT17);
-    }
-  } else {
-    PIN_CLEAR(RSCP_OUTPUT16);
-    dmx_tx_stop();
+  static unsigned int  dmx_channel_tx_count = 0;
+  static unsigned char dmx_tx_state = 0;
+
+  switch (dmx_tx_state)
+  {
+    case (0):
+      PIN_SET(RSCP_OUTPUT16);
+      PIN_CLEAR(RSCP_OUTPUT17);
+      PIN_CLEAR(RSCP_OUTPUT18);
+      usart(UBRR,H) = UBRR_BREAK >> 8;
+      usart(UBRR,L) = UBRR_BREAK & 0xff;
+
+      usart(UDR) = 0; //RESET Frame
+      dmx_tx_state = 1;
+      break;
+
+    case (1):
+      PIN_SET(RSCP_OUTPUT17);
+      PIN_CLEAR(RSCP_OUTPUT16);
+      PIN_CLEAR(RSCP_OUTPUT18);
+      usart(UBRR,H) = UBRR_DMX >> 8;
+      usart(UBRR,L) = UBRR_DMX & 0xff;
+
+      usart(UDR) = 0; //Start Byte
+      dmx_tx_state = 2;
+      PIN_CLEAR(RSCP_OUTPUT16);
+      PIN_CLEAR(RSCP_OUTPUT17);
+      break;
+
+    case (2):
+      PIN_TOGGLE(RSCP_OUTPUT18);
+      _delay_us(10);
+      //Ausgabe des Zeichens
+      usart(UDR) = get_dmx_channel(DMX_OUTPUT_UNIVERSE, dmx_channel_tx_count);
+      dmx_channel_tx_count++;
+
+      if(dmx_channel_tx_count == dmx_txlen)
+      {
+        dmx_channel_tx_count = 0;
+        dmx_tx_state = 0;
+      }
+      break;
   }
+//  /* Send the rest */
+//  if(dmx_index < dmx_txlen) {
+//    if(usart(UCSR, A) & _BV(usart(UDRE))) {
+//      usart(UDR) = get_dmx_channel(DMX_OUTPUT_UNIVERSE, dmx_index++);
+//    }
+//  } else
+//    dmx_tx_stop();
 }
 
 /*
   -- Ethersex META --
   header(protocols/dmx/dmx.h)
   init(dmx_init)
-  timer(10, dmx_periodic())
+  timer(2, dmx_periodic())
 */
