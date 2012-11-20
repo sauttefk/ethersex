@@ -235,10 +235,6 @@ static rscp_configDownload configDownload;
 
 static void sendConfigDownloadRequest() {
   rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-  uint32_t myCRC = rscpEEReadByte(rscpConfiguration->status) == rscp_configValid
-      ?rscpEEReadDWord(rscpConfiguration->crc32) : 0;
-
-  RSCP_DEBUG("Download request, my CRC: %08lx\n", myCRC);
 
   rscp_encodeUInt32(rscpEEReadByte(rscpConfiguration->status) == rscp_configValid
       ?rscpEEReadDWord(rscpConfiguration->crc32) : 0, buffer); // CRC
@@ -306,7 +302,9 @@ static void initiateConfigDownload() {
   timer_init(&(configDownload.timer), &configDownloadTimedOut, 0);
   sendConfigDownloadRequest();
 
-  RSCP_DEBUG("config download request sent\n");
+  RSCP_DEBUG("Config download request sent: tx=%d, myCRC=%08lx\n", configDownload.txID,
+      rscpEEReadByte(rscpConfiguration->status) == rscp_configValid ?
+          rscpEEReadDWord(rscpConfiguration->crc32) : 0);
 }
 
 static timer configCheckTimer;
@@ -488,6 +486,26 @@ void rscp_handleChannelStateCommand(uint8_t* payload) {
 
 static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
     uint8_t *payload) {
+#ifdef RSCP_DEBUG
+  switch(srcAddr->type) {
+  case rscp_ModeRawEthernet: {
+    uint8_t *a = srcAddr->u.ethNodeAddress.macAddress.addr;
+    RSCP_DEBUG("Got segment controller heartbeat from %02X:%02X:%02X:%02X:%02X:%02X\n",
+      a[0], a[1], a[2], a[3], a[4], a[5]);
+    break;
+  }
+  case rscp_ModeUDP: {
+    uip_ipaddr_t *i = &(srcAddr->u.ipNodeAddress.ipAddress);
+    RSCP_DEBUG("Got segment controller heartbeat from %d.%d.%d.%d\n",
+        uip_ipaddr1(i), uip_ipaddr2(i), uip_ipaddr3(i), uip_ipaddr4(i));
+    break;
+  }
+  default:
+    RSCP_DEBUG("Got segment controller heartbeat of type %d\n", srcAddr->type);
+    break;
+  }
+#endif
+
   uint8_t state = payload[0];
   bool found = false;
   for (int i = 0; i < NUM_SEGMENT_CONTROLLERS; i++) {
