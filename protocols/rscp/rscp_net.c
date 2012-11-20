@@ -153,10 +153,6 @@ void rscp_transmit(uint16_t msg_type, rscp_nodeAddress *dstAddress) {
     uip_ipaddr_copy(BUF->destipaddr,
         dstAddress ? dstAddress->u.ipNodeAddress.ipAddress : all_ones_addr);
 
-    uip_ipaddr_t *i = &(dstAddress->u.ipNodeAddress.ipAddress);
-    uint8_t *a = uip_ethaddr.addr;
-    uint8_t *b = rscp_udp_message->mac.addr;
-
     rscp_message = &(rscp_udp_message->message);
     break;
   }
@@ -178,13 +174,13 @@ void rscp_transmit(uint16_t msg_type, rscp_nodeAddress *dstAddress) {
     RSCP_DEBUG_NET("Sent RAW RSCP packet %d (%d)\n", payload_len, uip_len);
     break;
 
-    case rscp_ModeUDP:
+  case rscp_ModeUDP:
     packet->type = HTONS(UIP_ETHTYPE_IP);
 
-    // UDP broadcast
+    // UDP broadcast FIXME: unicast!
     uip_udp_conn_t rscp_conn;
     for(int i=0; i<4; i++)
-    rscp_conn.ripaddr[i] = uip_hostaddr[i] | ~uip_netmask[i];
+      rscp_conn.ripaddr[i] = uip_hostaddr[i] | ~uip_netmask[i];
 
     rscp_conn.rport = HTONS(RSCP_UDP_PORT);
     rscp_conn.lport = HTONS(RSCP_UDP_PORT);
@@ -196,7 +192,7 @@ void rscp_transmit(uint16_t msg_type, rscp_nodeAddress *dstAddress) {
     uip_slen = 0;
     break;
 
-    default:
+  default:
     uip_len = 0;
     break;
   }
