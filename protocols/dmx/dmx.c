@@ -59,6 +59,7 @@ dmx_init(void)
   /* Clear the buffers */
   dmx_txlen = DMX_STORAGE_CHANNELS;
   dmx_index = 0;
+  PIN_CLEAR(STATUSLED_HB_ACT);
 }
 
 /**
@@ -67,6 +68,7 @@ dmx_init(void)
 void
 dmx_tx_start(void)
 {
+  PIN_SET(RSCP_OUTPUT18);
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
   {
 #if (USE_USART == 0)
@@ -82,9 +84,9 @@ dmx_tx_start(void)
     PIN_SET(RS485TE_USART1);          // enable RS485 transmitter for usart 1
 #endif
     PIN_CLEAR(TXD1);                  // generate a break signal on usart 1
-    _delay_us(88);
+    _delay_us(10000);
     PIN_SET(TXD1);                    // make after break
-    _delay_us(8);
+    _delay_us(12);
 #endif
 
     /* start a new dmx packet */
@@ -93,6 +95,7 @@ dmx_tx_start(void)
     usart(UDR) = 0;                     // send startbyte (not always 0!)
     usart(UCSR,B) |= _BV(usart(TXCIE)); // enable usart interrupt
   }
+  PIN_CLEAR(RSCP_OUTPUT18);
 }
 
 void
@@ -105,18 +108,21 @@ dmx_tx_stop(void)
 #if (USE_USART == 0 && defined(HAVE_RS485TE_USART0))
     PIN_CLEAR(RS485TE_USART0);        // disable RS485 transmitter for usart 0
 #elif (USE_USART == 1  && defined(HAVE_RS485TE_USART1))
-    PIN_CLEAR(RS485TE_USART1);        // disable RS485 transmitter for usart 1
+//    PIN_CLEAR(RS485TE_USART1);        // disable RS485 transmitter for usart 1
 #endif
     dmx_index = 0;                    // reset output channel index
   }
 }
 
+#include "core/debug.h"
 /**
  * Send DMX-packet
  */
 void
 dmx_periodic(void)
 {
+  PIN_SET(RSCP_OUTPUT16);
+  PIN_SET(RSCP_OUTPUT17);
   wdt_kick();
   if(dmx_index == 0) {
     dmx_tx_start();
@@ -129,14 +135,17 @@ ISR(usart(USART,_TX_vect))
   if(dmx_index < dmx_txlen) {
     if(usart(UCSR, A) & _BV(usart(UDRE))) {
       usart(UDR) = get_dmx_channel(DMX_OUTPUT_UNIVERSE, dmx_index++);
+      PIN_TOGGLE(RSCP_OUTPUT17);
     }
-  } else
+  } else {
+    PIN_CLEAR(RSCP_OUTPUT16);
     dmx_tx_stop();
+  }
 }
 
 /*
   -- Ethersex META --
   header(protocols/dmx/dmx.h)
   init(dmx_init)
-  timer(2, dmx_periodic())
+  timer(10, dmx_periodic())
 */
