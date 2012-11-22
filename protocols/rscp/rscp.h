@@ -122,8 +122,35 @@ typedef struct __attribute__ ((packed))
 } onewireTemperatureChannel;
 
 uint16_t rscp_numOwChannels;
+
+#ifdef RSCP_USE_OW
 rscp_owChannel *rscp_owChannels;
 onewireTemperatureChannel *rspc_owList_p;
+#endif
+
+#ifdef DMX_SUPPORT
+typedef struct __attribute__ ((packed)) {
+  /*
+   * The first RSCP channel ID corresponding to DMX slot #1 (1-based!).
+   */
+  uint16_t firstDMXRSCPChannel;
+  /*
+   * The highest DMX slot used (1-based!).
+   */
+  uint16_t maxDMXSlot;
+} rscp_dmxChannelConfig;
+
+/*
+ * This is the in-RAM copy if the configuration above.
+ */
+rscp_dmxChannelConfig dmxChannelConfig;
+
+/*
+ * The number of DMX channels used. There may be gaps in the used channels,
+ * but this node doesn't care about that at the moment.
+ */
+uint16_t numDMXChannels;
+#endif
 
 uint8_t txidCounter;
 
@@ -302,7 +329,8 @@ enum
   RSCP_CHANNEL_BINARY_OUTPUT  = 0x02,
   RSCP_CHANNEL_COMPLEX_INPUT  = 0x11,
   RSCP_CHANNEL_COMPLEX_OUTPUT = 0x12,
-  RSCP_CHANNEL_OWTEMPERATURE  = 0x30
+  RSCP_CHANNEL_OWTEMPERATURE  = 0x30,
+  RSCP_CHANNEL_DMX            = 0x31
 };
 
 typedef struct __attribute__ ((packed))

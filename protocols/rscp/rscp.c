@@ -59,8 +59,8 @@ static void parseBIC(void *ptr, uint16_t items) {
     rscp_binaryInputChannels[i].flags =
         rscpEE_byte(rscp_binaryInputChannel, flags, ptr);
 
-    RSCP_DEBUG_CONF(
-        "binary input: port: %d - flags: %02x -> %c%c%c\n", rscp_binaryInputChannels[i].port, rscp_binaryInputChannels[i].flags, rscp_binaryInputChannels[i].pullup ? 'P' : 'p', rscp_binaryInputChannels[i].negate ? 'N' : 'n', rscp_binaryInputChannels[i].report ? 'R' : 'r');
+//    RSCP_DEBUG_CONF(
+//        "binary input: port: %d - flags: %02x -> %c%c%c\n", rscp_binaryInputChannels[i].port, rscp_binaryInputChannels[i].flags, rscp_binaryInputChannels[i].pullup ? 'P' : 'p', rscp_binaryInputChannels[i].negate ? 'N' : 'n', rscp_binaryInputChannels[i].report ? 'R' : 'r');
 
     rscp_setPortDDR(rscp_binaryInputChannels[i].port, 0);
     rscp_setPortPORT(rscp_binaryInputChannels[i].port,
@@ -123,6 +123,25 @@ static void parseOWC(void *ptr, uint16_t items) {
 }
 #endif
 
+#if defined(DMX_SUPPORT) && defined(DMX_STORAGE_SUPPORT)
+#define RSCP_DMX_SUPPORT
+#include "protocols/dmx/dmx.h"
+#include "services/dmx-storage/dmx_storage.h"
+/*
+ * just create an in-RAM copy of the config. It is just four bytes and used rather
+ * frequently.
+ */
+static void parseDMXChannels(void *ptr, uint16_t items) {
+  rscp_dmxChannelConfig *eeConfig = (rscp_dmxChannelConfig*) ptr;
+
+  dmxChannelConfig.firstDMXRSCPChannel = rscpEEReadWord(eeConfig->firstDMXRSCPChannel);
+  dmxChannelConfig.maxDMXSlot = rscpEEReadWord(eeConfig->maxDMXSlot);
+
+  RSCP_DEBUG_CONF("DMX: first rscp channel: %d, max DMX slot: %d\n",
+      dmxChannelConfig.firstDMXRSCPChannel, dmxChannelConfig.maxDMXSlot);
+}
+#endif
+
 static void parseRuleDefinitions(void) {
   void *ptr = (void *) (rscpEE_word(rscp_conf_header, rule_p,
       RSCP_EEPROM_START) + RSCP_EEPROM_START);
@@ -141,9 +160,6 @@ static void parseRuleDefinitions(void) {
 }
 
 static void parseChannelDefinitions(void) {
-  RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
-  RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
-
   rscp_conf_header *conf = (rscp_conf_header*) rscpEEReadWord(rscpConfiguration->p);
   rscp_chConfig *chConfig = (rscp_chConfig*) (((void*)conf) + rscpEEReadWord(conf->channel_p));
   uint8_t numChannelTypes = rscpEEReadByte(chConfig->numChannelTypes);
@@ -184,6 +200,13 @@ static void parseChannelDefinitions(void) {
         break;
       }
 #endif /* RSCP_USE_OW */
+#ifdef RSCP_DMX_SUPPORT
+      case RSCP_CHANNEL_DMX:
+      {
+        parseDMXChannels(chConfigPtr, items);
+        break;
+      }
+#endif
     default: {
       RSCP_DEBUG_CONF(
           "could not parse channel type 0x%02x --- SKIPPING\n", channelType);
@@ -197,20 +220,16 @@ static void parseChannelDefinitions(void) {
 }
 
 static uint32_t calcConfigCRC() {
-
   // verify configuration CRC
   uint16_t length = rscpEEReadWord(rscpConfiguration->length);
   uint8_t *p = (uint8_t*) rscpEEReadWord(rscpConfiguration->p);
-  // printf_P(PSTR("Config header @%04X, pointer @%04X, config @%04X:\n"), rscpConfiguration, &(rscpConfiguration->p), p);
   uint32_t crc = crc32init();
   while (length-- > 0) {
     uint8_t b = eeprom_read_byte(p);
     crc32update(crc, b);
-    // printf_P(PSTR("%02X"), b);
     p++;
   }
   crc32finish(crc);
-  // printf_P(PSTR("\n"));
   return crc;
 }
 
@@ -323,35 +342,51 @@ void rscp_init(void) {
   memset(segmentControllers, 0,
       sizeof(segmentController) * NUM_SEGMENT_CONTROLLERS);
 
+#ifdef RSCP_DMX_SUPPORT
+  dmxChannelConfig.firstDMXRSCPChannel = 0;
+  dmxChannelConfig.maxDMXSlot = 0;
+#endif
+
+  /*
+   * Read configuration
+   */
   rscpConfiguration = (rscp_configuration*) RSCP_EEPROM_START;
+  uint16_t expectedConfigOffset = (uint16_t) (rscpConfiguration + sizeof(rscpConfiguration));
   RSCP_DEBUG_CONF(
-      "Initializing. Start of rscp config in eeprom: 0x%03X\n", rscpConfiguration);
+      "Initializing. Start of rscp config in eeprom: 0x%03hx, config file @0x%03hx\n", rscpConfiguration, expectedConfigOffset);
 
   // verify config status in eeprom
   uint8_t status = rscpEEReadByte(rscpConfiguration->status);
   if (status == rscp_configValid) {
+    // we expect the configuration to immediately follow the rscpConfiguration structure
+    rscp_conf_header *conf = (rscp_conf_header*) rscpEEReadWord(rscpConfiguration->p);
+    if((uint16_t)conf != expectedConfigOffset) {
+      RSCP_DEBUG_CONF("Updating config offset from %hd to %hd\n", conf, expectedConfigOffset);
+      rscpEEWriteWord(rscpConfiguration->p, expectedConfigOffset);
+    }
+
     // Verify config CRC
-    uint32_t crc = calcConfigCRC();
-    uint32_t expected = rscpEEReadDWord(rscpConfiguration->crc32);
-    if (expected == crc) {
+    uint32_t actualCRC = calcConfigCRC();
+    uint32_t expectedCRC = rscpEEReadDWord(rscpConfiguration->crc32);
+    if (expectedCRC == actualCRC) {
       // config integrity is Ok
-      uint16_t version = rscpEEReadWord(rscpConfiguration->p->version);
+      uint16_t version = rscpEEReadWord(conf->version);
       RSCP_DEBUG_CONF(
           "version: %hd, mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
           version,
-          rscpEEReadByte(rscpConfiguration->p->mac[0]),
-          rscpEEReadByte(rscpConfiguration->p->mac[1]),
-          rscpEEReadByte(rscpConfiguration->p->mac[2]),
-          rscpEEReadByte(rscpConfiguration->p->mac[3]),
-          rscpEEReadByte(rscpConfiguration->p->mac[4]),
-          rscpEEReadByte(rscpConfiguration->p->mac[5])
+          rscpEEReadByte(conf->mac[0]),
+          rscpEEReadByte(conf->mac[1]),
+          rscpEEReadByte(conf->mac[2]),
+          rscpEEReadByte(conf->mac[3]),
+          rscpEEReadByte(conf->mac[4]),
+          rscpEEReadByte(conf->mac[5])
       );
 
       // can we use this version?
       if (version == 1) {
         uint8_t matching = 0;
         for(int i=0; i<6; i++)
-          if(rscpEEReadByte(rscpConfiguration->p->mac[i]) == uip_ethaddr.addr[i])
+          if(rscpEEReadByte(conf->mac[i]) == uip_ethaddr.addr[i])
             matching++;
 
         // is the configuration for this device?
@@ -371,6 +406,8 @@ void rscp_init(void) {
 #endif /* RSCP_USE_OW */
 
           timer_schedule_after_msecs(&configCheckTimer, CONFIG_CHECK_INTERVAL);
+
+          return;
         } else {
           RSCP_DEBUG_CONF("the config does not match this device's mac address\n");
         }
@@ -379,10 +416,11 @@ void rscp_init(void) {
       }
     } else {
       RSCP_DEBUG_CONF(
-          "Configuration CRC32 %04x doesn't match the expected %04x", crc, expected);
-      // mark as invalid, so we don't try to verify it again
-      rscpEEWriteByte(rscpConfiguration->status, status);
+          "Configuration CRC32 %08lx doesn't match the expected %08lx", actualCRC, expectedCRC);
     }
+
+    // mark as invalid, so we don't try to verify it again
+    rscpEEWriteByte(rscpConfiguration->status, rscp_configInvalid);
   } else {
     RSCP_DEBUG_CONF("Configuration is missing or invalid.\n");
   }
@@ -473,6 +511,35 @@ void rscp_handleChannelStateCommand(uint8_t* payload) {
    * the actual channel definition struct, to speed up the channel search.
    */
   // search for matching channel...
+#ifdef RSCP_DMX_SUPPORT
+  RSCP_DEBUG("First RSCP DMX channel: %d, highest DMX slot: %d\n", dmxChannelConfig.firstDMXRSCPChannel, dmxChannelConfig.maxDMXSlot);
+  // ... in range associated with DMX
+  if(dmxChannelConfig.maxDMXSlot > 0
+      && channelID >= dmxChannelConfig.firstDMXRSCPChannel && channelID < dmxChannelConfig.firstDMXRSCPChannel + dmxChannelConfig.maxDMXSlot) {
+    int32_t value;
+    switch(payload[2]) {
+    case rscp_field_Byte:
+      value = payload[3];
+      break;
+    case rscp_field_Short:
+      value = ntohl(*((int32_t*)(&payload[3])));
+      break;
+    case rscp_field_Integer:
+      value = ntohl(*((int32_t*)(&payload[3])));
+      break;
+    default:
+      RSCP_DEBUG("Invalid field type for DMX channel: %d", payload[2]);
+      return;
+    }
+
+    if(value >= 0 && value <= 255)
+      set_dmx_channel(0, channelID - dmxChannelConfig.firstDMXRSCPChannel, value);
+    else
+      RSCP_DEBUG("Invalid DMX channel value: %ld", value);
+    return;
+  }
+#endif
+
   // ...in binary output channels
   for (uint16_t i = 0; i < rscp_numBinaryOutputChannels; i++)
     if (rscp_binaryOutputChannels[i].channel == channelID) {

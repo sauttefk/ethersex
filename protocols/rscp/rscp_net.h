@@ -103,6 +103,26 @@ void rscp_net_raw(void);
 rscp_payloadBuffer_t* rscp_getPayloadBuffer();
 void rscp_transmit(uint16_t messageType, rscp_nodeAddress *dst);
 
+/*
+ * Field types
+ */
+enum {
+  rscp_field_Byte = 0x01,
+  rscp_field_UnsignedByte = 0x02,
+  rscp_field_Short = 0x03,
+  rscp_field_UnsignedShort =  0x04,
+  rscp_field_Integer = 0x05,
+  rscp_field_UnsignedInteger =  0x06,
+  rscp_field_Long = 0x07,
+  rscp_field_UnsignedLong =  0x08,
+  rscp_field_Float = 0x09,
+  rscp_field_Double = 0x0a,
+  rscp_field_Decimal16 = 0x0b,
+  rscp_field_Decimal24 = 0x0c,
+  rscp_field_Decimal32 = 0x0d,
+  rscp_field_BooleanFalse = 0x10,
+  rscp_field_BooleanTrue = 0x11,
+} rscp_fieldType;
 
 int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
 
