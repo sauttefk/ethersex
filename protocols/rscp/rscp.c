@@ -461,7 +461,7 @@ hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
         rscp_encodeUInt8(RSCP_UNIT_TEMPERATURE, buffer);
         rscp_encodeDecimal16Field(ow_sensor->temp, -1, buffer);
 
-        rscp_transmit(RSCP_CHANNEL_EVENT);
+        rscp_transmit(RSCP_CHANNEL_EVENT, 0);
       }
       return;
     }
