@@ -522,10 +522,10 @@ void rscp_handleChannelStateCommand(uint8_t* payload) {
       value = payload[3];
       break;
     case rscp_field_Short:
-      value = ntohl(*((int32_t*)(&payload[3])));
+      value = ntohs(*((int16_t*)(payload + 3)));
       break;
     case rscp_field_Integer:
-      value = ntohl(*((int32_t*)(&payload[3])));
+      value = ntohl(*((int32_t*)(payload + 3)));
       break;
     default:
       RSCP_DEBUG("Invalid field type for DMX channel: %d", payload[2]);

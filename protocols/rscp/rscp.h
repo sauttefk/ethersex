@@ -330,7 +330,8 @@ enum
   RSCP_CHANNEL_COMPLEX_INPUT  = 0x11,
   RSCP_CHANNEL_COMPLEX_OUTPUT = 0x12,
   RSCP_CHANNEL_OWTEMPERATURE  = 0x30,
-  RSCP_CHANNEL_DMX            = 0x31
+  RSCP_CHANNEL_ELTAKO_MS      = 0x31,
+  RSCP_CHANNEL_DMX            = 0x32
 };
 
 typedef struct __attribute__ ((packed))
