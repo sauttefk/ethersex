@@ -24,6 +24,7 @@
 #include "rscp.h"
 #include "crc32.h"
 #include "timer.h"
+#include "protocols/syslog/syslog.h"
 
 #ifdef RSCP_SUPPORT
 
@@ -336,12 +337,28 @@ static void periodicConfigCheck(timer *t, void *user) {
 /* ----------------------------------------------------------------------------
  * initialization of RSCP
  */
+static timer delayedInitTimer;
+static void parseConfig(void);
+static void delayedInit(timer *t, void *user) {
+  static uint8_t trys = 25;
+
+  if(!syslog_is_available() && trys-- > 0)
+    timer_schedule_after_msecs(&delayedInitTimer, 200);
+  else
+    parseConfig(); // give up for now
+}
+
 void rscp_init(void) {
   timer_init(&configCheckTimer, &periodicConfigCheck, 0);
 
   memset(segmentControllers, 0,
       sizeof(segmentController) * NUM_SEGMENT_CONTROLLERS);
 
+  timer_init(&delayedInitTimer, &delayedInit, 0);
+  timer_schedule_after_msecs(&delayedInitTimer, 50);
+}
+
+static void parseConfig(void) {
 #ifdef RSCP_DMX_SUPPORT
   dmxChannelConfig.firstDMXRSCPChannel = 0;
   dmxChannelConfig.maxDMXSlot = 0;
