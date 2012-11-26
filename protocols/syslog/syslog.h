@@ -26,6 +26,7 @@
 
 #include <avr/pgmspace.h>
 #include "protocols/uip/uip.h"
+#include <stdbool.h>
 
 #define MAX_DYNAMIC_SYSLOG_BUFFER 500
 
@@ -42,5 +43,10 @@ void syslog_flush (void);
 uint8_t syslog_check_cache(void);
 
 uip_ipaddr_t *syslog_getserver(void);
+
+/*
+ * Returns whether syslog is up and running.
+ */
+bool syslog_is_available();
 
 #endif /* _SYSLOG_H */
