@@ -529,7 +529,6 @@ void rscp_handleChannelStateCommand(uint8_t* payload) {
    */
   // search for matching channel...
 #ifdef RSCP_DMX_SUPPORT
-  RSCP_DEBUG("First RSCP DMX channel: %d, highest DMX slot: %d\n", dmxChannelConfig.firstDMXRSCPChannel, dmxChannelConfig.maxDMXSlot);
   // ... in range associated with DMX
   if(dmxChannelConfig.maxDMXSlot > 0
       && channelID >= dmxChannelConfig.firstDMXRSCPChannel && channelID < dmxChannelConfig.firstDMXRSCPChannel + dmxChannelConfig.maxDMXSlot) {
@@ -627,7 +626,7 @@ static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
 
 void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     uint16_t payload_len, uint8_t * payload) {
-#ifdef RSCP_DEBUG
+#ifdef RSCP_DEBUG_MSG
   switch (srcAddr->type) {
   case rscp_ModeRawEthernet: {
     u8_t *a = srcAddr->u.ethNodeAddress.macAddress.addr;
@@ -648,7 +647,6 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     RSCP_DEBUG("Unsupported address type %d\n", srcAddr->type);
     break;
   }
-#endif
 #ifdef DEBUG_RSCP_PAYLOAD
   for (int i = 0; i < payload_len; i++) {
     if((i % 32) == 0)
@@ -657,6 +655,7 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
   }
   printf_P(PSTR("\n"));
 #endif /* DEBUG_RSCP */
+#endif
 
   // Is this a command? Check whether this is even for me.
   if ((msg_type & 0xf000) == 0x2000 && !RSCP_ISFORME(payload)) {
