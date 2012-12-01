@@ -62,56 +62,6 @@
 
 typedef struct  __attribute__ ((packed))
 {
-  uint16_t channel;             // channel id
-  uint16_t port;                // port id
-  union {
-    uint8_t flags;              // bit flags
-    struct {
-      uint8_t :1;
-      uint8_t debounceDelay:4;  // the debounce delay in increments of 20ms
-      uint8_t pullup:1;         // weak pullup resistor
-      uint8_t report:1;         // report on change
-      uint8_t negate:1;         // negate polarity
-    };
-  };
-  union {
-    uint8_t status;             // status flags
-    struct {
-      uint8_t lastRawState:1;
-      uint8_t lastDebouncedState:1;
-      uint8_t didChangeState:1;
-      uint8_t debounceCounter:4;
-      uint8_t :1;
-    };
-  };
-} rscp_binaryInputChannel;
-
-uint16_t rscp_numBinaryInputChannels;
-rscp_binaryInputChannel *rscp_binaryInputChannels;
-
-
-typedef struct  __attribute__ ((packed))
-{
-  uint16_t channel;             // channel id
-  uint16_t port;                // port id
-  union {
-    uint8_t flags;              // bit flags
-    struct {
-      uint8_t lastState:1;
-      uint8_t :3;
-      uint8_t openDrain:1;      // open drain output
-      uint8_t openSource:1;     // open source output => combined: bipolar
-      uint8_t report:1;         // report on change
-      uint8_t negate:1;         // negate polarity
-    };
-  };
-} rscp_binaryOutputChannel;
-
-uint16_t rscp_numBinaryOutputChannels;
-rscp_binaryOutputChannel *rscp_binaryOutputChannels;
-
-typedef struct  __attribute__ ((packed))
-{
   uint16_t interval;             // interval
 } rscp_owChannel;
 
@@ -163,7 +113,6 @@ void rscp_init(void);
 void rscp_periodic(void);
 void rscp_sendPeriodicOutputEvents(void);
 void rscp_sendPeriodicInputEvents(void);
-void rscp_pollBinaryOutputChannelState(rscp_binaryOutputChannel *boc);
 void rscp_sendPeriodicIrmpEvents(void);
 
 // *********************************************
@@ -348,77 +297,8 @@ typedef struct __attribute__ ((packed))
   rscp_chList channelTypes[];
 } rscp_chConfig;
 
-struct __attribute__ ((packed)) chType11_t
-{                               // channel type 0x11 (complex input)
-  uint8_t flags;                // flags (currently unused)
-  uint8_t numports;             // number of channels to follow
-  uint8_t numstates;            // number of states to follow
-//  uint8_t ports_states[];
-};
-
-struct __attribute__ ((packed)) chType12_t
-{                               // channel type 0x12 (complex output)
-  uint8_t flags;                // flags (currently unused)
-  uint8_t numports;             // number of channels to follow
-  uint8_t numstates;            // number of states to follow
-//  uint8_t ports_states[];
-};
-
-typedef struct
-{
-  uint16_t  port;               // port id
-  uint8_t   flags;              // flags
-} rscp_conf_cht11_ports;
-
-#define RSCP_CHT11_PORTID     offsetof(rscp_conf_cht11_ports, port)
-#define RSCP_CHT11_PORT_FLAGS offsetof(rscp_conf_cht11_ports, flags)
-#define RSCP_CHT11_PORT_SIZE  sizeof(rscp_conf_cht11_ports)
-
-#define RSCP_CHT11_PORTSTATES 0
-// size of one portstate
-#define RSCP_CHT11_STATE_SIZE sizeof(uint8_t)
-
-
-typedef struct
-{
-  uint16_t  port;               // port id
-  uint8_t   flags;              // flags
-} rscp_conf_cht12_ports;
-
-
-#define RSCP_CHT12_PORTID     offsetof(rscp_conf_cht12_ports, port)
-#define RSCP_CHT12_PORT_FLAGS offsetof(rscp_conf_cht12_ports, flags)
-#define RSCP_CHT12_PORT_SIZE  sizeof(rscp_conf_cht12_ports)
-
-// port states
-#define RSCP_CHT12_PORTSTATES 0
-// size of one portstate
-#define RSCP_CHT12_STATE_SIZE sizeof(uint8_t)
-
-
 #define RSCP_CHANNEL_ID       offsetof(struct _rscp_conf_channel, channelId)
 #define RSCP_CHANNEL_TYPE     offsetof(struct _rscp_conf_channel, channelType)
-
-#define RSCP_CHT11_HEADSIZE   sizeof(struct chType11_t) + offsetof(rscp_conf_channel, chType01)
-#define RSCP_CHT12_HEADSIZE   sizeof(struct chType12_t) + offsetof(rscp_conf_channel, chType01)
-
-
-/**
- * button
- */
-// button id
-#define RSCP_BUTTON_ID          0
-// associated channel id
-#define RSCP_BUTTON_CHANNEL     (RSCP_BUTTON_ID + sizeof(uint16_t))
-// flags
-#define RSCP_BUTTON_FLAGS       (RSCP_BUTTON_CHANNEL + sizeof(uint16_t))
-// long press after N * 20 ms (0 = disabled)
-#define RSCP_BUTTON_LONGPRESS   (RSCP_BUTTON_FLAGS + sizeof(uint8_t))
-// repeat every N * 20 ms (0 = disabled)
-#define RSCP_BUTTON_REPEAT      (RSCP_BUTTON_LONGPRESS + sizeof(uint16_t))
-// size of button structure
-#define RSCP_BUTTON_SIZE        (RSCP_BUTTON_REPEAT + sizeof(uint16_t))
-
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_H */

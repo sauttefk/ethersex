@@ -115,14 +115,12 @@ static void parseChannelDefinitions(void) {
         "parsing %u channels of type 0x%02x @ 0x%04x\n", items, channelType, chConfigPtr);
 
     switch (channelType) {
-    case RSCP_CHANNEL_BINARY_INPUT: {
-      parseBIC(chConfigPtr, items);
+    case RSCP_CHANNEL_BINARY_INPUT:
+      rscp_parseBIC(chConfigPtr, items);
       break;
-    }
-    case RSCP_CHANNEL_BINARY_OUTPUT: {
-      parseBOC(chConfigPtr, items);
+    case RSCP_CHANNEL_BINARY_OUTPUT:
+      rscp_parseBOC(chConfigPtr, items);
       break;
-    }
 #if 0
       case RSCP_CHANNEL_COMPLEX_INPUT:
       {
@@ -150,16 +148,13 @@ static void parseChannelDefinitions(void) {
 #endif
 #ifdef ELTAKOMS_SUPPORT
       case RSCP_CHANNEL_ELTAKO_MS:
-      {
         rscp_parseEltakoChannels(chConfigPtr, items);
         break;
-      }
 #endif
-    default: {
+    default:
       RSCP_DEBUG_CONF(
           "could not parse channel type 0x%02x --- SKIPPING\n", channelType);
       break;
-    }
     };
   }
 
@@ -457,28 +452,6 @@ void rscp_main(void) {
   // RSCP_DEBUG("bla\n");
 }
 
-void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *boc,
-    uint8_t* payload) {
-  RSCP_DEBUG("setBinaryOutputChannel(%d): ", boc->channel);
-
-  switch (payload[0]) {
-  case 0x10: // boolean false
-    RSCP_DEBUG("off\n");
-    rscp_setPortPORT(boc->port, 0);
-    break;
-  case 0x11: // boolean true
-    RSCP_DEBUG("on\n");
-    rscp_setPortPORT(boc->port, 1);
-    break;
-  default:
-    RSCP_DEBUG(
-        "Invalid value for setBinaryOutputChannel of type %d", payload[0]);
-    break;
-  }
-
-  rscp_pollBinaryOutputChannelState(boc); // report new state of output
-}
-
 static void handleChannelStateCommand(uint8_t* payload) {
   uint16_t channelID = ntohs(((uint16_t*)payload)[0]);
 
@@ -518,12 +491,8 @@ static void handleChannelStateCommand(uint8_t* payload) {
 #endif
 
   // ...in binary output channels
-  for (uint16_t i = 0; i < rscp_numBinaryOutputChannels; i++)
-    if (rscp_binaryOutputChannels[i].channel == channelID) {
-      rscp_setBinaryOutputChannel(&(rscp_binaryOutputChannels[i]),
-          &(payload[2]));
-      return;
-    }
+  if(rscp_maybeHandleBOC_CSC(channelID, payload + 2))
+    return;
 
   // ...more channel types
 }

@@ -72,12 +72,12 @@ typedef struct
   const uint8_t pin;
 } ioConfig_t;
 
-
 void rscp_io_init (void);
 void rscp_IOChannels_periodic (void);
 
 void rscp_parseBOC(void *ptr, uint16_t items);
 void rscp_parseBIC(void *ptr, uint16_t items);
+bool rscp_maybeHandleBOC_CSC(uint16_t channelID, uint8_t *payload);
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_IO_H */
