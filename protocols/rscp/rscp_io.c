@@ -20,6 +20,7 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "rscp.h"
@@ -29,7 +30,7 @@
 const ioConfig_t rscp_portConfig[RSCP_IOS] PROGMEM = { RSCP_IO_CONFIG(C) };
 
 
-uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
+static uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
   portPtrType portDDR =
       (portPtrType) pgm_read_word(&rscp_portConfig[portID].ddr);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
@@ -45,7 +46,7 @@ uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value) {
 }
 
 
-uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
+static uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
   portPtrType portOut =
       (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
   uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
@@ -61,22 +62,87 @@ uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value) {
 }
 
 
-uint8_t rscp_togglePortPORT(uint16_t portID) {
-  portPtrType portOut =
-      (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
-  uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
+//static uint8_t rscp_togglePortPORT(uint16_t portID) {
+//  portPtrType portOut =
+//      (portPtrType) pgm_read_word(&rscp_portConfig[portID].portOut);
+//  uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
+//
+//  RSCP_DEBUG_IO("toggle PORT port %d (%x, bit %d)\n", portID, portOut, bit);
+//
+//  return *portOut ^= bit;
+//}
+//
+//
+//static uint8_t rscp_getPortPIN(uint16_t portID) {
+//  portPtrType portIn =
+//      (portPtrType) pgm_read_word(&rscp_portConfig[portID].portIn);
+//  uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
+//  return *portIn & bit ? 1 : 0;
+//}
 
-  RSCP_DEBUG_IO("toggle PORT port %d (%x, bit %d)\n", portID, portOut, bit);
+void rscp_parseBIC(void *ptr, uint16_t items) {
+  rscp_binaryInputChannels = malloc(items * sizeof(rscp_binaryInputChannel));
+  if (rscp_binaryInputChannels == NULL ) {
+    rscp_numBinaryInputChannels = 0;
+    RSCP_DEBUG_CONF("Out of memory\n");
+    return;
+  }
 
-  return *portOut ^= bit;
+  rscp_numBinaryInputChannels = items;
+  memset(rscp_binaryInputChannels, 0, items * sizeof(rscp_binaryInputChannel));
+  RSCP_DEBUG_CONF(
+      "Allocated %d bytes for %d binary input channels\n", items * sizeof(rscp_binaryInputChannel), items);
+
+  for (uint16_t i = 0; i < items; ++i) {
+    rscp_binaryInputChannels[i].channel =
+        rscpEE_word(rscp_binaryInputChannel, channel, ptr);
+    rscp_binaryInputChannels[i].port =
+        rscpEE_word(rscp_binaryInputChannel, port, ptr);
+    rscp_binaryInputChannels[i].flags =
+        rscpEE_byte(rscp_binaryInputChannel, flags, ptr);
+
+//    RSCP_DEBUG_CONF(
+//        "binary input: port: %d - flags: %02x -> %c%c%c\n", rscp_binaryInputChannels[i].port, rscp_binaryInputChannels[i].flags, rscp_binaryInputChannels[i].pullup ? 'P' : 'p', rscp_binaryInputChannels[i].negate ? 'N' : 'n', rscp_binaryInputChannels[i].report ? 'R' : 'r');
+
+    rscp_setPortDDR(rscp_binaryInputChannels[i].port, 0);
+    rscp_setPortPORT(rscp_binaryInputChannels[i].port,
+        rscp_binaryInputChannels[i].pullup);
+
+    ptr += offsetof(rscp_binaryInputChannel, status);
+  }
 }
 
+void rscp_parseBOC(void *ptr, uint16_t items) {
+  rscp_binaryOutputChannels = malloc(items * sizeof(rscp_binaryOutputChannel));
+  if (rscp_binaryOutputChannels == NULL ) {
+    rscp_numBinaryOutputChannels = 0;
+    RSCP_DEBUG_CONF("out of memory\n");
+    return;
+  }
 
-uint8_t rscp_getPortPIN(uint16_t portID) {
-  portPtrType portIn =
-      (portPtrType) pgm_read_word(&rscp_portConfig[portID].portIn);
-  uint8_t bit = 1 << pgm_read_byte(&rscp_portConfig[portID].pin);
-  return *portIn & bit ? 1 : 0;
+  rscp_numBinaryOutputChannels = items;
+  memset(rscp_binaryOutputChannels, 0,
+      items * sizeof(rscp_binaryOutputChannel));
+  RSCP_DEBUG_CONF(
+      "allocated %d bytes for %d binary output channels\n", items * sizeof(rscp_binaryOutputChannel), items);
+
+  for (uint16_t i = 0; i < items; ++i) {
+    rscp_binaryOutputChannels[i].channel =
+        rscpEE_word(rscp_binaryOutputChannel, channel, ptr);
+    rscp_binaryOutputChannels[i].port =
+        rscpEE_word(rscp_binaryOutputChannel, port, ptr);
+    rscp_binaryOutputChannels[i].flags =
+        rscpEE_byte(rscp_binaryOutputChannel, flags, ptr);
+
+    RSCP_DEBUG_CONF(
+        "binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n", rscp_binaryOutputChannels[i].port, rscp_binaryOutputChannels[i].flags, rscp_binaryOutputChannels[i].openDrain ? 'D' : 'd', rscp_binaryOutputChannels[i].openSource ? 'S' : 's', rscp_binaryOutputChannels[i].negate ? 'N' : 'n', rscp_binaryOutputChannels[i].report ? 'R' : 'r');
+
+    rscp_setPortDDR(rscp_binaryOutputChannels[i].port, 1);
+    rscp_setPortPORT(rscp_binaryOutputChannels[i].port,
+        rscp_binaryOutputChannels[i].negate);
+
+    ptr += sizeof(rscp_binaryOutputChannel);
+  }
 }
 
 

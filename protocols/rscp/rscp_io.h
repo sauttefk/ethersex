@@ -75,10 +75,9 @@ typedef struct
 
 void rscp_io_init (void);
 void rscp_IOChannels_periodic (void);
-uint8_t rscp_setPortDDR(uint16_t portID, uint8_t value);
-uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value);
-uint8_t rscp_togglePortPORT(uint16_t portID);
-uint8_t rscp_getPortPIN(uint16_t portID);
+
+void rscp_parseBOC(void *ptr, uint16_t items);
+void rscp_parseBIC(void *ptr, uint16_t items);
 
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_IO_H */
