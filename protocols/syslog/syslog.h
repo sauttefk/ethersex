@@ -28,7 +28,7 @@
 #include "protocols/uip/uip.h"
 #include <stdbool.h>
 
-#define MAX_DYNAMIC_SYSLOG_BUFFER 500
+#define MAX_DYNAMIC_SYSLOG_BUFFER 140
 
 uint8_t syslog_send_P(PGM_P message);
 uint8_t syslog_send(const char *message);
