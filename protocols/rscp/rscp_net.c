@@ -244,6 +244,7 @@ rscp_txContinuousIOChannelChange (uint16_t channel, void *value, int8_t scale, u
 
   // set unit and value
   rscp_encodeUInt8(unit, buffer);
+  rscp_encodeUInt8(fieldType, buffer);
   switch(fieldType) {
   case rscp_field_Byte: rscp_encodeInt8(*((int8_t*)value), buffer); break;
   case rscp_field_UnsignedByte: rscp_encodeUInt8(*((uint8_t*)value), buffer); break;
