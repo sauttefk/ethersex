@@ -25,6 +25,8 @@ void timer_init(timer *t, timer_callback cb, void *user) {
 void _timer_schedule(timer *t) {
   timer *p;
 
+  TIMER_DEBUG("_timer_schedule: %hx@%lu.%hu as new root\n", t, TP(t)->next_fire.seconds, TP(t)->next_fire.millis);
+
   if(!timer_chain) {
     timer_chain = t;
     TP(t)->next = (timer*) 0;
@@ -35,8 +37,8 @@ void _timer_schedule(timer *t) {
   if(mtime_compare(&(TP(timer_chain)->next_fire), &(TP(t)->next_fire)) >= 0) {
     TP(t)->next = timer_chain;
     timer_chain = t;
-    TIMER_DEBUG("scheduling: %hx@%lu.%hu as new root\n",
-        t, TP(t)->next_fire.seconds, TP(t)->next_fire.millis);
+    TIMER_DEBUG("scheduling: %hx@%lu.%hu as new root, next: %hx\n",
+        t, TP(t)->next_fire.seconds, TP(t)->next_fire.millis, TP(t)->next);
     return;
   }
 
@@ -48,9 +50,10 @@ void _timer_schedule(timer *t) {
   TP(p)->next = t;
   TP(t)->next = next;
 
-  TIMER_DEBUG("scheduling: %hx@%lu.%hu after %hx@%lu.%hu\n",
+  TIMER_DEBUG("scheduling: %hx@%lu.%hu after %hx@%lu.%hu, next: %hu\n",
       t, TP(t)->next_fire.seconds, TP(t)->next_fire.millis,
-      p, TP(p)->next_fire.seconds, TP(p)->next_fire.millis);
+      p, TP(p)->next_fire.seconds, TP(p)->next_fire.millis,
+      next);
 }
 
 void timer_schedule_at_mtime(timer *t, mtime *time) {
@@ -67,7 +70,8 @@ void timer_schedule_at_mtime(timer *t, mtime *time) {
 void timer_schedule_after_msecs(timer *t, uint32_t milliseconds) {
   mtime delay;
   mtime_from_milliseconds(&delay, milliseconds);
-
+	TIMER_DEBUG("timer_schedule_after_msecs: %hx@%lu.%hu\n",
+      t, delay.seconds, delay.millis);
   timer_schedule_after_mtime(t, &delay);
 }
 
@@ -102,6 +106,8 @@ void timer_cancel(timer *t) {
   if(!timer_chain)
     return;
 
+  TIMER_DEBUG("timer_cancel: %hx\n", t);
+
   if(t == timer_chain) {
     timer_chain = TP(timer_chain)->next;
     TP(t)->next = 0;
@@ -112,8 +118,10 @@ void timer_cancel(timer *t) {
   }
 
   timer *p = timer_chain;
-  while(TP(p)->next != 0 && TP(p)->next != t)
+  while(TP(p)->next != 0 && TP(p)->next != t) {
+    TIMER_DEBUG("timer_cancel: %hx -> %hx\n", p, TP(p)->next);
     p = TP(p)->next;
+  }
 
   if(TP(p)->next == t) {
     TP(p)->next = TP(t)->next;
