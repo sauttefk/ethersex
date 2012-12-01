@@ -51,8 +51,6 @@ static eltakoMSChannel *eltakoMSChannels;
 static uint8_t numEltakoMSChannels = 0;
 
 static void pollELTAKOMS(timer *t, void *usr) {
-  RSCP_DEBUG("foo\n");
-
   eltakoMSChannel *c = (eltakoMSChannel*) usr;
 
   RSCP_DEBUG("Polling ELKTAKO MS subchannel type: %d, valid=%d\n", c->subchannelType, eltakoms_data.valid);
@@ -146,7 +144,7 @@ void rscp_parseEltakoChannels(void *ptr, uint16_t items) {
       if(c->subchannelType >= 16)
         millis = 10000;
 
-      timer_schedule_after_msecs(&(c->timer), 1000);
+      timer_schedule_repeating_msecs(&(c->timer), millis / 2, millis);
     }
   }
 }
