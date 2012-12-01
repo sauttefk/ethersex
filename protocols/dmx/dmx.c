@@ -54,8 +54,8 @@ typedef enum {
 } dmx_tx_state_t;
 
 static volatile uint16_t dmx_index = 0;
-static volatile uint16_t dmx_txlen = DMX_STORAGE_CHANNELS;
 static volatile dmx_tx_state_t dmx_tx_state = DMX_START;
+volatile uint16_t dmx_txlen = DMX_STORAGE_CHANNELS;
 
 
 /**
