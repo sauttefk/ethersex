@@ -37,7 +37,6 @@
 #include "protocols/uip/uip.h"
 #include "protocols/uip/uip_router.h"
 #include "services/clock/clock.h"
-#include "hardware/onewire/onewire.h"
 #include "hardware/ir/irmp/irmp.h"
 
 #include "rscp_net.h"
@@ -57,26 +56,6 @@
 #define RSCP_DEBUG_CONF(str...) debug_printf ("RSCP-CONF: " str)
 #else
 #define RSCP_DEBUG_CONF(...)    ((void) 0)
-#endif
-
-
-typedef struct  __attribute__ ((packed))
-{
-  uint16_t interval;             // interval
-} rscp_owChannel;
-
-typedef struct __attribute__ ((packed))
-{                               // channel type 0x30 (ow temperature)
-  uint16_t channel;             // channel id
-  ow_rom_code_t owROM;          // onewire ROM code
-  uint16_t interval;            // report-interval (s)
-} onewireTemperatureChannel;
-
-uint16_t rscp_numOwChannels;
-
-#ifdef RSCP_USE_OW
-rscp_owChannel *rscp_owChannels;
-onewireTemperatureChannel *rspc_owList_p;
 #endif
 
 #ifdef DMX_SUPPORT

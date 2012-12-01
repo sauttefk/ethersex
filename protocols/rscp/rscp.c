@@ -30,37 +30,13 @@
 #include "protocols/syslog/syslog.h"
 
 #include "rscp_eltako_ms.h"
+#include "rscp_onewire.h"
 
 // the interval at which we check whether there's a more recent configuration available
 #define CONFIG_CHECK_INTERVAL 60000
 
-/* local prototypes */
-#ifdef RSCP_USE_OW
-void hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state);
-#endif
-
 /* local variables */
 volatile uint8_t rscp_heartbeatCounter;
-
-#ifdef RSCP_USE_OW
-static void parseOWC(void *ptr, uint16_t items) {
-  rspc_owList_p = ptr;
-  rscp_numOwChannels = items;
-
-#ifdef RSCP_DEBUG_CONF
-  for (uint16_t i = 0; i < rscp_numOwChannels; i++) {
-    onewireTemperatureChannel owItem;
-
-    eeprom_read_block(&owItem, &(rspc_owList_p[i]),
-        sizeof(onewireTemperatureChannel));
-
-    RSCP_DEBUG_CONF(
-        "1WID: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n", owItem.owROM.bytewise[0], owItem.owROM.bytewise[1], owItem.owROM.bytewise[2], owItem.owROM.bytewise[3], owItem.owROM.bytewise[4], owItem.owROM.bytewise[5], owItem.owROM.bytewise[6], owItem.owROM.bytewise[7]);
-    RSCP_DEBUG_CONF("interval: %d\n", owItem.interval);
-  }
-#endif
-}
-#endif
 
 #if defined(DMX_SUPPORT) && defined(DMX_STORAGE_SUPPORT)
 #define RSCP_DMX_SUPPORT
@@ -132,13 +108,11 @@ static void parseChannelDefinitions(void) {
         break;
       }
 #endif
-#ifdef RSCP_USE_OW
+#ifdef RSCP_ONEWIRE_SUPPORT
       case RSCP_CHANNEL_OWTEMPERATURE:
-      {
-        parseOWC(chConfigPtr, items);
+        rscp_parseOWC(chConfigPtr, items);
         break;
-      }
-#endif /* RSCP_USE_OW */
+#endif
 #ifdef RSCP_DMX_SUPPORT
       case RSCP_CHANNEL_DMX:
       {
@@ -372,9 +346,6 @@ static void parseConfig(void) {
 
           parseChannelDefinitions();
           parseRuleDefinitions();
-#ifdef RSCP_USE_OW
-          hook_ow_poll_register(hook_ow_poll_handler);
-#endif /* RSCP_USE_OW */
 
           timer_schedule_after_msecs(&configCheckTimer, CONFIG_CHECK_INTERVAL);
 
@@ -402,51 +373,6 @@ static void parseConfig(void) {
   // try to get a new one ASAP.
   timer_schedule_after_msecs(&configCheckTimer, 500);
 }
-
-#ifdef RSCP_USE_OW
-void
-hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
-{
-  RSCP_DEBUG("Temperature %d state %d\n", ow_sensor->temp, state);
-
-  for (uint16_t i = 0; i < rscp_numOwChannels; i++)
-  {
-    onewireTemperatureChannel owItem;
-
-    eeprom_read_block(&owItem, &(rspc_owList_p[i]),
-        sizeof(onewireTemperatureChannel));
-    if (owItem.owROM.raw == ow_sensor->ow_rom_code.raw)
-    {
-      if (state == OW_CONVERT)
-      {
-        RSCP_DEBUG("oneWire channel %d set interval %ds\n", owItem.channel,
-            owItem.interval);
-        ow_sensor->polling_delay = owItem.interval;
-      }
-      else if (state == OW_READY)
-      {
-        RSCP_DEBUG("oneWire channel %d ready\n", owItem.channel);
-        rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-
-        rscp_encodeChannel(owItem.channel, buffer);
-
-        // set unit and value
-        rscp_encodeUInt8(RSCP_UNIT_TEMPERATURE, buffer);
-        rscp_encodeDecimal16Field(ow_sensor->temp, -1, buffer);
-
-        rscp_transmit(RSCP_CHANNEL_EVENT, 0);
-      }
-      return;
-    }
-  }
-  RSCP_DEBUG("no channel definition for oneWire: "
-      "%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X\n",
-      ow_sensor->ow_rom_code.bytewise[0], ow_sensor->ow_rom_code.bytewise[1],
-      ow_sensor->ow_rom_code.bytewise[2], ow_sensor->ow_rom_code.bytewise[3],
-      ow_sensor->ow_rom_code.bytewise[4], ow_sensor->ow_rom_code.bytewise[5],
-      ow_sensor->ow_rom_code.bytewise[6], ow_sensor->ow_rom_code.bytewise[7]);
-}
-#endif /* RSCP_USE_OW */
 
 void rscp_main(void) {
   // RSCP_DEBUG("bla\n");
