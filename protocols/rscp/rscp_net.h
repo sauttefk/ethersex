@@ -76,12 +76,12 @@ typedef struct rscp_ipNodeAddress {
 
 typedef struct rscp_ethNodeAddress {
   struct uip_eth_addr macAddress;
-  uint8_t padding[4];
+  // uint8_t padding[4];
 } rscp_ethNodeAddress;
 
 typedef struct rscp_canNodeAddress {
   uint8_t canAddress;
-  uint8_t padding[9];
+  // uint8_t padding[9];
 } rscp_canNodeAddress;
 
 typedef struct rscp_nodeAddress {
@@ -106,7 +106,7 @@ void rscp_transmit(uint16_t messageType, rscp_nodeAddress *dst);
 /*
  * Field types
  */
-enum {
+typedef enum {
   rscp_field_Byte = 0x01,
   rscp_field_UnsignedByte = 0x02,
   rscp_field_Short = 0x03,
@@ -121,7 +121,7 @@ enum {
   rscp_field_Decimal24 = 0x0c,
   rscp_field_Decimal32 = 0x0d,
   rscp_field_BooleanFalse = 0x10,
-  rscp_field_BooleanTrue = 0x11,
+  rscp_field_BooleanTrue = 0x11
 } rscp_fieldType;
 
 int8_t rscp_encodeChannel(uint16_t channel, rscp_payloadBuffer_t *buffer);
@@ -152,6 +152,9 @@ int8_t rscp_encodeDecimal24Field(int32_t significand, int8_t scale,
     rscp_payloadBuffer_t *buffer);
 int8_t rscp_encodeDecimal32Field(int32_t significand, int8_t scale,
     rscp_payloadBuffer_t *buffer);
+
+void rscp_txBinaryIOChannelChange (uint16_t channel, uint8_t state);
+void rscp_txContinuousIOChannelChange(uint16_t channel, void *value, int8_t scale, uint8_t unit, rscp_fieldType fieldType);
 
 #endif /* _RSCP_NET_H */
 

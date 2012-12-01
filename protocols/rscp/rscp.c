@@ -20,13 +20,16 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
+
 #include <stdio.h>
 #include "rscp.h"
+
+#ifdef RSCP_SUPPORT
 #include "crc32.h"
 #include "timer.h"
 #include "protocols/syslog/syslog.h"
 
-#ifdef RSCP_SUPPORT
+#include "rscp_eltako_ms.h"
 
 // the interval at which we check whether there's a more recent configuration available
 #define CONFIG_CHECK_INTERVAL 60000
@@ -138,6 +141,8 @@ static void parseDMXChannels(void *ptr, uint16_t items) {
   dmxChannelConfig.firstDMXRSCPChannel = rscpEEReadWord(eeConfig->firstDMXRSCPChannel);
   dmxChannelConfig.maxDMXSlot = rscpEEReadWord(eeConfig->maxDMXSlot);
 
+  dmx_txlen = dmxChannelConfig.maxDMXSlot + 1;
+
   RSCP_DEBUG_CONF("DMX: first rscp channel: %d, max DMX slot: %d\n",
       dmxChannelConfig.firstDMXRSCPChannel, dmxChannelConfig.maxDMXSlot);
 }
@@ -205,6 +210,13 @@ static void parseChannelDefinitions(void) {
       case RSCP_CHANNEL_DMX:
       {
         parseDMXChannels(chConfigPtr, items);
+        break;
+      }
+#endif
+#ifdef ELTAKOMS_SUPPORT
+      case RSCP_CHANNEL_ELTAKO_MS:
+      {
+        rscp_parseEltakoChannels(chConfigPtr, items);
         break;
       }
 #endif
@@ -349,6 +361,7 @@ static void delayedInit(timer *t, void *user) {
 }
 
 void rscp_init(void) {
+
   timer_init(&configCheckTimer, &periodicConfigCheck, 0);
 
   memset(segmentControllers, 0,
@@ -358,7 +371,18 @@ void rscp_init(void) {
   timer_schedule_after_msecs(&delayedInitTimer, 50);
 }
 
+static uint8_t isInitialized;
+
 static void parseConfig(void) {
+  // cleanup phase. FIXME: find better place
+  if(isInitialized == 0x42) {
+#ifdef ELTAKOMS_SUPPORT
+    rscp_cleanupEltakoMS();
+#endif
+  }
+  isInitialized = 0;
+  // end cleanup
+
 #ifdef RSCP_DMX_SUPPORT
   dmxChannelConfig.firstDMXRSCPChannel = 0;
   dmxChannelConfig.maxDMXSlot = 0;
@@ -423,6 +447,8 @@ static void parseConfig(void) {
 #endif /* RSCP_USE_OW */
 
           timer_schedule_after_msecs(&configCheckTimer, CONFIG_CHECK_INTERVAL);
+
+          isInitialized = 0x42; // magic
 
           return;
         } else {
@@ -518,7 +544,7 @@ void rscp_setBinaryOutputChannel(rscp_binaryOutputChannel *boc,
   rscp_pollBinaryOutputChannelState(boc); // report new state of output
 }
 
-void rscp_handleChannelStateCommand(uint8_t* payload) {
+static void handleChannelStateCommand(uint8_t* payload) {
   uint16_t channelID = ntohs(((uint16_t*)payload)[0]);
 
   RSCP_DEBUG("handleChannelStateCommand: channel=%d\n", channelID);
@@ -657,13 +683,6 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
 #endif /* DEBUG_RSCP */
 #endif
 
-  // Is this a command? Check whether this is even for me.
-  if ((msg_type & 0xf000) == 0x2000 && !RSCP_ISFORME(payload)) {
-    RSCP_DEBUG(
-        "Command to %02X:%02X:%02X:%02X:%02X:%02X isn't for me\n", payload[0], payload[1], payload[2], payload[3], payload[4], payload[5]);
-    return;
-  }
-
   switch (msg_type) {
   case RSCP_CHANNEL_EVENT:
 #warning FIXME: testcode currently not working
@@ -686,7 +705,7 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     break;
 
   case RSCP_CHANNEL_STATE_CMD:
-    rscp_handleChannelStateCommand(&(payload[6]));
+    handleChannelStateCommand(&(payload[6]));
     break;
 
   case RSCP_FILE_TRANSFER_RESPONSE: {
@@ -826,24 +845,6 @@ void rscp_periodic(void)     // 1Hz interrupt
 //    rscp_sendPeriodicOutputEvents();
 //    rscp_sendPeriodicInputEvents();
   }
-}
-
-void rscp_sendPeriodicOutputEvents(void) {
-  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-
-#warning FIXME
-
-  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
-  RSCP_DEBUG("node output data sent\n");
-}
-
-void rscp_sendPeriodicInputEvents(void) {
-  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-
-#warning FIXME
-
-  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
-  RSCP_DEBUG("node input data sent\n");
 }
 
 #endif /* RSCP_SUPPORT */

@@ -80,6 +80,5 @@ uint8_t rscp_setPortPORT(uint16_t portID, uint8_t value);
 uint8_t rscp_togglePortPORT(uint16_t portID);
 uint8_t rscp_getPortPIN(uint16_t portID);
 
-
 #endif /* RSCP_SUPPORT */
 #endif /* _RSCP_IO_H */

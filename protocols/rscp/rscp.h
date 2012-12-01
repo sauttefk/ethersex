@@ -27,6 +27,7 @@
 
 #ifdef RSCP_SUPPORT
 
+#include <stdio.h>
 #include <avr/io.h>
 #include <avr/eeprom.h>
 #include <stdbool.h>
@@ -154,8 +155,6 @@ uint16_t numDMXChannels;
 
 uint8_t txidCounter;
 
-#define RSCP_ISFORME(X) (!memcmp(uip_ethaddr.addr, X, 6))
-
 void rscp_setup(void);
 void rscp_main(void);
 void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
@@ -198,6 +197,8 @@ void rscp_sendPeriodicIrmpEvents(void);
 #define RSCP_UNIT_VOLUME              0x07  // Volume (l)
 #define RSCP_UNIT_PERCENT             0x08  // Percent
 #define RSCP_UNIT_BOOLEAN             0x09  // Boolean (on/off)
+#define RSCP_UNIT_SPEED               0x0a  // Speed (m/s)
+#define RSCP_UNIT_ILLUMINATION        0x0b  // Illumination (Lux)
 
 #define RSCP_FIELD_CAT_LEN_TINY       0x0   // length encoded in the lll bits
 #define RSCP_FIELD_CAT_LEN_BYTE       0x1   // length follows as one-byte length specifier

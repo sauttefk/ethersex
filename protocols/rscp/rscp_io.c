@@ -83,23 +83,6 @@ uint8_t rscp_getPortPIN(uint16_t portID) {
 /* ---------------------------------------------------------------------------
  * change of button state
  */
-void
-rscp_txBinaryIOChannelChange (uint16_t channel, uint8_t state)
-{
-  RSCP_DEBUG_IO("BinaryIOChannel: %d status: %d\n", channel, state, state);
-
-  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
-
-  // set channel
-  rscp_encodeChannel(channel, buffer);
-
-  // set unit and value
-  rscp_encodeUInt8(RSCP_UNIT_BOOLEAN, buffer);
-  rscp_encodeBooleanField(state, buffer);
-
-  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
-}
-
 
 void
 rscp_IOChannels_periodic(void)

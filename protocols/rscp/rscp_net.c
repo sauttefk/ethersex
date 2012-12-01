@@ -43,15 +43,16 @@ void rscp_net_raw(void) {
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->timestamp));
 
   // discard messages sent by myself
-  if(memcmp(uip_ethaddr.addr, packet->src.addr, 6) == 0)
-    return;
+    if(memcmp(&uip_ethaddr, &(packet->src), sizeof(struct uip_eth_addr)) == 0) {
+      RSCP_DEBUG_NET("Discard message from self\n");
+      return;
+    }
 
   srcAddress.type = rscp_ModeRawEthernet;
   memcpy(srcAddress.u.ethNodeAddress.macAddress.addr, packet->src.addr,
       sizeof(srcAddress.u.ethNodeAddress.macAddress));
 
-  rscp_handleMessage(&srcAddress, ntohs(rscp->msg_type),
-      ntohs(rscp->payload_len), rscp->payload);
+  rscp_handleMessage(&srcAddress, ntohs(rscp->msg_type), ntohs(rscp->payload_len), rscp->payload);
 }
 #endif /* RSCP_USE_RAW_ETHERNET */
 
@@ -74,9 +75,13 @@ void rscp_netUdp(void) {
   RSCP_DEBUG_NET("HDLEN: 0x%02X\n", rscp->message.header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->message.timestamp));
 
+  struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
+
   // discard messages sent by myself
-  if(memcmp(uip_ethaddr.addr, rscp->mac.addr, 6) == 0)
+  if(memcmp(&uip_ethaddr, &(packet->src), sizeof(struct uip_eth_addr)) == 0) {
+    RSCP_DEBUG_NET("Discard message from self\n");
     return;
+  }
 
   srcAddress.type = rscp_ModeUDP;
   memcpy(srcAddress.u.ipNodeAddress.macAddress.addr, rscp->mac.addr,
@@ -84,8 +89,18 @@ void rscp_netUdp(void) {
   memcpy(srcAddress.u.ipNodeAddress.ipAddress, BUF->srcipaddr,
       sizeof(srcAddress.u.ipNodeAddress.ipAddress));
 
-  rscp_handleMessage(&srcAddress, ntohs(rscp->message.msg_type),
-      ntohs(rscp->message.payload_len), rscp->message.payload);
+  uint16_t msgType = ntohs(rscp->message.msg_type);
+  uint8_t *payload = rscp->message.payload;
+
+  // Is this a command? Check whether this is even for me.
+  if ((msgType & 0x8000) && memcmp(&uip_ethaddr, &(rscp->mac), sizeof(struct uip_eth_addr))) {
+    RSCP_DEBUG_NET(
+        "Command to %02X:%02X:%02X:%02X:%02X:%02X isn't for me\n",
+        rscp->mac.addr[0], rscp->mac.addr[1], rscp->mac.addr[2], rscp->mac.addr[3], rscp->mac.addr[4], rscp->mac.addr[5]);
+    return;
+  }
+
+  rscp_handleMessage(&srcAddress, msgType, ntohs(rscp->message.payload_len), payload);
 }
 #endif /* RSCP_USE_UDP */
 
@@ -93,9 +108,13 @@ void rscp_net_init(void) {
 #ifdef RSCP_USE_UDP
   uip_udp_conn_t *rscp_conn;
   uip_ipaddr_t ip;
+
   uip_ipaddr_copy(&ip, all_ones_addr);
-  if (!(rscp_conn = uip_udp_new(&ip, 0, rscp_netUdp)))
-    RSCP_DEBUG_NET("couldn't bind to UDP port %d\n", RSCP_ETHTYPE);
+
+  if (!(rscp_conn = uip_udp_new(&ip, 0, rscp_netUdp))) {
+    RSCP_DEBUG_NET("couldn't bind broadcast to UDP port %d\n", RSCP_ETHTYPE);
+    return;
+  }
 
   uip_udp_bind(rscp_conn, HTONS(RSCP_ETHTYPE));
   RSCP_DEBUG_NET("listening on UDP port %d\n", RSCP_ETHTYPE);
@@ -198,6 +217,57 @@ void rscp_transmit(uint16_t msg_type, rscp_nodeAddress *dstAddress) {
   }
 }
 
+void
+rscp_txBinaryIOChannelChange (uint16_t channel, uint8_t state)
+{
+  RSCP_DEBUG_IO("BinaryIOChannel: %d status: %d\n", channel, state, state);
+
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+
+  // set channel
+  rscp_encodeChannel(channel, buffer);
+
+  // set unit and value
+  rscp_encodeUInt8(RSCP_UNIT_BOOLEAN, buffer);
+  rscp_encodeBooleanField(state, buffer);
+
+  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
+}
+
+void
+rscp_txContinuousIOChannelChange (uint16_t channel, void *value, int8_t scale, uint8_t unit, rscp_fieldType fieldType)
+{
+  RSCP_DEBUG_IO("ContinuousIOChannel: %d, type %d status: %d\n", channel, fieldType, value);
+
+  rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+
+  // set channel
+  rscp_encodeChannel(channel, buffer);
+
+  // set unit and value
+  rscp_encodeUInt8(unit, buffer);
+  switch(fieldType) {
+  case rscp_field_Byte: rscp_encodeInt8(*((int8_t*)value), buffer); break;
+  case rscp_field_UnsignedByte: rscp_encodeUInt8(*((uint8_t*)value), buffer); break;
+  case rscp_field_Short: rscp_encodeInt16(*((int16_t*)value), buffer); break;
+  case rscp_field_UnsignedShort: rscp_encodeUInt16(*((uint16_t*)value), buffer); break;
+  case rscp_field_Integer: rscp_encodeInt32(*((int32_t*)value), buffer); break;
+  case rscp_field_UnsignedInteger: rscp_encodeUInt32(*((uint32_t*)value), buffer); break;
+  case rscp_field_Long:
+  case rscp_field_UnsignedLong:
+  case rscp_field_Float:
+  case rscp_field_Double:
+    break; // unsupported
+  case rscp_field_Decimal16: rscp_encodeDecimal16Field(*((int16_t*)value), scale, buffer); break;
+  case rscp_field_Decimal24: rscp_encodeDecimal24Field(*((int32_t*)value), scale, buffer); break;
+  case rscp_field_Decimal32: rscp_encodeDecimal32Field(*((int32_t*)value), scale, buffer); break;
+  case rscp_field_BooleanFalse:
+  case rscp_field_BooleanTrue:
+    rscp_encodeBooleanField(*((int8_t*)value), buffer); break;
+  }
+
+  rscp_transmit(RSCP_CHANNEL_EVENT, 0);
+}
 
 /*
  * General encoding methods
