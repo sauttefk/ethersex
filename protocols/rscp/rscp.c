@@ -349,10 +349,6 @@ static void parseConfig(void) {
   timer_schedule_after_msecs(&configCheckTimer, 500);
 }
 
-void rscp_main(void) {
-  // RSCP_DEBUG("bla\n");
-}
-
 static void handleChannelStateCommand(uint8_t* payload) {
   uint16_t channelID = ntohs(((uint16_t*)payload)[0]);
 
