@@ -109,9 +109,6 @@ static void parseChannelDefinitions(void) {
       break;
     };
   }
-
-  RSCP_DEBUG_CONF("PORT: %02x %02x %02x %02x \n", PORTA, PORTF, PORTC, PORTE);
-  RSCP_DEBUG_CONF("DDR:  %02x %02x %02x %02x \n", DDRA, DDRF, DDRC, DDRE);
 }
 
 static uint32_t calcConfigCRC() {
