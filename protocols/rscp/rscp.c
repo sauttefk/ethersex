@@ -38,26 +38,6 @@
 /* local variables */
 volatile uint8_t rscp_heartbeatCounter;
 
-#if defined(DMX_SUPPORT) && defined(DMX_STORAGE_SUPPORT)
-#define RSCP_DMX_SUPPORT
-#include "protocols/dmx/dmx.h"
-#include "services/dmx-storage/dmx_storage.h"
-/*
- * just create an in-RAM copy of the config. It is just four bytes and used rather
- * frequently.
- */
-static void parseDMXChannels(void *ptr, uint16_t items) {
-  rscp_dmxChannelConfig *eeConfig = (rscp_dmxChannelConfig*) ptr;
-
-  dmxChannelConfig.firstDMXRSCPChannel = rscpEEReadWord(eeConfig->firstDMXRSCPChannel);
-  dmxChannelConfig.maxDMXSlot = rscpEEReadWord(eeConfig->maxDMXSlot);
-
-  dmx_txlen = dmxChannelConfig.maxDMXSlot + 1;
-
-  RSCP_DEBUG_CONF("DMX: first rscp channel: %d, max DMX slot: %d\n",
-      dmxChannelConfig.firstDMXRSCPChannel, dmxChannelConfig.maxDMXSlot);
-}
-#endif
 
 static void parseRuleDefinitions(void) {
   void *ptr = (void *) (rscpEE_word(rscp_conf_header, rule_p,
@@ -115,10 +95,8 @@ static void parseChannelDefinitions(void) {
 #endif
 #ifdef RSCP_DMX_SUPPORT
       case RSCP_CHANNEL_DMX:
-      {
-        parseDMXChannels(chConfigPtr, items);
+        rscp_parseDMXChannels(chConfigPtr, items);
         break;
-      }
 #endif
 #ifdef ELTAKOMS_SUPPORT
       case RSCP_CHANNEL_ELTAKO_MS:
@@ -287,9 +265,9 @@ static void parseConfig(void) {
   isInitialized = 0;
   // end cleanup
 
+  // init phase
 #ifdef RSCP_DMX_SUPPORT
-  dmxChannelConfig.firstDMXRSCPChannel = 0;
-  dmxChannelConfig.maxDMXSlot = 0;
+  rscp_initDMX();
 #endif
 
   /*
@@ -389,31 +367,8 @@ static void handleChannelStateCommand(uint8_t* payload) {
    */
   // search for matching channel...
 #ifdef RSCP_DMX_SUPPORT
-  // ... in range associated with DMX
-  if(dmxChannelConfig.maxDMXSlot > 0
-      && channelID >= dmxChannelConfig.firstDMXRSCPChannel && channelID < dmxChannelConfig.firstDMXRSCPChannel + dmxChannelConfig.maxDMXSlot) {
-    int32_t value;
-    switch(payload[2]) {
-    case rscp_field_Byte:
-      value = payload[3];
-      break;
-    case rscp_field_Short:
-      value = ntohs(*((int16_t*)(payload + 3)));
-      break;
-    case rscp_field_Integer:
-      value = ntohl(*((int32_t*)(payload + 3)));
-      break;
-    default:
-      RSCP_DEBUG("Invalid field type for DMX channel: %d", payload[2]);
-      return;
-    }
-
-    if(value >= 0 && value <= 255)
-      set_dmx_channel(0, channelID - dmxChannelConfig.firstDMXRSCPChannel, value);
-    else
-      RSCP_DEBUG("Invalid DMX channel value: %ld", value);
+  if(rscp_maybeHandleDMX_CSC(channelID, payload + 2))
     return;
-  }
 #endif
 
   // ...in binary output channels

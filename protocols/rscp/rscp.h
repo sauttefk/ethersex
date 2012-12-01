@@ -58,30 +58,6 @@
 #define RSCP_DEBUG_CONF(...)    ((void) 0)
 #endif
 
-#ifdef DMX_SUPPORT
-typedef struct __attribute__ ((packed)) {
-  /*
-   * The first RSCP channel ID corresponding to DMX slot #1 (1-based!).
-   */
-  uint16_t firstDMXRSCPChannel;
-  /*
-   * The highest DMX slot used (1-based!).
-   */
-  uint16_t maxDMXSlot;
-} rscp_dmxChannelConfig;
-
-/*
- * This is the in-RAM copy if the configuration above.
- */
-rscp_dmxChannelConfig dmxChannelConfig;
-
-/*
- * The number of DMX channels used. There may be gaps in the used channels,
- * but this node doesn't care about that at the moment.
- */
-uint16_t numDMXChannels;
-#endif
-
 uint8_t txidCounter;
 
 void rscp_setup(void);
