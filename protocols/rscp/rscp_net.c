@@ -84,8 +84,6 @@ void rscp_netUdp(void) {
   }
 
   srcAddress.type = rscp_ModeUDP;
-  memcpy(srcAddress.u.ipNodeAddress.macAddress.addr, rscp->mac.addr,
-      sizeof(srcAddress.u.ipNodeAddress.macAddress));
   memcpy(srcAddress.u.ipNodeAddress.ipAddress, BUF->srcipaddr,
       sizeof(srcAddress.u.ipNodeAddress.ipAddress));
 
