@@ -30,7 +30,6 @@
 
 static const ioConfig_t portConfig[RSCP_IOS] PROGMEM = { RSCP_IO_CONFIG(C) };
 
-
 typedef struct  __attribute__ ((packed))
 {
   uint16_t channel;             // channel id
@@ -66,7 +65,6 @@ static uint16_t firstBinaryInputChannelID;
 static binaryInputChannelConfig *binaryInputChannelConfigs;
 static binaryInputChannelState *binaryInputChannels;
 
-
 typedef struct  __attribute__ ((packed))
 {
   uint16_t channel;             // channel id
@@ -74,18 +72,24 @@ typedef struct  __attribute__ ((packed))
   union {
     uint8_t flags;              // bit flags
     struct {
-      uint8_t lastState:1;
-      uint8_t :3;
+      uint8_t :4;
       uint8_t openDrain:1;      // open drain output
       uint8_t openSource:1;     // open source output => combined: bipolar
       uint8_t report:1;         // report on change
       uint8_t negate:1;         // negate polarity
     };
   };
-} binaryOutputChannel;
+} binaryOutputChannelConfig;
+
+typedef struct  __attribute__ ((packed))
+{
+  uint8_t lastState:1;
+} binaryOutputChannelState;
 
 static uint16_t numBinaryOutputChannels;
-static binaryOutputChannel *binaryOutputChannels;
+static uint16_t firstBinaryOutputChannelID;
+static binaryOutputChannelConfig *binaryOutputChannelConfigs;
+static binaryOutputChannelState *binaryOutputChannels;
 
 
 static uint8_t setPortDDR(uint16_t portID, uint8_t value) {
@@ -162,13 +166,11 @@ void rscp_parseBIC(void *ptr, uint16_t items) {
 
     setPortDDR(bicc.port, 0);
     setPortPORT(bicc.port, bicc.pullup);
-
-    ptr += offsetof(binaryInputChannelState, status);
   }
 }
 
 void rscp_parseBOC(void *ptr, uint16_t items) {
-  binaryOutputChannels = malloc(items * sizeof(binaryOutputChannel));
+  binaryOutputChannels = malloc(items * sizeof(binaryOutputChannelState));
   if (binaryOutputChannels == NULL ) {
     numBinaryOutputChannels = 0;
     RSCP_DEBUG_CONF("out of memory\n");
@@ -176,27 +178,24 @@ void rscp_parseBOC(void *ptr, uint16_t items) {
   }
 
   numBinaryOutputChannels = items;
-  memset(binaryOutputChannels, 0,
-      items * sizeof(binaryOutputChannel));
-  RSCP_DEBUG_CONF(
-      "allocated %d bytes for %d binary output channels\n", items * sizeof(binaryOutputChannel), items);
+  binaryOutputChannelConfigs = (binaryOutputChannelConfig*) ptr;
 
+  memset(binaryOutputChannels, 0, items * sizeof(binaryOutputChannelState));
+  RSCP_DEBUG_CONF(
+      "allocated %d bytes for %d binary output channels\n", items * sizeof(binaryOutputChannelState), items);
+
+  binaryOutputChannelConfig bocc;
   for (uint16_t i = 0; i < items; ++i) {
-    binaryOutputChannels[i].channel =
-        rscpEE_word(binaryOutputChannel, channel, ptr);
-    binaryOutputChannels[i].port =
-        rscpEE_word(binaryOutputChannel, port, ptr);
-    binaryOutputChannels[i].flags =
-        rscpEE_byte(binaryOutputChannel, flags, ptr);
+    rscpEEReadStruct(&bocc, binaryOutputChannelConfigs + i);
+
+    if(i==0)
+      firstBinaryOutputChannelID = bocc.channel;
 
     RSCP_DEBUG_CONF(
-        "binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n", binaryOutputChannels[i].port, binaryOutputChannels[i].flags, binaryOutputChannels[i].openDrain ? 'D' : 'd', binaryOutputChannels[i].openSource ? 'S' : 's', binaryOutputChannels[i].negate ? 'N' : 'n', binaryOutputChannels[i].report ? 'R' : 'r');
+        "binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n", bocc.port, bocc.flags, bocc.openDrain ? 'D' : 'd', bocc.openSource ? 'S' : 's', bocc.negate ? 'N' : 'n', bocc.report ? 'R' : 'r');
 
-    setPortDDR(binaryOutputChannels[i].port, 1);
-    setPortPORT(binaryOutputChannels[i].port,
-        binaryOutputChannels[i].negate);
-
-    ptr += sizeof(binaryOutputChannel);
+    setPortDDR(bocc.port, 1);
+    setPortPORT(bocc.port, bocc.negate);
   }
 }
 
@@ -204,11 +203,11 @@ void rscp_parseBOC(void *ptr, uint16_t items) {
  * change of button state
  */
 
-static void pollBinaryOutputChannelState(binaryOutputChannel *boc)  {
+static void pollBinaryOutputChannelState(binaryOutputChannelState *boc, binaryOutputChannelConfig *bocc)  {
   /* get current value from portpin... */
-  volatile uint8_t portState = *((portPtrType) pgm_read_word(&portConfig[boc->port].portIn));
-  uint8_t bit = 1 << pgm_read_byte(&portConfig[boc->port].pin);
-  uint8_t curState = (portState & bit ? 1 : 0) ^ (boc->negate ? 1 : 0);
+  volatile uint8_t portState = *((portPtrType) pgm_read_word(&portConfig[bocc->port].portIn));
+  uint8_t bit = 1 << pgm_read_byte(&portConfig[bocc->port].pin);
+  uint8_t curState = (portState & bit ? 1 : 0) ^ (bocc->negate ? 1 : 0);
 
   /* current state hasn't changed since the last read... */
   if (boc->lastState != curState)
@@ -216,7 +215,7 @@ static void pollBinaryOutputChannelState(binaryOutputChannel *boc)  {
     boc->lastState = curState;
     RSCP_DEBUG_IO("BinaryOutputChannel %hu changed to %hu\n", boc->channel,
     boc->lastState);
-    rscp_txBinaryIOChannelChange(boc->channel, boc->lastState);
+    rscp_txBinaryIOChannelChange(bocc->channel, boc->lastState);
   }
 }
 
@@ -272,25 +271,26 @@ rscp_IOChannels_periodic(void)
   }
 
   /* Check all configured outputs */
+  binaryOutputChannelConfig bocc;
   for (uint8_t i = 0; i < numBinaryOutputChannels; i++)
   {
-    binaryOutputChannel *boc = &binaryOutputChannels[i];
-    pollBinaryOutputChannelState(boc);
+    rscpEEReadStruct(&bocc, binaryOutputChannelConfigs + i);
+    pollBinaryOutputChannelState(&binaryOutputChannels[i], &bocc);
   }
 }
 
-static void setBinaryOutputChannel(binaryOutputChannel *boc,
+static void setBinaryOutputChannel(binaryOutputChannelState *boc, binaryOutputChannelConfig *bocc,
     uint8_t* payload) {
-  RSCP_DEBUG("setBinaryOutputChannel(%d): ", boc->channel);
+  RSCP_DEBUG("setBinaryOutputChannel(%d): ", bocc->channel);
 
   switch (payload[0]) {
   case 0x10: // boolean false
     RSCP_DEBUG("off\n");
-    setPortPORT(boc->port, 0);
+    setPortPORT(bocc->port, 0);
     break;
   case 0x11: // boolean true
     RSCP_DEBUG("on\n");
-    setPortPORT(boc->port, 1);
+    setPortPORT(bocc->port, 1);
     break;
   default:
     RSCP_DEBUG(
@@ -298,17 +298,21 @@ static void setBinaryOutputChannel(binaryOutputChannel *boc,
     break;
   }
 
-  pollBinaryOutputChannelState(boc); // report new state of output
+  pollBinaryOutputChannelState(boc, bocc); // report new state of output
 }
 
 bool rscp_maybeHandleBOC_CSC(uint16_t channelID, uint8_t *payload) {
-  for (uint16_t i = 0; i < numBinaryOutputChannels; i++)
-    if (binaryOutputChannels[i].channel == channelID) {
-      setBinaryOutputChannel(&(binaryOutputChannels[i]),
-          &(payload[2]));
-      return true;
-    }
+  if(channelID >= firstBinaryOutputChannelID
+      && channelID < firstBinaryOutputChannelID + numBinaryOutputChannels) {
+    uint16_t idx = channelID - firstBinaryOutputChannelID;
+    binaryOutputChannelConfig bocc;
 
+    rscpEEReadStruct(&bocc, binaryOutputChannelConfigs + idx);
+
+    setBinaryOutputChannel(&(binaryOutputChannels[idx]), &bocc, &(payload[2]));
+
+    return true;
+  }
   return false;
 }
 
