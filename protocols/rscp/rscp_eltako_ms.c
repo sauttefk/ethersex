@@ -30,7 +30,6 @@
 #include "rscp_eltako_ms.h"
 
 typedef struct eltakoMSChannelConfig {
-  uint16_t channelID;
   uint8_t subchannelType;
   uint16_t reportInterval;
 } eltakoMSChannelConfig;
@@ -116,7 +115,7 @@ static void pollELTAKOMS(timer *t, void *usr) {
   }
 }
 
-void rscp_parseEltakoChannels(void *ptr, uint16_t items) {
+void rscp_parseEltakoChannels(void *ptr, uint16_t items, uint16_t firstChannelID) {
   eltakoMSChannelConfig *eeConfig = (eltakoMSChannelConfig*) ptr;
 
   eltakoMSChannels = malloc(items * sizeof(eltakoMSChannel));
@@ -132,7 +131,7 @@ void rscp_parseEltakoChannels(void *ptr, uint16_t items) {
 
     uint8_t interval = rscpEEReadByte(cfg->reportInterval);
     c->subchannelType = rscpEEReadByte(cfg->subchannelType);
-    c->channelID = rscpEEReadWord(cfg->channelID);
+    c->channelID = firstChannelID + i;
 
     if(eeConfig[i].reportInterval) {
       uint32_t millis = interval * 1000L;

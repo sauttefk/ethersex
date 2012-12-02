@@ -30,10 +30,6 @@
 
 typedef struct __attribute__ ((packed)) {
   /*
-   * The first RSCP channel ID corresponding to DMX slot #1 (1-based!).
-   */
-  uint16_t firstDMXRSCPChannel;
-  /*
    * The highest DMX slot used (1-based!).
    */
   uint16_t maxDMXSlot;
@@ -54,10 +50,10 @@ uint16_t numDMXChannels;
  * just create an in-RAM copy of the config. It is just four bytes and used rather
  * frequently.
  */
-void rscp_parseDMXChannels(void *ptr, uint16_t items) {
+void rscp_parseDMXChannels(void *ptr, uint16_t items, uint16_t firstChannelID) {
   rscp_dmxChannelConfig *eeConfig = (rscp_dmxChannelConfig*) ptr;
 
-  dmxChannelConfig.firstDMXRSCPChannel = rscpEEReadWord(eeConfig->firstDMXRSCPChannel);
+  dmxChannelConfig.firstDMXRSCPChannel = firstChannelID;
   dmxChannelConfig.maxDMXSlot = rscpEEReadWord(eeConfig->maxDMXSlot);
 
   dmx_txlen = dmxChannelConfig.maxDMXSlot + 1;

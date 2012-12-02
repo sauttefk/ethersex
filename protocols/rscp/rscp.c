@@ -64,7 +64,8 @@ static void parseChannelDefinitions(void) {
   for (uint8_t i = 0; i < numChannelTypes; i++) {
     rscp_chList *chListEntry = &(chConfig->channelTypes[i]);
     uint8_t channelType = rscpEEReadByte(chListEntry->channelType);
-    uint16_t items = rscpEEReadByte(chListEntry->channel_list_items);
+    uint16_t items = rscpEEReadWord(chListEntry->channel_list_items);
+    uint16_t firstChannelID = rscpEEReadWord(chListEntry->firstChannelID);
     void* chConfigPtr = (((void*)conf) + rscpEEReadWord(chListEntry->channel_list_p));
 
     RSCP_DEBUG_CONF(
@@ -72,10 +73,10 @@ static void parseChannelDefinitions(void) {
 
     switch (channelType) {
     case RSCP_CHANNEL_BINARY_INPUT:
-      rscp_parseBIC(chConfigPtr, items);
+      rscp_parseBIC(chConfigPtr, items, firstChannelID);
       break;
     case RSCP_CHANNEL_BINARY_OUTPUT:
-      rscp_parseBOC(chConfigPtr, items);
+      rscp_parseBOC(chConfigPtr, items, firstChannelID);
       break;
 #if 0
       case RSCP_CHANNEL_COMPLEX_INPUT:
@@ -84,23 +85,23 @@ static void parseChannelDefinitions(void) {
       }
       case RSCP_CHANNEL_COMPLEX_OUTPUT:
       {
-        rscp_parseCOC((void *)(chConfigPtr), items);
+        rscp_parseCOC((void *)(chConfigPtr), items, firstChannelID);
         break;
       }
 #endif
 #ifdef RSCP_ONEWIRE_SUPPORT
       case RSCP_CHANNEL_OWTEMPERATURE:
-        rscp_parseOWC(chConfigPtr, items);
+        rscp_parseOWC(chConfigPtr, items, firstChannelID);
         break;
 #endif
 #ifdef RSCP_DMX_SUPPORT
       case RSCP_CHANNEL_DMX:
-        rscp_parseDMXChannels(chConfigPtr, items);
+        rscp_parseDMXChannels(chConfigPtr, items, firstChannelID);
         break;
 #endif
 #ifdef ELTAKOMS_SUPPORT
       case RSCP_CHANNEL_ELTAKO_MS:
-        rscp_parseEltakoChannels(chConfigPtr, items);
+        rscp_parseEltakoChannels(chConfigPtr, items, firstChannelID);
         break;
 #endif
     default:

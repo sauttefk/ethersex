@@ -33,7 +33,7 @@
 #define RSCP_DMX_SUPPORT
 
 void rscp_initDMX();
-void rscp_parseDMXChannels(void *ptr, uint16_t items);
+void rscp_parseDMXChannels(void *ptr, uint16_t items, uint16_t firstChannelID);
 
 
 #endif

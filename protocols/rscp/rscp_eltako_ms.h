@@ -27,7 +27,7 @@
 #ifndef _RSCP_ELTAKO
 #define _RSCP_ELTAKO
 
-void rscp_parseEltakoChannels(void *ptr, uint16_t items);
+void rscp_parseEltakoChannels(void *ptr, uint16_t items, uint16_t firstChannelID);
 void rscp_cleanupEltakoMS();
 
 #endif

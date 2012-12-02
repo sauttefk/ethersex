@@ -245,6 +245,7 @@ typedef struct __attribute__ ((packed))
   uint8_t channelType;          // channel type
   uint16_t channel_list_p;      // channel list pointer
   uint16_t channel_list_items;  // number of channels of this type
+  uint16_t firstChannelID;      // id of first channel of this type
 } rscp_chList;
 
 typedef struct __attribute__ ((packed))

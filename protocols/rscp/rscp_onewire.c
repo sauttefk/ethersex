@@ -87,7 +87,7 @@ hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
       ow_sensor->ow_rom_code.bytewise[6], ow_sensor->ow_rom_code.bytewise[7]);
 }
 
-void rscp_parseOWC(void *ptr, uint16_t items) {
+void rscp_parseOWC(void *ptr, uint16_t items, uint16_t firstChannelID) {
   owList_p = ptr;
   numOwChannels = items;
 
