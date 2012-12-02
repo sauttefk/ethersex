@@ -181,6 +181,7 @@ void rscp_sendPeriodicIrmpEvents(void);
 #define rscpEEReadByte(x) eeprom_read_byte((void*)&(x))
 #define rscpEEReadWord(x) eeprom_read_word((void*)&(x))
 #define rscpEEReadDWord(x) eeprom_read_dword((void*)&(x))
+#define rscpEEReadStruct(mem, x) eeprom_read_block(mem, (void*)(x), sizeof(*(x)))
 #define rscpEEWriteByte(x, w) eeprom_write_byte((void*)&(x), w)
 #define rscpEEWriteWord(x, w) eeprom_write_word((void*)&(x), w)
 #define rscpEEWriteDWord(x, w) eeprom_write_dword((void*)&(x), w)

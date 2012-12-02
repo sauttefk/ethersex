@@ -45,6 +45,10 @@ typedef struct  __attribute__ ((packed))
       uint8_t negate:1;         // negate polarity
     };
   };
+} binaryInputChannelConfig;
+
+typedef struct  __attribute__ ((packed))
+{
   union {
     uint8_t status;             // status flags
     struct {
@@ -55,10 +59,12 @@ typedef struct  __attribute__ ((packed))
       uint8_t :1;
     };
   };
-} binaryInputChannel;
+} binaryInputChannelState;
 
 static uint16_t numBinaryInputChannels;
-static binaryInputChannel *binaryInputChannels;
+static uint16_t firstBinaryInputChannelID;
+static binaryInputChannelConfig *binaryInputChannelConfigs;
+static binaryInputChannelState *binaryInputChannels;
 
 
 typedef struct  __attribute__ ((packed))
@@ -133,34 +139,31 @@ static uint8_t setPortPORT(uint16_t portID, uint8_t value) {
 //}
 
 void rscp_parseBIC(void *ptr, uint16_t items) {
-  binaryInputChannels = malloc(items * sizeof(binaryInputChannel));
-  if (binaryInputChannels == NULL ) {
+  binaryInputChannels = malloc(items * sizeof(binaryInputChannelState));
+  if (!binaryInputChannels) {
     numBinaryInputChannels = 0;
     RSCP_DEBUG_CONF("Out of memory\n");
     return;
   }
 
+  binaryInputChannelConfigs = (binaryInputChannelConfig*) ptr;
   numBinaryInputChannels = items;
-  memset(binaryInputChannels, 0, items * sizeof(binaryInputChannel));
+
+  memset(binaryInputChannels, 0, items * sizeof(binaryInputChannelState));
   RSCP_DEBUG_CONF(
-      "Allocated %d bytes for %d binary input channels\n", items * sizeof(binaryInputChannel), items);
+      "Allocated %d bytes for %d binary input channels\n", items * sizeof(binaryInputChannelState), items);
 
+  binaryInputChannelConfig bicc;
   for (uint16_t i = 0; i < items; ++i) {
-    binaryInputChannels[i].channel =
-        rscpEE_word(binaryInputChannel, channel, ptr);
-    binaryInputChannels[i].port =
-        rscpEE_word(binaryInputChannel, port, ptr);
-    binaryInputChannels[i].flags =
-        rscpEE_byte(binaryInputChannel, flags, ptr);
+    rscpEEReadStruct(&bicc, binaryInputChannelConfigs + i);
 
-//    RSCP_DEBUG_CONF(
-//        "binary input: port: %d - flags: %02x -> %c%c%c\n", rscp_binaryInputChannels[i].port, rscp_binaryInputChannels[i].flags, rscp_binaryInputChannels[i].pullup ? 'P' : 'p', rscp_binaryInputChannels[i].negate ? 'N' : 'n', rscp_binaryInputChannels[i].report ? 'R' : 'r');
+    RSCP_DEBUG_CONF(
+        "binary input: port: %d - flags: %02x -> %c%c%c\n", bicc.port, bicc.flags, bicc.pullup ? 'P' : 'p', bicc.negate ? 'N' : 'n', bicc.report ? 'R' : 'r');
 
-    setPortDDR(binaryInputChannels[i].port, 0);
-    setPortPORT(binaryInputChannels[i].port,
-        binaryInputChannels[i].pullup);
+    setPortDDR(bicc.port, 0);
+    setPortPORT(bicc.port, bicc.pullup);
 
-    ptr += offsetof(binaryInputChannel, status);
+    ptr += offsetof(binaryInputChannelState, status);
   }
 }
 
@@ -221,15 +224,19 @@ void
 rscp_IOChannels_periodic(void)
 {
   /* Check all configured inputs */
+  binaryInputChannelConfig bicc;
   for (uint8_t i = 0; i < numBinaryInputChannels; i++)
   {
-    binaryInputChannel *bic = &binaryInputChannels[i];
+    binaryInputChannelState *bic = &binaryInputChannels[i];
+
+    // read config from eeprom
+    rscpEEReadStruct(&bicc, binaryInputChannelConfigs + i);
 
     /* get current value from portpin... */
     volatile uint8_t portState =
-        *((portPtrType) pgm_read_word(&portConfig[bic->port].portIn));
-    uint8_t bit = 1 << pgm_read_byte(&portConfig[bic->port].pin);
-    uint8_t curState = (portState & bit ? 1 : 0) ^ (bic->negate ? 1 : 0);
+        *((portPtrType) pgm_read_word(&portConfig[bicc.port].portIn));
+    uint8_t bit = 1 << pgm_read_byte(&portConfig[bicc.port].pin);
+    uint8_t curState = (portState & bit ? 1 : 0) ^ (bicc.negate ? 1 : 0);
 
     /* current state hasn't changed since the last read... */
     if (bic->lastRawState == curState)
@@ -255,12 +262,12 @@ rscp_IOChannels_periodic(void)
 
     /* button was stable for debounceDelay * 20 ms */
     if (bic->lastRawState != bic->lastDebouncedState &&
-        bic->debounceDelay <= bic->debounceCounter)
+        bicc.debounceDelay <= bic->debounceCounter)
     {
       bic->lastDebouncedState = bic->lastRawState;
       RSCP_DEBUG_IO("Debounced BinaryInputChannel %hu changed to %hu\n",
-        bic->channel, bic->lastDebouncedState);
-      rscp_txBinaryIOChannelChange(bic->channel, bic->lastDebouncedState);
+        bicc.channel, bic->lastDebouncedState);
+      rscp_txBinaryIOChannelChange(bicc.channel, bic->lastDebouncedState);
     }
   }
 
