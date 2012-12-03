@@ -129,11 +129,12 @@ void rscp_parseEltakoChannels(void *ptr, uint16_t items, uint16_t firstChannelID
     eltakoMSChannelConfig *cfg = eeConfig + i;
     eltakoMSChannel *c = eltakoMSChannels + i;
 
-    uint8_t interval = rscpEEReadByte(cfg->reportInterval);
+    uint16_t interval = rscpEEReadWord(cfg->reportInterval);
     c->subchannelType = rscpEEReadByte(cfg->subchannelType);
     c->channelID = firstChannelID + i;
+    c->previousValue.ui16 = 0xffff;
 
-    if(eeConfig[i].reportInterval) {
+    if(interval) {
       uint32_t millis = interval * 1000L;
 
       RSCP_DEBUG("Scheduling poll of ELTAKO MS subchannel: %d, interval=%ld\n", c->subchannelType, millis);
