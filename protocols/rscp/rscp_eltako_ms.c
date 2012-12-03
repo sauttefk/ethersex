@@ -62,13 +62,13 @@ static void pollELTAKOMS(timer *t, void *usr) {
   case 0x01: // temperature (int16)
     if(eltakoms_data.temperature != c->previousValue.i16) {
       c->previousValue.i16 = eltakoms_data.temperature;
-      rscp_txContinuousIOChannelChange(c->channelID, &(c->previousValue.i16), 1, RSCP_UNIT_TEMPERATURE, rscp_field_Short);
+      rscp_txContinuousIOChannelChange(c->channelID, &(c->previousValue.i16), -1, RSCP_UNIT_TEMPERATURE, rscp_field_Decimal16);
     }
     break;
   case 0x05: // wind (uint16)
     if(eltakoms_data.wind != c->previousValue.i16) {
       c->previousValue.ui16 = eltakoms_data.wind;
-      rscp_txContinuousIOChannelChange(c->channelID, &(c->previousValue.ui16), 1, RSCP_UNIT_SPEED, rscp_field_UnsignedShort);
+      rscp_txContinuousIOChannelChange(c->channelID, &(c->previousValue.ui16), -1, RSCP_UNIT_SPEED, rscp_field_Decimal16);
     }
     break;
   case 0x06: // twilight (uint16)

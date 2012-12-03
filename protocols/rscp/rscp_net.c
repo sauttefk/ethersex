@@ -244,14 +244,13 @@ rscp_txContinuousIOChannelChange (uint16_t channel, void *value, int8_t scale, u
 
   // set unit and value
   rscp_encodeUInt8(unit, buffer);
-  rscp_encodeUInt8(fieldType, buffer);
   switch(fieldType) {
-  case rscp_field_Byte: rscp_encodeInt8(*((int8_t*)value), buffer); break;
-  case rscp_field_UnsignedByte: rscp_encodeUInt8(*((uint8_t*)value), buffer); break;
-  case rscp_field_Short: rscp_encodeInt16(*((int16_t*)value), buffer); break;
-  case rscp_field_UnsignedShort: rscp_encodeUInt16(*((uint16_t*)value), buffer); break;
-  case rscp_field_Integer: rscp_encodeInt32(*((int32_t*)value), buffer); break;
-  case rscp_field_UnsignedInteger: rscp_encodeUInt32(*((uint32_t*)value), buffer); break;
+  case rscp_field_Byte: rscp_encodeInt8Field(*((int8_t*)value), buffer); break;
+  case rscp_field_UnsignedByte: rscp_encodeUInt8Field(*((uint8_t*)value), buffer); break;
+  case rscp_field_Short: rscp_encodeInt16Field(*((int16_t*)value), buffer); break;
+  case rscp_field_UnsignedShort: rscp_encodeUInt16Field(*((uint16_t*)value), buffer); break;
+  case rscp_field_Integer: rscp_encodeInt32Field(*((int32_t*)value), buffer); break;
+  case rscp_field_UnsignedInteger: rscp_encodeUInt32Field(*((uint32_t*)value), buffer); break;
   case rscp_field_Long:
   case rscp_field_UnsignedLong:
   case rscp_field_Float:
