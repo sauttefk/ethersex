@@ -25,6 +25,7 @@
 #ifdef RSCP_SUPPORT
 #ifdef ELTAKOMS_SUPPORT
 
+#include <stdlib.h>
 #include "timer.h"
 #include "protocols/eltakoms/eltakoms.h"
 #include "rscp_eltako_ms.h"
@@ -79,20 +80,20 @@ static void pollELTAKOMS(timer *t, void *usr) {
     break;
   case 0x02: // sun east (uint8)
     if(eltakoms_data.sune != c->previousValue.i16) {
-      c->previousValue.ui8 = eltakoms_data.sune;
-      rscp_txContinuousIOChannelChange(c->channelID, &(c->previousValue.ui8), 3, RSCP_UNIT_ILLUMINATION, rscp_field_UnsignedByte);
+      uint32_t tmp = c->previousValue.ui8 = eltakoms_data.sune;
+      rscp_txContinuousIOChannelChange(c->channelID, &tmp, 0, RSCP_UNIT_ILLUMINATION, rscp_field_UnsignedInteger);
     }
     break;
   case 0x03: // sun south (uint8)
     if(eltakoms_data.suns != c->previousValue.i16) {
-      c->previousValue.ui8 = eltakoms_data.suns;
-      rscp_txContinuousIOChannelChange(c->channelID, &(c->previousValue.ui8), 3, RSCP_UNIT_ILLUMINATION, rscp_field_UnsignedByte);
+      uint32_t tmp = c->previousValue.ui8 = eltakoms_data.suns;
+      rscp_txContinuousIOChannelChange(c->channelID, &tmp, 0, RSCP_UNIT_ILLUMINATION, rscp_field_UnsignedInteger);
     }
     break;
   case 0x04: // sun west (uint8)
     if(eltakoms_data.sunw != c->previousValue.i16) {
-      c->previousValue.ui8 = eltakoms_data.sunw;
-      rscp_txContinuousIOChannelChange(c->channelID, &(c->previousValue.ui8), 3, RSCP_UNIT_ILLUMINATION, rscp_field_UnsignedByte);
+      uint32_t tmp = c->previousValue.ui8 = eltakoms_data.sunw;
+      rscp_txContinuousIOChannelChange(c->channelID, &tmp, 0, RSCP_UNIT_ILLUMINATION, rscp_field_UnsignedInteger);
     }
     break;
 
