@@ -118,7 +118,7 @@ static void pollELTAKOMS(timer *t, void *usr) {
 void rscp_parseEltakoChannels(void *ptr, uint16_t items, uint16_t firstChannelID) {
   eltakoMSChannelConfig *eeConfig = (eltakoMSChannelConfig*) ptr;
 
-  eltakoMSChannels = malloc(items * sizeof(eltakoMSChannel));
+  eltakoMSChannels = (eltakoMSChannel*) malloc(items * sizeof(eltakoMSChannel));
   if(!eltakoMSChannels) {
     RSCP_DEBUG("Can't allocate memory for channels\n");
     return;
