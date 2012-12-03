@@ -279,7 +279,7 @@ static void parseConfig(void) {
   // we expect the configuration to immediately follow the rscpConfiguration structure
   rscp_conf_header *conf = (rscp_conf_header*) rscpEEReadWord(rscpConfiguration->p);
   if((uint16_t)conf != expectedConfigOffset) {
-    RSCP_DEBUG_CONF("Updating config offset from %hd to %hd\n", conf, expectedConfigOffset);
+    RSCP_DEBUG_CONF("Updating config offset from %03hx to %03hx\n", conf, expectedConfigOffset);
     rscpEEWriteWord(rscpConfiguration->p, expectedConfigOffset);
   }
 
