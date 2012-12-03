@@ -276,16 +276,16 @@ static void parseConfig(void) {
   RSCP_DEBUG_CONF(
       "Initializing. Start of rscp config in eeprom: 0x%03hx, config file @0x%03hx\n", rscpConfiguration, expectedConfigOffset);
 
+  // we expect the configuration to immediately follow the rscpConfiguration structure
+  rscp_conf_header *conf = (rscp_conf_header*) rscpEEReadWord(rscpConfiguration->p);
+  if((uint16_t)conf != expectedConfigOffset) {
+    RSCP_DEBUG_CONF("Updating config offset from %hd to %hd\n", conf, expectedConfigOffset);
+    rscpEEWriteWord(rscpConfiguration->p, expectedConfigOffset);
+  }
+
   // verify config status in eeprom
   uint8_t status = rscpEEReadByte(rscpConfiguration->status);
   if (status == rscp_configValid) {
-    // we expect the configuration to immediately follow the rscpConfiguration structure
-    rscp_conf_header *conf = (rscp_conf_header*) rscpEEReadWord(rscpConfiguration->p);
-    if((uint16_t)conf != expectedConfigOffset) {
-      RSCP_DEBUG_CONF("Updating config offset from %hd to %hd\n", conf, expectedConfigOffset);
-      rscpEEWriteWord(rscpConfiguration->p, expectedConfigOffset);
-    }
-
     // Verify config CRC
     uint32_t actualCRC = calcConfigCRC();
     uint32_t expectedCRC = rscpEEReadDWord(rscpConfiguration->crc32);
