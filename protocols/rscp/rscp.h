@@ -79,6 +79,7 @@ void rscp_sendPeriodicIrmpEvents(void);
 #define RSCP_SEGMENT_CTRL_HEARTBEAT   0x0101
 
 #define RSCP_CHANNEL_STATE_CMD        0x8001
+#define RSCP_TRANSITION_CMD           0x8002
 
 #define RSCP_FILE_TRANSFER_REQUEST    0x8110
 #define RSCP_FILE_TRANSFER_RESPONSE   0x8111

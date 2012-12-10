@@ -31,6 +31,7 @@
 
 #include "rscp_eltako_ms.h"
 #include "rscp_onewire.h"
+#include "rscp_dmx.h"
 
 // the interval at which we check whether there's a more recent configuration available
 #define CONFIG_CHECK_INTERVAL 60000
@@ -372,6 +373,17 @@ static void handleChannelStateCommand(uint8_t* payload) {
   // ...more channel types
 }
 
+typedef struct {
+  uint16_t channelID;
+  float startValue;
+  float finalValue;
+
+} transition;
+
+static void handleTransitionCommand(uint8_t* payload) {
+  // FIXME
+}
+
 static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
     uint8_t *payload) {
 #ifdef RSCP_DEBUG
@@ -485,6 +497,10 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
 
   case RSCP_CHANNEL_STATE_CMD:
     handleChannelStateCommand(&(payload[6]));
+    break;
+
+  case RSCP_TRANSITION_CMD:
+    handleTransitionCommand(&(payload[6]));
     break;
 
   case RSCP_FILE_TRANSFER_RESPONSE: {
