@@ -36,9 +36,9 @@ typedef struct __attribute__ ((packed)) {
 } rscp_dmxChannelConfig;
 
 /*
- * This is the in-RAM copy if the configuration above.
+ * The first RSCP channel ID corresponding to DMX slot #1 (1-based!).
  */
-rscp_dmxChannelConfig dmxChannelConfig;
+uint16_t firstDMXRSCPChannel;
 
 /*
  * The number of DMX channels used. There may be gaps in the used channels,
@@ -47,47 +47,51 @@ rscp_dmxChannelConfig dmxChannelConfig;
 uint16_t numDMXChannels;
 
 /*
+ * The highest DMX slot used (1-based!).
+ */
+uint16_t maxDMXSlot;
+
+/*
  * just create an in-RAM copy of the config. It is just four bytes and used rather
  * frequently.
  */
 void rscp_parseDMXChannels(void *ptr, uint16_t items, uint16_t firstChannelID) {
   rscp_dmxChannelConfig *eeConfig = (rscp_dmxChannelConfig*) ptr;
 
-  dmxChannelConfig.firstDMXRSCPChannel = firstChannelID;
-  dmxChannelConfig.maxDMXSlot = rscpEEReadWord(eeConfig->maxDMXSlot);
+  firstDMXRSCPChannel = firstChannelID;
+  maxDMXSlot = rscpEEReadWord(eeConfig->maxDMXSlot);
 
-  dmx_txlen = dmxChannelConfig.maxDMXSlot + 1;
+  dmx_txlen = maxDMXSlot + 1;
 
-  RSCP_DEBUG_CONF("DMX: first rscp channel: %d, max DMX slot: %d\n",
-      dmxChannelConfig.firstDMXRSCPChannel, dmxChannelConfig.maxDMXSlot);
+  RSCP_DEBUG_CONF("DMX: first rscp channel: %d, max DMX slot: %d\n", firstDMXRSCPChannel, maxDMXSlot);
 }
 
 void rscp_initDMX() {
-  dmxChannelConfig.firstDMXRSCPChannel = 0;
-  dmxChannelConfig.maxDMXSlot = 0;
+  firstDMXRSCPChannel = 0;
+  maxDMXSlot = 0;
 }
 
 bool rscp_maybeHandleDMX_CSC(uint16_t channelID, uint8_t *payload) {
   // ... in range associated with DMX
-  if(dmxChannelConfig.maxDMXSlot > 0
-      && channelID >= dmxChannelConfig.firstDMXRSCPChannel && channelID < dmxChannelConfig.firstDMXRSCPChannel + dmxChannelConfig.maxDMXSlot) {
+  if(maxDMXSlot > 0
+      && channelID >= firstDMXRSCPChannel && channelID < firstDMXRSCPChannel + maxDMXSlot) {
     int32_t value = 0;
-    switch(payload[2]) {
+    switch(payload[0]) {
     case rscp_field_Byte:
-      value = payload[3];
+      value = payload[1];
       break;
     case rscp_field_Short:
-      value = ntohs(*((int16_t*)(payload + 3)));
+      value = ntohs(*((int16_t*)(payload + 1)));
       break;
     case rscp_field_Integer:
-      value = ntohl(*((int32_t*)(payload + 3)));
+      value = ntohl(*((int32_t*)(payload + 1)));
       break;
     default:
       RSCP_DEBUG("Invalid field type for DMX channel: %d", payload[2]);
     }
 
     if(value >= 0 && value <= 255)
-      set_dmx_channel(0, channelID - dmxChannelConfig.firstDMXRSCPChannel, value);
+      set_dmx_channel(0, channelID - firstDMXRSCPChannel, value);
     else
       RSCP_DEBUG("Invalid DMX channel value: %ld", value);
     return true;
