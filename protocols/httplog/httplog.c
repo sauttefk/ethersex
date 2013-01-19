@@ -98,6 +98,7 @@ httplog_net_main(void)
     p += sprintf_P(p, get_string_foot);
     uip_udp_send(p - (char *) uip_appdata);
     HTTPLOG_DEBUG("send %d bytes\n", p - (char *) uip_appdata);
+    HTTPLOG_DEBUG("%s\n", uip_appdata);
   }
 
   if (uip_acked())
