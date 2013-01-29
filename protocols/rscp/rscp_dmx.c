@@ -38,25 +38,25 @@ typedef struct __attribute__ ((packed)) {
 /*
  * The first RSCP channel ID corresponding to DMX slot #1 (1-based!).
  */
-uint16_t firstDMXRSCPChannel;
+static uint16_t firstDMXRSCPChannel;
 
 /*
  * The number of DMX channels used. There may be gaps in the used channels,
  * but this node doesn't care about that at the moment.
  */
-uint16_t numDMXChannels;
+static uint16_t numDMXChannels;
 
 /*
  * The highest DMX slot used (1-based!).
  */
-uint16_t maxDMXSlot;
+static uint16_t maxDMXSlot;
 
 /*
  * just create an in-RAM copy of the config. It is just four bytes and used rather
  * frequently.
  */
-void rscp_parseDMXChannels(void *ptr, uint16_t items, uint16_t firstChannelID) {
-  rscp_dmxChannelConfig *eeConfig = (rscp_dmxChannelConfig*) ptr;
+void rscp_parseDMXChannels(void *configPtr, uint16_t items, uint16_t firstChannelID) {
+  rscp_dmxChannelConfig *eeConfig = (rscp_dmxChannelConfig*) configPtr;
 
   firstDMXRSCPChannel = firstChannelID;
   maxDMXSlot = rscpEEReadWord(eeConfig->maxDMXSlot);
@@ -66,9 +66,11 @@ void rscp_parseDMXChannels(void *ptr, uint16_t items, uint16_t firstChannelID) {
   RSCP_DEBUG_CONF("DMX: first rscp channel: %d, max DMX slot: %d\n", firstDMXRSCPChannel, maxDMXSlot);
 }
 
-void rscp_initDMX() {
-  firstDMXRSCPChannel = 0;
-  maxDMXSlot = 0;
+static void pollState(void) {
+  for(int i = 0; i < maxDMXSlot; i++) {
+    uint8_t value = get_dmx_channel(0, i - firstDMXRSCPChannel);
+    rscp_txContinuousIOChannelChange(firstDMXRSCPChannel + i, &value, 0, RSCP_UNIT_BOOLEAN, rscp_field_UnsignedByte);
+  }
 }
 
 bool rscp_maybeHandleDMX_CSC(uint16_t channelID, uint8_t *payload) {
@@ -90,13 +92,36 @@ bool rscp_maybeHandleDMX_CSC(uint16_t channelID, uint8_t *payload) {
       RSCP_DEBUG("Invalid field type for DMX channel: %d", payload[2]);
     }
 
-    if(value >= 0 && value <= 255)
-      set_dmx_channel(0, channelID - firstDMXRSCPChannel, value);
-    else
+    if(value >= 0 && value <= 255) {
+      uint16_t dmxChannel = channelID - firstDMXRSCPChannel;
+      uint8_t value = get_dmx_channel(0, dmxChannel);
+      set_dmx_channel(0, dmxChannel, value);
+      rscp_txContinuousIOChannelChange(firstDMXRSCPChannel + dmxChannel, &value, 0, RSCP_UNIT_BOOLEAN, rscp_field_UnsignedByte);
+    } else
       RSCP_DEBUG("Invalid DMX channel value: %ld", value);
     return true;
   }
   return false;
 }
+
+void rscp_initDMX() {
+  static rscp_channelDriver driverConfig;
+
+  firstDMXRSCPChannel = 0;
+  maxDMXSlot = 0;
+
+  driverConfig.channelName = "dmx";
+  driverConfig.configureChannels = &rscp_parseDMXChannels;
+  driverConfig.handleChannelStateCommand = &rscp_maybeHandleDMX_CSC;
+  driverConfig.pollState =  &pollState;
+
+  rscp_registerChannelDriver(&driverConfig);
+}
+
+/*
+ -- Ethersex META --
+ init(rscp_initDMX)
+ block(Miscelleanous)
+ */
 #endif
 #endif

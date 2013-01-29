@@ -79,6 +79,8 @@ void rscp_sendPeriodicIrmpEvents(void);
 #define RSCP_SEGMENT_CTRL_HEARTBEAT   0x0101
 
 #define RSCP_CHANNEL_STATE_CMD        0x8001
+#define RSCP_INQUIRE_NODE_STATE       0x8003
+#define RSCP_INQUIRE_CHANNEL_STATE    0x8004
 
 #define RSCP_FILE_TRANSFER_REQUEST    0x8110
 #define RSCP_FILE_TRANSFER_RESPONSE   0x8111
@@ -103,6 +105,7 @@ void rscp_sendPeriodicIrmpEvents(void);
 #define RSCP_UNIT_BOOLEAN             0x09  // Boolean (on/off)
 #define RSCP_UNIT_SPEED               0x0a  // Speed (m/s)
 #define RSCP_UNIT_ILLUMINATION        0x0b  // Illumination (Lux)
+#define RSCP_UNIT_ABSTRACT            0x0c  // Any abstract value
 
 #define RSCP_FIELD_CAT_LEN_TINY       0x0   // length encoded in the lll bits
 #define RSCP_FIELD_CAT_LEN_BYTE       0x1   // length follows as one-byte length specifier
@@ -215,6 +218,23 @@ typedef struct __attribute__ ((packed))
 } rscp_configuration;
 
 rscp_configuration *rscpConfiguration;
+
+/*
+ * Dynamic channel driver configuration. Channel drivers register themselves with the core
+ * using this structure;
+ */
+typedef struct __attribute__ ((packed)) {
+  char *channelName;
+  void (*configureChannels)(void *configPtr, uint16_t items, uint16_t firstChannelID);
+  bool (*handleChannelStateCommand)(uint16_t channelID, uint8_t *payload);
+  void (*pollState)(void);
+  void (*unconfigure)(void);
+} rscp_channelDriver;
+
+/*
+ * Register an rscp channel driver with the core.
+ */
+void rscp_registerChannelDriver(rscp_channelDriver *channelDriver);
 
 #define NUM_SEGMENT_CONTROLLERS 4
 typedef struct __attribute__ ((packed)) {

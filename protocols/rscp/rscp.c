@@ -38,6 +38,9 @@
 /* local variables */
 volatile uint8_t rscp_heartbeatCounter;
 
+#define MAX_CHANNEL_DRIVERS         10
+
+static rscp_channelDriver *channelDrivers[MAX_CHANNEL_DRIVERS];
 
 static void parseRuleDefinitions(void) {
   void *ptr = (void *) (rscpEE_word(rscp_conf_header, rule_p,
@@ -429,6 +432,10 @@ static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
     initiateConfigDownload();
 }
 
+void publishNodeState(void) {
+  // FIXME
+}
+
 void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     uint16_t payload_len, uint8_t * payload) {
 #ifdef RSCP_DEBUG_MSG
@@ -485,6 +492,10 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
 
   case RSCP_CHANNEL_STATE_CMD:
     handleChannelStateCommand(&(payload[6]));
+    break;
+
+  case RSCP_INQUIRE_NODE_STATE:
+    publishNodeState();
     break;
 
   case RSCP_FILE_TRANSFER_RESPONSE: {
@@ -582,6 +593,17 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     break;
   }
   }
+}
+
+void rscp_registerChannelDriver(rscp_channelDriver *channelDriver) {
+  for(int i=0; i<MAX_CHANNEL_DRIVERS; i++) {
+    if(!channelDrivers[i]) {
+      channelDrivers[i] = channelDriver;
+      return;
+    }
+  }
+
+  RSCP_DEBUG("Can't register channel driver: out of driver slots\n");
 }
 
 #ifdef IRMP_SUPPORT

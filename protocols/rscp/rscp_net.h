@@ -40,6 +40,7 @@
 #endif /* ntohl */
 
 /* constants */
+#define RSCP_MESSAGE_VERSION          0
 
 typedef enum rscp_networkMode {
   rscp_ModeRawEthernet,
@@ -50,7 +51,7 @@ typedef enum rscp_networkMode {
 /* structs */
 typedef struct rscp_message
 {
-  uint8_t  version;                   // The version, currently 0
+  uint8_t  version;                   // The version, currently 1
   uint8_t  header_len;                // The length of the header
   uint32_t timestamp;                 // timestamp in miliseconds
   uint16_t msg_type;                  // RSCP message type
