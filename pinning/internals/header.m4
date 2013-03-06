@@ -26,6 +26,7 @@ dnl
    Please do not modify it, edit the m4 scripts below pinning/ instead. */
 
 /* code to en-/disable RS485 transmitters depending on the usart used */
+#ifdef USE_USART
 #undef RS485_HAVE_TE
 #undef RS485_DISABLE_TX
 #undef RS485_ENABLE_TX
@@ -45,6 +46,7 @@ dnl
   #define RS485_DISABLE_TX  /* empty */
   #define RS485_ENABLE_TX   /* empty */
   #define RS485_TE_SETUP    /* empty */
+#endif
 #endif
 
 divert(-1)dnl
