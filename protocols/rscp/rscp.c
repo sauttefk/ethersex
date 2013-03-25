@@ -237,9 +237,9 @@ static void parseConfig(void);
 static void delayedInit(timer *t, void *user) {
   static uint8_t trys = 25;
 
-  if(!syslog_is_available() && trys-- > 0)
-    timer_schedule_after_msecs(&delayedInitTimer, 200);
-  else
+//  if(!syslog_is_available() && trys-- > 0)
+//    timer_schedule_after_msecs(&delayedInitTimer, 200);
+//  else
     parseConfig(); // give up for now
 }
 

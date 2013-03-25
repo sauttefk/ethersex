@@ -30,27 +30,41 @@
 
 #include "protocols/ecmd/ecmd-base.h"
 
-#define CRC_BYTE_POS 0x37FE
+#ifdef BOOTLOADER_JUMP
+  #define CRC_BYTE_POS (FLASHEND - BOOTLOADER_SIZE - 1)
+#else
+  #define CRC_BYTE_POS (FLASHEND - 1)
+#endif
 
-int16_t parse_cmd_crc_calc(char *cmd, char *output, uint16_t len)
+int16_t
+parse_cmd_crc_calc(char *cmd, char *output, uint16_t len)
 {
-    char *p;
-    uint16_t crc=0xffff;
-    
-    for(p=0; p < (char*)CRC_BYTE_POS; p++)
-        crc=_crc16_update(crc,pgm_read_byte(p));
+  uint16_t crc = 0xffff;
+#if FLASHEND > UINT16_MAX
+  uint_farptr_t p;
 
-    return ECMD_FINAL(sprintf_P(output, PSTR("%.4X"), crc));
+  for (p = 0; p < (uint_farptr_t) CRC_BYTE_POS; p++)
+    crc = _crc16_update(crc, pgm_read_byte_far(p));
+#else
+  uint8_t *p;
+  for (p = 0; p < (uint8_t *) CRC_BYTE_POS; p++)
+    crc = _crc16_update(crc, pgm_read_byte(p));
+#endif
+
+  return ECMD_FINAL(sprintf_P(output, PSTR("%.4X"), crc));
 }
 
-int16_t parse_cmd_crc_read(char *cmd, char *output, uint16_t len)
-{
-    uint16_t crc;
 
-    crc=pgm_read_word(CRC_BYTE_POS);
-    
-    return ECMD_FINAL(sprintf_P(output, PSTR("%.4X"), crc));
+int16_t
+parse_cmd_crc_read(char *cmd, char *output, uint16_t len)
+{
+  uint16_t crc;
+
+  crc = pgm_read_word_far(CRC_BYTE_POS);
+
+  return ECMD_FINAL(sprintf_P(output, PSTR("%.4X"), crc));
 }
+
 
 /*
   -- Ethersex META --

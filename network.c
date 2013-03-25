@@ -28,6 +28,7 @@
 #include "network.h"
 #include "config.h"
 #include "core/eeprom.h"
+#include "core/mbr.h"
 #include "protocols/uip/ipv6.h"
 #include "protocols/zbus/zbus.h"
 
@@ -40,13 +41,7 @@
 #include "services/tftp/tftp.h"
 #include "hardware/ethernet/enc28j60.h"
 
-#ifdef BOOTLOADER_SUPPORT
-extern uint8_t bootload_delay;
-#endif
-
 extern void ethersex_meta_netinit (void);
-
-
 
 void
 network_init(void)
@@ -112,9 +107,13 @@ network_init(void)
 #   if defined(IPV6_STATIC_SUPPORT) && defined(TFTPOMATIC_SUPPORT)
     const char *filename = CONF_TFTP_IMAGE;
     set_CONF_TFTP_IP(&ip);
-
-    tftp_fire_tftpomatic(&ip, filename);
-    bootload_delay = CONF_BOOTLOAD_DELAY;
+#ifdef MBR_SUPPORT
+    if (mbr.bootloader == 1)
+#endif
+    {
+      tftp_fire_tftpomatic(&ip, filename, 0);
+      bootload_delay = CONF_BOOTLOAD_DELAY;
+    }
 #   endif /* IPV6_STATIC_SUPPORT && TFTPOMATIC_SUPPORT */
 
 

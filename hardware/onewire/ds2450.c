@@ -536,7 +536,7 @@ ow_ds2450_get(ow_rom_code_t * rom, uint8_t channel_start,
   if (++num_channels <= 0 || num_channels > 4)
     return -4;
 
-  b = malloc(sizeof(uint8_t) * num_channels * 2);
+  b = __builtin_alloca(sizeof(uint8_t) * num_channels * 2);
 
 #ifndef TEENSY_SUPPORT
   /* check if malloc did fine */
@@ -553,7 +553,9 @@ ow_ds2450_get(ow_rom_code_t * rom, uint8_t channel_start,
                            num_channels * 2, b);
 
   if (ret != num_channels * 2)
+  {
     return -2;
+  }
 
   for (i = 0; i < num_channels; ++i)
   {
@@ -579,8 +581,8 @@ ow_ds2450_get(ow_rom_code_t * rom, uint8_t channel_start,
  * returns the number of bytes successfully read, -1 on failure
  */
 int8_t
-ow_ds2450_mempage_read(ow_rom_code_t * rom, int8_t mempage, uint8_t len,
-                       uint8_t * mem)
+ow_ds2450_mempage_read(ow_rom_code_t * rom, const int8_t mempage,
+                       const uint8_t len, uint8_t * mem)
 {
   // FIXME: currently only on 1st bus
   uint8_t mask = 1 << (ONEWIRE_STARTPIN);
