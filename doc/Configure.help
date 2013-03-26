@@ -841,6 +841,9 @@ TFTP_CRC_SUPPORT
     - If file does not exist or content does not match current application 
       CRC, then try to load and program application
   
+  %M is replaced with '-[MAC-ADDRESS]' (13 characters hex uppercase) in both
+  (CRC and binary) filenames
+  
   The filename of the CRC-file is constructed out of the application filename
   having additional formatting keys.
   %m : replace with '-[MAC-ADDRESS]' (13 characters hex uppercase)
@@ -848,10 +851,19 @@ TFTP_CRC_SUPPORT
   %e : replace with '.crc' - the rest of the filename is truncated
   %C : replace with '' - verify CRC-file content
   
-  Example:
+  Example 1:
   Supplied filename:    ethersex%m%c%e.bin
   CRC-filename:         ethersex-DEADBEEFCAFE-1337.crc
   Application filename: ethersex.bin
+  Existence of CRC-file is checked. If not existent, application binary is
+  loaded and programmed into flash.
+
+  Example 2:
+  Supplied filename:    %Cethersex%M%e.bin
+  CRC-filename:         ethersex-DEADBEEFCAFE.crc
+  Application filename: ethersex-DEADBEEFCAFE.bin
+  Content of CRC-file is checked for correct CRC of application. If content 
+  mismatchces application binary is loaded and programmed into flash.
 
 MDNS service announcement (Avahi)
 MDNS_SD_SUPPORT
@@ -1186,7 +1198,7 @@ DISABLE_IPCONF_SUPPORT
    * Networking support (UIP_SUPPORT)
    * ECMD support (ECMD_PARSER_SUPPORT)
 
-  Disable the ecmd's to set ip, gw, netmask and mac
+  Disable the ECMDs to set ip, gw, netmask and mac
 
 Disable remote reboot
 DISABLE_REBOOT_SUPPORT
@@ -3123,4 +3135,18 @@ ONEWIRE_HOOK_SUPPORT
    * Onewire Polling (ONEWIRE_POLLING_SUPPORT)
 
   Support for callback hooks. For details see hook.def in the top directory.
+
+Bootloader timeout
+CONF_BOOTLOAD_DELAY
+  How long to wait for a remote server to answer until the bootloader exits.
+  Measured in 1/50th seconds. Default value 250 = 5 seconds.
+
+TFTP image to load
+CONF_TFTP_IMAGE
+  Filename of binary image to load from and programm into the application flash
+  memory when in TFTP-o-matic mode.
+
+Address of TFTP-Server
+CONF_TFTP_IP
+  IPv4 or IPv6 address of TFTP-server when in TFTP-o-matic mode.
 
