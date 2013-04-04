@@ -1082,6 +1082,7 @@ Select the default profile you wish to load. \
 			alpengluehn	  "Alpengluehn 16 Channel LED Driver Hardware"  0 \
 			antares_O	  "Antares O - AT90CAN, 40 Outputs, DIN rail"   0 \
 			antares_I	  "Antares I - AT90CAN, 32 Inputs, DIN rail"    0 \
+			antares_IO	  "Antares IO - AT90CAN, 16 Inputs, 16 Outputs, DIN rail"    0 \
 			beteigeuze	  "Beteigeuze - AT90CAN, 42 I/O, Unterputzdose" 0 \
 			rscp_bootloader	  "RSCP Bootloader"                             0 \
 			 2>MCdialog.out
