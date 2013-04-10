@@ -299,6 +299,7 @@ uint8_t sd_raw_init(void)
         if(i == 0x7fff)
         {
             unselect_card();
+            SDDEBUG ("SDcard timeout\n");
             return 0;
         }
     }
@@ -321,6 +322,7 @@ uint8_t sd_raw_init(void)
     }
 #endif
 
+    SDDEBUG ("SDcard ready\n");
     /* set block size to 512 bytes */
     if(sd_raw_send_command(CMD_SET_BLOCKLEN, 512))
     {
@@ -343,9 +345,13 @@ uint8_t sd_raw_init(void)
     raw_block_written = 1;
 #endif
     if(!sd_raw_read(0, raw_block, sizeof(raw_block)))
+    {
+        SDDEBUG ("SDcard blöd\n");
         return 0;
+    }
 #endif
 
+    SDDEBUG ("SDcard exit\n");
     return 1;
 }
 
