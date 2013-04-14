@@ -24,13 +24,17 @@
 
 #include "config.h"
 #include "core/bit-macros.h"
+#ifdef RFM12_ASK_FS20_RX_SUPPORT
+#include "core/util/byte2hex.h"
+#endif
 #include "protocols/ecmd/ecmd-base.h"
 
+#include "rfm12.h"
 #include "rfm12_fs20.h"
 #include "rfm12_fs20_lib.h"
 #include "rfm12_fs20_ecmd.h"
 
-#ifdef RFM12_ASK_FS20_SUPPORT
+#ifdef RFM12_ASK_FS20_TX_SUPPORT
 typedef void (*fs20_func_t) (uint16_t, uint8_t, uint8_t, uint8_t);
 
 static int16_t
@@ -61,44 +65,45 @@ parse_cmd_rfm12_fs20_send(char *cmd, char *output, uint16_t len)
   return parse_cmd_rfm12_internal(cmd, output, len, rfm12_fs20_send);
 }
 
-#endif
-
 #ifdef RFM12_ASK_FHT_SUPPORT
 int16_t
 parse_cmd_rfm12_fht_send(char *cmd, char *output, uint16_t len)
 {
   return parse_cmd_rfm12_internal(cmd, output, len, rfm12_fht_send);
 }
-#endif
+#endif /* RFM12_ASK_FHT_SUPPORT */
+#endif /* RFM12_ASK_FS20_TX_SUPPORT */
 
+#ifdef RFM12_ASK_FS20_RX_SUPPORT
 int16_t
-parse_cmd_rfm12_fs20_setgain(char *cmd, char *output, uint16_t len)
+parse_cmd_rfm12_fs20_receive(char *cmd, char *output, uint16_t len)
 {
-  (void) output;
+  (void) cmd;
   (void) len;
 
-  uint8_t gain;
-  if (1 != sscanf_P(cmd, PSTR("%hhu"), &gain))
-    return ECMD_ERR_PARSE_ERROR;
+  fs20_data_t *fs20_data_p = rfm12_fs20_read();
+  if (fs20_data_p == 0)
+    return ECMD_FINAL_OK;
 
-  rfm12_fs20_setgain(gain);
-  return ECMD_FINAL_OK;
+  output[0] = fs20_data_p->datatype;
+  uint8_t count = fs20_data_p->count;
+  if (fs20_data_p->nibble)
+    count--;
+  int16_t len_out = 1;
+  for (uint8_t i = 0; i < count; i++)
+    len_out += byte2hex(fs20_data_p->data[i], &output[len_out]);
+  if (fs20_data_p->nibble)
+  {
+    byte2hex(fs20_data_p->data[count], &output[len_out]);
+    output[len_out] = output[len_out + 1];
+    len_out++;
+  }
+  output[len_out] = '\0';
+
+  return ECMD_FINAL(len_out);
 }
 
-int16_t
-parse_cmd_rfm12_fs20_setdrssi(char *cmd, char *output, uint16_t len)
-{
-  (void) output;
-  (void) len;
-
-  uint8_t drssi;
-  if (1 != sscanf_P(cmd, PSTR("%hhu"), &drssi))
-    return ECMD_ERR_PARSE_ERROR;
-
-  rfm12_fs20_setdrssi(drssi);
-  return ECMD_FINAL_OK;
-}
-
+#ifdef DEBUG_ASK_FS20
 int16_t
 parse_cmd_rfm12_fs20_setdebug(char *cmd, char *output, uint16_t len)
 {
@@ -112,19 +117,22 @@ parse_cmd_rfm12_fs20_setdebug(char *cmd, char *output, uint16_t len)
   rx_report = debug;
   return ECMD_FINAL_OK;
 }
+#endif /* DEBUG_ASK_FS20 */
+#endif /* RFM12_ASK_FS20_RX_SUPPORT */
 
 /*
 -- Ethersex META --
   block([[RFM12_FS20]])
-  ecmd_ifdef(RFM12_ASK_FS20_SUPPORT)
+  ecmd_ifdef(RFM12_ASK_FS20_TX_SUPPORT)
     ecmd_feature(rfm12_fs20_send, "fs20 send", , housecode addr command data)
+    ecmd_ifdef(RFM12_ASK_FHT_SUPPORT)
+      ecmd_feature(rfm12_fht_send, "fht send", , housecode addr command data)
+    ecmd_endif()
   ecmd_endif()
-  ecmd_ifdef(RFM12_ASK_FHT_SUPPORT)
-    ecmd_feature(rfm12_fht_send, "fht send", , housecode addr command data)
-  ecmd_endif()
-  ecmd_feature(rfm12_fs20_setgain, "fs20 setgain", GAIN, Set preamplifier gain to GAIN.)
-  ecmd_feature(rfm12_fs20_setdrssi, "fs20 setdrssi", DRSSI, Set the drssi to DRSSI.)
-  ecmd_ifdef(DEBUG_ASK_FS20)
-    ecmd_feature(rfm12_fs20_setdebug, "fs20 setdebug", DEBUG, Set debug to DEBUG.)
+  ecmd_ifdef(RFM12_ASK_FS20_RX_SUPPORT)
+    ecmd_feature(rfm12_fs20_receive, "fs20 receive", , Receive FS20/FHT sequence and display it.)
+    ecmd_ifdef(DEBUG_ASK_FS20)
+      ecmd_feature(rfm12_fs20_setdebug, "fs20 setdebug", DEBUG, Set debug to DEBUG.)
+    ecmd_endif()
   ecmd_endif()
 */
