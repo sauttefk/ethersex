@@ -105,6 +105,7 @@ bool rscp_maybeHandleDMX_CSC(uint16_t channelID, uint8_t *payload) {
 }
 
 void rscp_initDMX() {
+
   static rscp_channelDriver driverConfig;
 
   firstDMXRSCPChannel = 0;
@@ -118,10 +119,5 @@ void rscp_initDMX() {
   rscp_registerChannelDriver(&driverConfig);
 }
 
-/*
- -- Ethersex META --
- init(rscp_initDMX)
- block(Miscelleanous)
- */
 #endif
 #endif
