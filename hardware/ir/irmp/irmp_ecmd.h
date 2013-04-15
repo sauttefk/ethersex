@@ -1,6 +1,10 @@
 /*
- * Copyright (c) 2008 Stefan Siegl <stesie@brokenpipe.de>
- * Copyright (c) 2013 Erik Kunze <ethersex@erik-kunze.de>
+ * Infrared-Multiprotokoll-Decoder 
+ *
+ * for additional information please
+ * see http://www.mikrocontroller.net/articles/IRMP
+ *
+ * Copyright (c) 2010-13 by Erik Kunze <ethersex@erik-kunze.de>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License (either version 2 or
@@ -19,15 +23,12 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-#ifndef __RFM12_ECMD_H_
-#define __RFM12_ECMD_H_
+#ifndef __IRMPP_ECMD_H
+#define __IRMPP_ECMD_H
 
-int16_t parse_cmd_rfm12_status(char *, char *, uint16_t);
-int16_t parse_cmd_rfm12_setbandwidth(char *, char *, uint16_t);
-int16_t parse_cmd_rfm12_setgain(char *, char *, uint16_t);
-int16_t parse_cmd_rfm12_setdrssi(char *, char *, uint16_t);
-int16_t parse_cmd_rfm12_reinit(char *, char *, uint16_t);
-int16_t parse_cmd_rfm12_setbaud(char *, char *, uint16_t);
-int16_t parse_cmd_rfm12_setmod(char *, char *, uint16_t);
+#include <stdint.h>
 
-#endif /* __RFM12_ECMD_H_ */
+int16_t parse_cmd_irmp_receive(char *, char *, uint16_t);
+int16_t parse_cmd_irmp_send(char *, char *, uint16_t);
+
+#endif /* __IRMPP_ECMD_H */

@@ -27,28 +27,33 @@
 #include "core/bool.h"
 #include "core/heartbeat.h"
 #include "core/periodic.h"
+#ifdef RFM12_ASK_FS20_SYSLOG
+#include "core/util/byte2hex.h"
+#include "protocols/syslog/syslog.h"
+#endif
 
 #include "rfm12.h"
 #include "rfm12_ask.h"
 #include "rfm12_fs20.h"
 
+#ifdef RFM12_ASK_FS20_RX_SUPPORT
+
 /* FS20 read routines use timer 2 */
 /* Determine best prescaler depending on F_CPU */
-/* Longest pulse comes from WS300 and is 1464 us */
-#define FS20_LONGEST_PULSE   1500
+#define FS20_SILENCE         4100
 
 #define FS20_MAX_OVERFLOW    255UL
-#if (F_CPU/1000000*FS20_LONGEST_PULSE) < FS20_MAX_OVERFLOW
+#if (F_CPU/1000000*FS20_SILENCE) < FS20_MAX_OVERFLOW
 #define FS20_PRESCALER       1UL
-#elif (F_CPU/1000000*FS20_LONGEST_PULSE/8) < FS20_MAX_OVERFLOW
+#elif (F_CPU/1000000*FS20_SILENCE/8) < FS20_MAX_OVERFLOW
 #define FS20_PRESCALER       8UL
-#elif (F_CPU/1000000*FS20_LONGEST_PULSE/64) < FS20_MAX_OVERFLOW
+#elif (F_CPU/1000000*FS20_SILENCE/64) < FS20_MAX_OVERFLOW
 #define FS20_PRESCALER       64UL
-#elif (F_CPU/1000000*FS20_LONGEST_PULSE/128) < FS20_MAX_OVERFLOW
+#elif (F_CPU/1000000*FS20_SILENCE/128) < FS20_MAX_OVERFLOW
 #define FS20_PRESCALER       128UL
-#elif (F_CPU/1000000*FS20_LONGEST_PULSE/256) < FS20_MAX_OVERFLOW
+#elif (F_CPU/1000000*FS20_SILENCE/256) < FS20_MAX_OVERFLOW
 #define FS20_PRESCALER       256UL
-#elif (F_CPU/1000000*FS20_LONGEST_PULSE/1024) < FS20_MAX_OVERFLOW
+#elif (F_CPU/1000000*FS20_SILENCE/1024) < FS20_MAX_OVERFLOW
 #define FS20_PRESCALER       1024UL
 #else
 #error F_CPU to large
@@ -64,21 +69,36 @@
 #define FS20_TIMER_CNT_CURR  TC2_COUNTER_CURRENT
 #define FS20_TIMER_CNT_COMP  TC2_COUNTER_COMPARE
 #define ticks                TC1_COUNTER_CURRENT
+#define ticks_per_second     CLOCK_SECONDS
 
 /* culfw decoding routines */
 #include "rfm12_fs20_lib.c"
 
+#define FIFO_SIZE            8
+#define FIFO_NEXT(x)         (((x)+1)&(FIFO_SIZE-1))
+
+typedef struct
+{
+  uint8_t read;
+  uint8_t write;
+  fs20_data_t buffer[FIFO_SIZE];
+} fs20_fifo_t;
+
+static fs20_fifo_t fs20_rx_fifo;
 
 static void
 activate_ask_receiver(void)
 {
   /* turn on external filter again */
-  rfm12_prologue(RFM12_MODUL_FS20);
+  rfm12_prologue(RFM12_MODULE_FS20);
   rfm12_trans(RFM12_CMD_PWRMGT | RFM12_PWRMGT_ER | RFM12_PWRMGT_EBB);
   rfm12_trans(RFM12_CMD_DATAFILTER & ~0x0008);
   rfm12_epilogue();
 }
+#endif /* RFM12_ASK_FS20_RX_SUPPORT */
 
+
+#ifdef RFM12_ASK_FS20_TX_SUPPORT
 static void
 send_bits(uint16_t data, uint8_t bits)
 {
@@ -115,7 +135,7 @@ fs20_send_internal(uint8_t fht, uint16_t house, uint8_t addr, uint8_t cmd,
     PIN_SET(STATUSLED_RFM12_TX);
 #endif
 
-    rfm12_prologue(RFM12_MODUL_FS20);
+    rfm12_prologue(RFM12_MODULE_FS20);
 
     send_bits(1, 13);
     send_bits(HI8(house), 8);
@@ -143,7 +163,9 @@ fs20_send_internal(uint8_t fht, uint16_t house, uint8_t addr, uint8_t cmd,
     _delay_ms(10);
   }
 
+#ifdef RFM12_ASK_FS20_RX_SUPPORT
   activate_ask_receiver();
+#endif
 }
 
 void
@@ -158,26 +180,10 @@ rfm12_fht_send(uint16_t house, uint8_t addr, uint8_t cmd, uint8_t data)
 {
   fs20_send_internal(TRUE, house, addr, cmd, data);
 }
-#endif
+#endif /* RFM12_ASK_FHT_SUPPORT */
+#endif /* RFM12_ASK_FS20_TX_SUPPORT */
 
-void
-rfm12_fs20_setgain(uint8_t gain)
-{
-  rfm12_prologue(RFM12_MODUL_FS20);
-  rfm12_setbandwidth(rfm12_modul->rfm12_bandwidth, gain,
-                     rfm12_modul->rfm12_drssi);
-  rfm12_epilogue();
-}
-
-void
-rfm12_fs20_setdrssi(uint8_t drssi)
-{
-  rfm12_prologue(RFM12_MODUL_FS20);
-  rfm12_setbandwidth(rfm12_modul->rfm12_bandwidth, rfm12_modul->rfm12_gain,
-                     drssi);
-  rfm12_epilogue();
-}
-
+#ifdef RFM12_ASK_FS20_RX_SUPPORT
 ISR(TC2_VECTOR_COMPARE)
 {
   rfm12_fs20_lib_rx_timeout();
@@ -201,7 +207,7 @@ rfm12_fs20_init_rx(void)
 {
   rfm12_fs20_lib_init();
 
-  /* configure timer1 for receiving fs20, overflow interrupt enabled */
+  /* configure timer2 for receiving fs20 */
   TC2_COUNTER_CURRENT = 0;
 #if FS20_PRESCALER == 1UL
   TC2_PRESCALER_1;
@@ -218,7 +224,7 @@ rfm12_fs20_init_rx(void)
 #endif
   TC2_MODE_OFF;
   TC2_OUTPUT_COMPARE_NONE;
-  TC2_INT_COMPARE_ON;
+  TC2_INT_COMPARE_OFF;
   TC2_INT_OVERFLOW_OFF;
 
 #ifdef DEBUG_ASK_FS20
@@ -236,6 +242,7 @@ rfm12_fs20_init_rx(void)
   PIN_CLEAR(STATUSLED_RFM12_RX);
 #endif
 }
+#endif /* RFM12_ASK_FS20_RX_SUPPORT */
 
 void
 rfm12_fs20_init(void)
@@ -244,7 +251,7 @@ rfm12_fs20_init(void)
   for (uint8_t i = 15; i; i--)
     _delay_ms(10);
 
-  rfm12_prologue(RFM12_MODUL_FS20);
+  rfm12_prologue(RFM12_MODULE_FS20);
 
   rfm12_trans(RFM12_CMD_LBDMCD | 0xE0);
   rfm12_trans(RFM12_CMD_CFG | RFM12_BAND_868 | RFM12_XTAL_135PF);
@@ -260,7 +267,8 @@ rfm12_fs20_init(void)
 #endif
 
   rfm12_setfreq(RFM12FREQ(RFM12_FREQ_868300));
-  rfm12_setbandwidth(4, 1, 2);
+  /* bandwidth, gain, drssi */
+  rfm12_setbandwidth(1, 2, 1);
 
   rfm12_epilogue();
 
@@ -268,18 +276,57 @@ rfm12_fs20_init(void)
   PIN_CLEAR(STATUSLED_RFM12_TX);
 #endif
 
+#ifdef RFM12_ASK_FS20_RX_SUPPORT
   rfm12_fs20_init_rx();
+#endif
 }
 
+#ifdef RFM12_ASK_FS20_RX_SUPPORT
 void
 rfm12_fs20_process(void)
 {
-  rfm12_fs20_lib_process();
+  fs20_data_t fs20_data;
+  if (rfm12_fs20_lib_process(&fs20_data))
+  {
+#ifdef RFM12_ASK_FS20_SYSLOG
+    uint8_t buf[2 * FS20_MAXMSG + 2];
+    buf[0] = fs20_data.datatype;
+    uint8_t count = fs20_data.count;
+    if (fs20_data.nibble)
+      count--;
+    uint8_t i = 1;
+    for (uint8_t j = 0; j < count; j++)
+      i += byte2hex(fs20_data.data[j], &buf[i]);
+    if (nibble)
+    {
+      byte2hex(fs20_data.data[count], &buf[i]);
+      buf[i] = buf[i + 1];
+      i++;
+    }
+    buf[i] = '\0';
+    syslog_send(buf);
+#endif
+    uint8_t tmphead = FIFO_NEXT(fs20_rx_fifo.write);
+    if (tmphead != fs20_rx_fifo.read)
+    {
+      fs20_rx_fifo.buffer[tmphead] = fs20_data;
+      fs20_rx_fifo.write = tmphead;
+    }
+  }
 }
+
+fs20_data_t *
+rfm12_fs20_read(void)
+{
+  return (fs20_rx_fifo.read == fs20_rx_fifo.write ?
+          0 : &fs20_rx_fifo.buffer[fs20_rx_fifo.read =
+                                   FIFO_NEXT(fs20_rx_fifo.read)]);
+}
+#endif /* RFM12_ASK_FS20_RX_SUPPORT */
 
 /*
   -- Ethersex META --
   header(hardware/radio/rfm12/rfm12_fs20.h)
   init(rfm12_fs20_init)
-  mainloop(rfm12_fs20_process)
+  ifdef(`conf_RFM12_ASK_FS20_RX', `mainloop(rfm12_fs20_process)')
 */
