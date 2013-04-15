@@ -75,6 +75,11 @@ void rscp_netUdp(void) {
   RSCP_DEBUG_NET("HDLEN: 0x%02X\n", rscp->message.header_len);
   RSCP_DEBUG_NET("TIMES: 0x%08lX\n", ntohl(rscp->message.timestamp));
 
+  if(rscp->message.version != RSCP_MESSAGE_VERSION) {
+    RSCP_DEBUG_NET("Discard message from self\n");
+    return;
+  }
+
   struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;
 
   // discard messages sent by myself
