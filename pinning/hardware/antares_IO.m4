@@ -44,7 +44,7 @@ ifdef(`conf_HD44780', `
 
 
 ifdef(`conf_RSCP', `
-  pin(RSCP_CONFIG_BUTTON, PD7, INPUT)
+  pin(RSCP_CONFIG_BUTTON, PD1, INPUT)
   pin(RSCP_INPUT00, PA0, INPUT)
   pin(RSCP_INPUT01, PA1, INPUT)
   pin(RSCP_INPUT02, PA2, INPUT)

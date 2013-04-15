@@ -90,7 +90,7 @@ onewire_init(void)
 #endif
 
 #if ONEWIRE_POLLING_SUPPORT
-  ow_periodic();
+//  ow_periodic();
 #endif
 }
 
