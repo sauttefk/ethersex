@@ -104,7 +104,7 @@ bootp_handle_reply(void)
    * looks like we have received a valid bootp reply,
    * prepare to override eeprom configuration
    */
-  uip_ipaddr_t ips[5];
+  uip_ipaddr_t ips[6];
   memset(&ips, 0, sizeof(ips));
 
   /* extract our ip addresses, subnet-mask and gateway ... */
@@ -129,19 +129,28 @@ bootp_handle_reply(void)
         memcpy(&ips[2], &ptr[2], 4);
         uip_setdraddr(&ips[2]);
         break;
-#ifdef DNS_SUPPORT
+#if defined(DNS_SUPPORT) || defined(BOOTLOADER_SUPPORT)
       case TAG_DOMAIN_SERVER:
         memcpy(&ips[3], &ptr[2], 4);
+#ifdef DNS_SUPPORT
         resolv_conf(&ips[3]);
+#endif
         break;
 #endif
-#ifdef NTP_SUPPORT
+#if defined(NTP_SUPPORT) || defined(BOOTLOADER_SUPPORT)
       case TAG_NTP_SERVER:
         /* This will set the ntp connection to the server set by the bootp
          * request
          */
         memcpy(&ips[4], &ptr[2], 4);
+#ifdef NTP_SUPPORT
         ntp_conf(&ips[4]);
+#endif
+        break;
+#endif
+#if defined(BOOTLOADER_SUPPORT)
+      case TAG_LOG_SERVER:
+        memcpy(&ips[5], &ptr[2], 4);
         break;
 #endif
     }
@@ -153,15 +162,20 @@ bootp_handle_reply(void)
   uip_udp_remove(uip_udp_conn);
 
 #ifdef BOOTP_TO_EEPROM_SUPPORT
-  eeprom_save(ip, &ips[0], IPADDR_LEN);
-  eeprom_save(netmask, &ips[1], IPADDR_LEN);
-  eeprom_save(gateway, &ips[2], IPADDR_LEN);
-#ifdef DNS_SUPPORT
-  eeprom_save(dns_server, &ips[3], IPADDR_LEN);
-#endif
-#ifdef NTP_SUPPORT
-  eeprom_save(ntp_server, &ips[4], IPADDR_LEN);
-#endif
+//  eeprom_save_P(mac, PSTR (CONF_ETHERSEX_MAC), 6);
+
+  if (ips[0] != 0)
+    eeprom_save(ip, &ips[0], IPADDR_LEN);
+  if (ips[1] != 0)
+    eeprom_save(netmask, &ips[1], IPADDR_LEN);
+  if (ips[2] != 0)
+    eeprom_save(gateway, &ips[2], IPADDR_LEN);
+  if (ips[3] != 0)
+    eeprom_save(dns_server, &ips[3], IPADDR_LEN);
+  if (ips[4] != 0)
+    eeprom_save(ntp_server, &ips[4], IPADDR_LEN);
+  if (ips[5] != 0)
+    eeprom_save(syslog_server, &ips[5], IPADDR_LEN);
   eeprom_update_chksum();
 #endif /* BOOTP_TO_EEPROM_SUPPORT */
 

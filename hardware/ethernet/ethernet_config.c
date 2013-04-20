@@ -28,8 +28,6 @@
 #include "protocols/uip/uip.h"
 #include "core/eeprom.h"
 
-static const char conf_mac[] PROGMEM = CONF_ETHERSEX_MAC;
-
 void
 network_config_load (void)
 {

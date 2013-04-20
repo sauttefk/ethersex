@@ -86,8 +86,14 @@ eeprom_init (void)
   uip_ipaddr_t ip;
   (void) ip;			/* Keep GCC quiet. */
 
-#ifdef ETHERNET_SUPPORT
-  eeprom_save_P (mac, PSTR (CONF_ETHERSEX_MAC), 6);
+#if defined(BOOTLOADER_SUPPORT) &&  BOOTLOADER_START_ADDRESS > UINT16_MAX
+  uint_farptr_t src = pgm_get_far_address (conf_mac);
+  uint8_t *dst = uip_ethaddr.addr;
+  for (uint8_t i = sizeof(uip_ethaddr.addr); i; i--)
+    *dst++ = pgm_read_byte_far (src++);
+  eeprom_save(mac, uip_ethaddr.addr, sizeof(uip_ethaddr.addr));
+#else
+  eeprom_save_P (mac, PSTR (CONF_ETHERSEX_MAC), sizeof(uip_ethaddr.addr));
 #endif
 
 #if (defined(IPV4_SUPPORT) && !defined(BOOTP_SUPPORT) && !defined(DHCP_SUPPORT)) || defined(IPV6_STATIC_SUPPORT)
@@ -108,7 +114,13 @@ eeprom_init (void)
   set_CONF_DNS_SERVER (&ip);
   eeprom_save (dns_server, &ip, IPADDR_LEN);
 #endif
+  eeprom_update_chksum ();
+}
 
+
+void
+eeprom_module_init (void)
+{
 #ifdef PAM_SINGLE_USER_EEPROM_SUPPORT
   /* Copy the httpd's password. */
   eeprom_save_P (pam_username, PSTR (PAM_SINGLE_USERNAME), 16);
