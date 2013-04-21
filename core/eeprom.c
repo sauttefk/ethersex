@@ -86,14 +86,18 @@ eeprom_init (void)
   uip_ipaddr_t ip;
   (void) ip;			/* Keep GCC quiet. */
 
-#if defined(BOOTLOADER_SUPPORT) &&  BOOTLOADER_START_ADDRESS > UINT16_MAX
-  uint_farptr_t src = pgm_get_far_address (conf_mac);
-  uint8_t *dst = uip_ethaddr.addr;
-  for (uint8_t i = sizeof(uip_ethaddr.addr); i; i--)
-    *dst++ = pgm_read_byte_far (src++);
-  eeprom_save(mac, uip_ethaddr.addr, sizeof(uip_ethaddr.addr));
-#else
-  eeprom_save_P (mac, PSTR (CONF_ETHERSEX_MAC), sizeof(uip_ethaddr.addr));
+#if !defined(BOOTLOADER_JUMP) || defined(BOOTLOADER_SUPPORT)
+  /* only overwrite mac-address in the eeprom if there is no bootloader or if
+   * we are building a bootloader */
+  #if BOOTLOADER_START_ADDRESS > UINT16_MAX
+    uint_farptr_t src = pgm_get_far_address (conf_mac);
+    uint8_t *dst = uip_ethaddr.addr;
+    for (uint8_t i = sizeof(uip_ethaddr.addr); i; i--)
+      *dst++ = pgm_read_byte_far (src++);
+    eeprom_save(mac, uip_ethaddr.addr, sizeof(uip_ethaddr.addr));
+  #else
+    eeprom_save_P (mac, PSTR (CONF_ETHERSEX_MAC), sizeof(uip_ethaddr.addr));
+  #endif
 #endif
 
 #if (defined(IPV4_SUPPORT) && !defined(BOOTP_SUPPORT) && !defined(DHCP_SUPPORT)) || defined(IPV6_STATIC_SUPPORT)
