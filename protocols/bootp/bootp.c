@@ -138,7 +138,7 @@ bootp_handle_reply(void)
         break;
 #endif
 #if defined(NTP_SUPPORT) || defined(BOOTLOADER_SUPPORT)
-      case TAG_NTP_SERVER:
+      case TAG_TIME_SERVER:
         /* This will set the ntp connection to the server set by the bootp
          * request
          */
