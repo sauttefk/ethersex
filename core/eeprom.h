@@ -84,6 +84,8 @@ struct eeprom_config_t
   uint8_t ntp_server[IPADDR_LEN];
   uint8_t syslog_server[IPADDR_LEN];
 #endif
+  uint32_t flashedsize;
+  uint8_t status;
   uint8_t crc;
 };
 
