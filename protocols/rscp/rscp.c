@@ -606,7 +606,7 @@ void rscp_registerChannelDriver(rscp_channelDriver *channelDriver) {
   RSCP_DEBUG("Can't register channel driver: out of driver slots\n");
 }
 
-#ifdef IRMP_SUPPORT
+#if defined IRMP_SUPPORT && false
 void
 rscp_sendPeriodicIrmpEvents(void)
 {
@@ -643,18 +643,17 @@ void rscp_periodic(void)     // 1Hz interrupt
     rscp_heartbeatCounter = 0;
 
     sendHeartBeat();
-//    rscp_sendPeriodicOutputEvents();
-//    rscp_sendPeriodicInputEvents();
   }
 }
 
 #endif /* RSCP_SUPPORT */
 
 /*
+ ifdef(`conf_IRMP',`timer(1, rscp_sendPeriodicIrmpEvents())')
+
  -- Ethersex META --
  header(protocols/rscp/rscp.h)
  init(rscp_init)
  timer(50, rscp_periodic())
- ifdef(`conf_IRMP',`timer(1, rscp_sendPeriodicIrmpEvents())')
  block(Miscelleanous)
  */
