@@ -244,8 +244,9 @@ tftp_handle_packet(void)
           {
             if (flashedpages)
             {
-              uint32_t flashedbytes = base + uip_datalen() - 4;
-              eeprom_save(flashedsize, &flashedbytes, 4);
+              uint_farptr_t applicationsize = base + uip_datalen() - 4;
+              eeprom_save(applicationsize, &applicationsize,
+                  sizeof(uint_farptr_t));
               eeprom_save_char(status, 1);
               eeprom_update_chksum();
             }

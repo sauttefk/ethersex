@@ -25,22 +25,34 @@
 #include <util/crc16.h>
 
 #include "config.h"
+#include "core/eeprom.h"
 #include "core/util/app_crc.h"
+
 
 uint16_t
 calc_application_crc(void)
 {
   uint16_t crc = 0xffff;
+  uint_farptr_t applicationsize;
 
+  eeprom_restore(applicationsize, &applicationsize, sizeof(applicationsize));
+
+  if (applicationsize < BOOTLOADER_START_ADDRESS)
+  {
 #if FLASHEND > UINT16_MAX
-  uint_farptr_t p;
-  for (p = 0; p < (uint_farptr_t) BOOTLOADER_START_ADDRESS; p++)
-    crc = _crc16_update(crc, pgm_read_byte_far(p));
+    uint_farptr_t p;
+    for (p = 0; p < applicationsize; p++)
+      crc = _crc16_update(crc, pgm_read_byte_far(p));
 #else
-  uint8_t *p;
-  for (p = 0; p < (uint8_t *) BOOTLOADER_START_ADDRESS; p++)
-    crc = _crc16_update(crc, pgm_read_byte(p));
+    uint8_t *p;
+    for (p = 0; p < (uint8_t *) applicationsize; p++)
+      crc = _crc16_update(crc, pgm_read_byte(p));
 #endif
 
-  return (crc);
+    return (crc);
+  }
+  else
+  {
+    return (-1);
+  }
 }
