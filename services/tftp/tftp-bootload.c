@@ -35,6 +35,7 @@
 #include "core/global.h"
 #include "core/util/app_crc.h"
 
+static uint8_t flashedpages;
 
 /* Define if you want to temporarily disable firmware flashing. */
 #undef  TFTP_DEBUG_DO_NOT_FLASH
@@ -59,7 +60,7 @@ typedef uint16_t flash_base_t;
 #endif
 
 
-static void
+static uint8_t
 flash_page(uint32_t page, uint8_t * buf)
 {
   uint16_t i;
@@ -71,7 +72,7 @@ flash_page(uint32_t page, uint8_t * buf)
   for (i = 0; i < SPM_PAGESIZE; i++)
     if (buf[i] != __pgm_read_byte(page + i))
       goto commit_changes;
-  return;                               /* no changes */
+  return(0);                            /* no changes */
 
 commit_changes:
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
@@ -92,6 +93,7 @@ commit_changes:
 
     boot_rww_enable();                  /* reenable RWW-section again. */
   }
+  return(1);
 }
 
 
@@ -180,7 +182,7 @@ tftp_handle_packet(void)
       goto send_ack;
 
     case 3:                             /* data packet */
-      bootload_delay = 0;               /* stop bootloader. */
+      bootload_delay = 0;               /* set bootloader timeout to max. */
 
       if (uip_udp_conn->appstate.tftp.download != 0)
         goto error_out;
@@ -208,7 +210,7 @@ tftp_handle_packet(void)
 #endif
       {
         for (i = 0; i < TFTP_BLOCK_SIZE / SPM_PAGESIZE; i++)
-          flash_page(base + i * SPM_PAGESIZE,
+          flashedpages += flash_page(base + i * SPM_PAGESIZE,
               pk->u.data.data + i * SPM_PAGESIZE);
       }
 
@@ -240,6 +242,15 @@ tftp_handle_packet(void)
         {
 #endif
           {
+            if (flashedpages)
+            {
+              uint_farptr_t applicationsize = base + uip_datalen() - 4;
+              eeprom_save(applicationsize, &applicationsize,
+                  sizeof(uint_farptr_t));
+              eeprom_save_char(status, 1);
+              eeprom_update_chksum();
+            }
+
 #ifdef MBR_SUPPORT
             mbr_config.flashed = 1;
             write_mbr();

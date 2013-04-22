@@ -17,6 +17,7 @@
 subdir.mk
 Debug/*
 ethersex.bin
+*.dSYM
 
 # make generated files
 .config*
