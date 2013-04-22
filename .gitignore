@@ -17,6 +17,10 @@
 subdir.mk
 Debug/*
 ethersex.bin
+*.dSYM
+*.ht
+Sty.c
+embed/conf
 
 # make generated files
 .config*
