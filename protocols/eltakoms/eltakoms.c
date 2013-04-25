@@ -25,13 +25,14 @@
 #include "config.h"
 
 #ifdef ELTAKOMS_SUPPORT
+#define USE_USART ELTAKOMS_USE_USART
 
 #include "eltakoms.h"
 #include "services/clock/clock.h"
 
-#define USE_USART ELTAKOMS_USE_USART
 #define BAUD 19200
 #include "core/usart.h"
+#include "pinning.c"
 
 struct eltakoms_t eltakoms_data;
 
