@@ -212,11 +212,12 @@ void rscp_parseBOC(void *ptr, uint16_t items, uint16_t firstChannelID) {
   RSCP_DEBUG_CONF(
       "allocated %d bytes for %d binary output channels\n", items * sizeof(binaryOutputChannelState), items);
 
-  firstBinaryOutputChannelID = firstChannelID;
-
   binaryOutputChannelConfig bocc;
   for (uint16_t i = 0; i < items; ++i) {
     rscpEEReadStruct(&bocc, binaryOutputChannelConfigs + i);
+
+    if(i==0)
+      firstBinaryOutputChannelID = firstChannelID + i;
 
     RSCP_DEBUG_CONF(
         "binary output: port:%d - flags: 0x%02x -> %c%c%c%c\n", bocc.port, bocc.flags, bocc.openDrain ? 'D' : 'd', bocc.openSource ? 'S' : 's', bocc.negate ? 'N' : 'n', bocc.report ? 'R' : 'r');
@@ -257,6 +258,13 @@ void rscp_parseCounterChannels(void *ptr, uint16_t items, uint16_t firstChannelI
 
     setPortDDR(bicc.bcc.port, 0);
     setPortPORT(bicc.bcc.port, bicc.bcc.pullup);
+
+    // set the debounced state, lest we don't generate spurious ticks during startup
+    volatile uint8_t portState =
+          *((portPtrType) pgm_read_word(&portConfig[bicc.bcc.port].portIn));
+    uint8_t bit = 1 << pgm_read_byte(&portConfig[bicc.bcc.port].pin);
+    uint8_t curState = (portState & bit ? 1 : 0) ^ (bicc.bcc.negate ? 1 : 0);
+    counterChannels[i].ics.lastRawState = counterChannels[i].ics.lastDebouncedState = curState;
   }
 }
 
@@ -271,7 +279,7 @@ static void pollBinaryOutputChannelState(binaryOutputChannelState *boc, binaryOu
   uint8_t curState = (portState & bit ? 1 : 0) ^ (bocc->negate ? 1 : 0);
 
   /* current state hasn't changed since the last read... */
-  if (boc->lastState != curState || force)
+  if ((boc->lastState != curState && bocc->report) || force)
   {
     boc->lastState = curState;
     RSCP_DEBUG_IO("BinaryOutputChannel %hu changed to %hu\n", channelID,
@@ -333,8 +341,8 @@ static void rscp_tx_counterChannelChange (uint16_t channel, uint16_t ticks, uint
 
   // set unit and value
   rscp_encodeUInt8(RSCP_UNIT_COUNT, buffer);
-  rscp_encodeUInt16(ticks, buffer);
-  rscp_encodeUInt16(lastTicks, buffer);
+  rscp_encodeUInt16Field(ticks, buffer);
+  rscp_encodeUInt16Field(lastTicks, buffer);
 
   rscp_transmit(RSCP_CHANNEL_EVENT, 0);
 }
@@ -352,7 +360,6 @@ rscp_io_publish_state(bool force)
 
     // read config from eeprom
     rscpEEReadStruct(&bicc, binaryInputChannelConfigs + i);
-
     bool stateChanged = poll_binary_input_channel(&bicc, bic);
     if((stateChanged && bicc.report) || force)
       rscp_txBinaryIOChannelChange(channelID, bic->lastDebouncedState);
@@ -363,13 +370,13 @@ rscp_io_publish_state(bool force)
   for (uint8_t i = 0; i < numBinaryOutputChannels; i++)
   {
     rscpEEReadStruct(&bocc, binaryOutputChannelConfigs + i);
-    pollBinaryOutputChannelState(&binaryOutputChannels[i], &bocc, firstBinaryOutputChannelID + i, bocc.report || force);
+    pollBinaryOutputChannelState(&binaryOutputChannels[i], &bocc, firstBinaryOutputChannelID + i, force);
   }
+
 
   /* Check all counters */
   counterChannelConfig ccc;
-  for (uint8_t i = 0; i < numCounterChannels; i++)
-  {
+  for (uint8_t i = 0; i < numCounterChannels; i++) {
     counterChannelState *ccs = &counterChannels[i];
     uint16_t channelID = firstCounterChannelID + i;
 
@@ -381,15 +388,20 @@ rscp_io_publish_state(bool force)
 
     // We always trigger on the rising edge, because the input channel handler
     // already applied the channel polarity.
-    if(stateChanged && ccs->ics.lastDebouncedState) {
-      // time to report?
-      if(ccs->ticks == 0 // tick roll over!
-          || (ccc.reportIntervalTicks > 0 && ccs->ticks - ccs->lastReportTicks > ccc.reportIntervalTicks)
-          || (ccc.reportIntervalSeconds > 0 && ccs->lastReportTime < clock_get_time() + ccc.reportIntervalSeconds)) {
-        rscp_tx_counterChannelChange(channelID, ccs->ticks, ccs->lastReportTicks);
-        ccs->lastReportTicks = ccs->ticks;
-        ccs->lastReportTime = clock_get_time();
-      }
+    bool countTick = stateChanged && ccs->ics.lastDebouncedState;
+    if(countTick)
+      ccs->ticks++;
+
+    // time to report?
+    // - when ticks increased and tick interval reached
+    // - or report interval time has expired
+    if((countTick &&
+        (ccs->ticks == 0 // tick roll over!
+            || (ccc.reportIntervalTicks > 0 && ccs->ticks - ccs->lastReportTicks >= ccc.reportIntervalTicks)))
+        || (ccc.reportIntervalSeconds > 0 && ccs->lastReportTime + ccc.reportIntervalSeconds < clock_get_time())) {
+      rscp_tx_counterChannelChange(channelID, ccs->ticks, ccs->lastReportTicks);
+      ccs->lastReportTicks = ccs->ticks;
+      ccs->lastReportTime = clock_get_time();
     }
   }
 }
@@ -417,7 +429,7 @@ static void setBinaryOutputChannel(binaryOutputChannelState *boc, binaryOutputCh
     break;
   }
 
-  pollBinaryOutputChannelState(boc, bocc, channelID, true); // report new state of output
+  pollBinaryOutputChannelState(boc, bocc, channelID, true); // always report new state of output
 }
 
 bool rscp_maybeHandleBOC_CSC(uint16_t channelID, uint8_t *payload) {
