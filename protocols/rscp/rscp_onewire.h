@@ -30,6 +30,7 @@
 #define RSCP_ONEWIRE_SUPPORT
 
 void rscp_parseOWC(void *ptr, uint16_t items, uint16_t firstChannelID);
+void rscp_onewire_publish_state();
 
 #endif
 #endif

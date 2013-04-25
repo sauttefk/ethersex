@@ -29,6 +29,7 @@
 
 void rscp_parseEltakoChannels(void *ptr, uint16_t items, uint16_t firstChannelID);
 void rscp_cleanupEltakoMS();
+void rscp_eltakoms_publish_state();
 
 #endif
 #endif

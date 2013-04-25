@@ -88,6 +88,31 @@ hook_ow_poll_handler(ow_sensor_t * ow_sensor, uint8_t state)
       ow_sensor->ow_rom_code.bytewise[6], ow_sensor->ow_rom_code.bytewise[7]);
 }
 
+void rscp_onewire_publish_state() {
+  // we can't publish the state synchronously,
+  for (uint16_t i = 0; i < numOwChannels; i++) {
+      onewireTemperatureChannel owItem;
+      uint16_t channelID = firstOWChannel + i;
+
+      eeprom_read_block(&owItem, &(owList_p[i]),
+          sizeof(onewireTemperatureChannel));
+
+      ow_sensor_t *ow_sensor = ow_find_sensor((ow_rom_code_t*) &(owItem.owROM.raw));
+      if(ow_sensor) {
+        rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
+
+        rscp_encodeChannel(channelID, buffer);
+
+        // set unit and value
+        rscp_encodeUInt8(RSCP_UNIT_TEMPERATURE, buffer);
+        rscp_encodeDecimal16Field(ow_sensor->temp, -1, buffer);
+
+        rscp_transmit(RSCP_CHANNEL_EVENT, 0);
+      } else
+        owChannels[i].pollTimer = 0; // at least reset polling timer
+    }
+}
+
 void rscp_onewire_periodic() {
   // Decrement poll timers until they are zero.
   // The hook function will then proceed to poll the channel and reset the

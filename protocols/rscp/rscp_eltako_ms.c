@@ -116,6 +116,10 @@ static void pollELTAKOMS(timer *t, void *usr) {
   }
 }
 
+void rscp_eltakoms_publish_state() {
+  // FIXME
+}
+
 void rscp_parseEltakoChannels(void *ptr, uint16_t items, uint16_t firstChannelID) {
   eltakoMSChannelConfig *eeConfig = (eltakoMSChannelConfig*) ptr;
 

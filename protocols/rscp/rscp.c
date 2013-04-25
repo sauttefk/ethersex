@@ -432,8 +432,22 @@ static void handleSegmentControllerHeartbeat(rscp_nodeAddress *srcAddr,
     initiateConfigDownload();
 }
 
-void publishNodeState(void) {
-  // FIXME
+static void pollNodeState(void) {
+  RSCP_DEBUG("Polling node state\n");
+
+#ifdef RSCP_DMX_SUPPORT
+  rscp_dmx_pollState();
+#endif
+
+#ifdef ELTAKOMS_SUPPORT
+  rscp_eltakoms_publish_state();
+#endif
+
+#ifdef RSCP_ONEWIRE_SUPPORT
+  rscp_onewire_publish_state();
+#endif
+
+  rscp_io_publish_state(true);
 }
 
 void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
@@ -447,7 +461,7 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     break;
   }
   case rscp_ModeUDP: {
-    u8_t *a = srcAddr->u.ipNodeAddress.macAddress.addr;
+    u8_t *a = srcAddr->u.ethNodeAddress.macAddress.addr;
     uip_ipaddr_t *i = &(srcAddr->u.ipNodeAddress.ipAddress);
     RSCP_DEBUG(
         "Message from: %d.%d.%d.%d (%02X:%02X:%02X:%02X:%02X:%02X), type: 0x%04X, size: %d\n",
@@ -494,8 +508,8 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     handleChannelStateCommand(&(payload[6]));
     break;
 
-  case RSCP_INQUIRE_NODE_STATE:
-    publishNodeState();
+  case RSCP_POLL_NODE_STATE:
+    pollNodeState();
     break;
 
   case RSCP_FILE_TRANSFER_RESPONSE: {

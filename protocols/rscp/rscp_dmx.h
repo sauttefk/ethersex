@@ -35,6 +35,7 @@
 void rscp_initDMX();
 void rscp_parseDMXChannels(void *ptr, uint16_t items, uint16_t firstChannelID);
 bool rscp_maybeHandleDMX_CSC(uint16_t channelID, uint8_t *payload);
+void rscp_dmx_pollState(void);
 
 #endif
 #endif

@@ -66,7 +66,7 @@ void rscp_parseDMXChannels(void *configPtr, uint16_t items, uint16_t firstChanne
   RSCP_DEBUG_CONF("DMX: first rscp channel: %d, max DMX slot: %d\n", firstDMXRSCPChannel, maxDMXSlot);
 }
 
-static void pollState(void) {
+void rscp_dmx_pollState(void) {
   for(int i = 0; i < maxDMXSlot; i++) {
     uint8_t value = get_dmx_channel(0, i - firstDMXRSCPChannel);
     rscp_txContinuousIOChannelChange(firstDMXRSCPChannel + i, &value, 0, RSCP_UNIT_BOOLEAN, rscp_field_UnsignedByte);
@@ -114,7 +114,7 @@ void rscp_initDMX() {
   driverConfig.channelName = "dmx";
   driverConfig.configureChannels = &rscp_parseDMXChannels;
   driverConfig.handleChannelStateCommand = &rscp_maybeHandleDMX_CSC;
-  driverConfig.pollState =  &pollState;
+  driverConfig.pollState =  &rscp_dmx_pollState;
 
   rscp_registerChannelDriver(&driverConfig);
 }
