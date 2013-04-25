@@ -81,6 +81,9 @@ static void parseChannelDefinitions(void) {
     case RSCP_CHANNEL_BINARY_OUTPUT:
       rscp_parseBOC(chConfigPtr, items, firstChannelID);
       break;
+    case RSCP_CHANNEL_COUNTER:
+      rscp_parseCounterChannels(chConfigPtr, items, firstChannelID);
+      break;
 #if 0
       case RSCP_CHANNEL_COMPLEX_INPUT:
       {

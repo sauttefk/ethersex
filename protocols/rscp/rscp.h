@@ -58,6 +58,8 @@
 #define RSCP_DEBUG_CONF(...)    ((void) 0)
 #endif
 
+#define RSCP_DEBUG_MESSAGE
+
 uint8_t txidCounter;
 
 void rscp_setup(void);
@@ -255,6 +257,7 @@ enum
   RSCP_CHANNEL_BINARY_OUTPUT  = 0x02,
   RSCP_CHANNEL_COMPLEX_INPUT  = 0x11,
   RSCP_CHANNEL_COMPLEX_OUTPUT = 0x12,
+  RSCP_CHANNEL_COUNTER        = 0x13,
   RSCP_CHANNEL_OWTEMPERATURE  = 0x30,
   RSCP_CHANNEL_ELTAKO_MS      = 0x31,
   RSCP_CHANNEL_DMX            = 0x32

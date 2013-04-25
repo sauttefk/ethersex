@@ -73,10 +73,12 @@ typedef struct
 } ioConfig_t;
 
 void rscp_io_init (void);
-void rscp_IOChannels_periodic (void);
+void rscp_io_periodic (void);
+void rscp_io_publish_state (bool);
 
 void rscp_parseBOC(void *ptr, uint16_t items, uint16_t firstChannelID);
 void rscp_parseBIC(void *ptr, uint16_t items, uint16_t firstChannelID);
+void rscp_parseCounterChannels(void *ptr, uint16_t items, uint16_t firstChannelID);
 bool rscp_maybeHandleBOC_CSC(uint16_t channelID, uint8_t *payload);
 
 #endif /* RSCP_SUPPORT */
