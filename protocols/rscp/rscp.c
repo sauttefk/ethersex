@@ -28,6 +28,7 @@
 #include "crc32.h"
 #include "timer.h"
 #include "protocols/syslog/syslog.h"
+#include "core/global.h"
 
 #include "rscp_eltako_ms.h"
 #include "rscp_onewire.h"
@@ -41,6 +42,8 @@ volatile uint8_t rscp_heartbeatCounter;
 #define MAX_CHANNEL_DRIVERS         10
 
 static rscp_channelDriver *channelDrivers[MAX_CHANNEL_DRIVERS];
+
+static void sendHeartBeat(rscp_nodeStatus s);
 
 static void parseRuleDefinitions(void) {
   void *ptr = (void *) (rscpEE_word(rscp_conf_header, rule_p,
@@ -240,10 +243,12 @@ static void parseConfig(void);
 static void delayedInit(timer *t, void *user) {
   static uint8_t trys = 25;
 
-//  if(!syslog_is_available() && trys-- > 0)
-//    timer_schedule_after_msecs(&delayedInitTimer, 200);
-//  else
-    parseConfig(); // give up for now
+  if(!syslog_is_available() && trys-- > 0)
+    timer_schedule_after_msecs(&delayedInitTimer, 200);
+  else {
+    parseConfig();
+    sendHeartBeat(rscp_Running);
+  }
 }
 
 void rscp_init(void) {
@@ -325,6 +330,8 @@ static void parseConfig(void) {
               ^ uip_ethaddr.addr[5]);
 
           RSCP_DEBUG_CONF("heartbeat offset: %d\n", rscp_heartbeatCounter);
+
+          sendHeartBeat(rscp_Starting);
 
           parseChannelDefinitions();
           parseRuleDefinitions();
@@ -609,6 +616,13 @@ void rscp_handleMessage(rscp_nodeAddress *srcAddr, uint16_t msg_type,
     handleSegmentControllerHeartbeat(srcAddr, payload);
     break;
   }
+
+  case RSCP_RESTART_NODE:
+    sendHeartBeat(rscp_Stopping);
+
+    // request reset: executed from main loop (ethersex.c)
+    status.request_reset = 1;
+    break;
   }
 }
 
@@ -645,10 +659,11 @@ rscp_sendPeriodicIrmpEvents(void)
 }
 #endif
 
-static void sendHeartBeat(void) {
+static void sendHeartBeat(rscp_nodeStatus s) {
   rscp_payloadBuffer_t *buffer = rscp_getPayloadBuffer();
   rscp_encodeUInt8(rscpEEReadByte(rscpConfiguration->status), buffer);
   rscp_encodeInt32(rscpEEReadDWord(rscpConfiguration->crc32), buffer);
+  rscp_encodeUInt8(s, buffer);
   rscp_transmit(RSCP_NODE_HEARTBEAT, 0);
   RSCP_DEBUG("node heartbeat sent\n");
 }
@@ -659,7 +674,7 @@ void rscp_periodic(void)     // 1Hz interrupt
     /* send a heartbeat packet every 256 seconds */
     rscp_heartbeatCounter = 0;
 
-    sendHeartBeat();
+    sendHeartBeat(rscp_Running);
   }
 }
 

@@ -83,6 +83,7 @@ void rscp_sendPeriodicIrmpEvents(void);
 #define RSCP_CHANNEL_STATE_CMD        0x8001
 #define RSCP_POLL_NODE_STATE          0x8003
 #define RSCP_POLL_CHANNEL_STATE       0x8004
+#define RSCP_RESTART_NODE             0x8888
 
 #define RSCP_FILE_TRANSFER_REQUEST    0x8110
 #define RSCP_FILE_TRANSFER_RESPONSE   0x8111
@@ -210,6 +211,13 @@ typedef enum rscp_configStatus {
   rscp_configInvalid,
   rscp_configUpdating
 } rscp_configStatus;
+
+typedef enum rscp_nodeStatus {
+  rscp_Starting = 0,
+  rscp_Running,
+  rscp_Stopping,
+  rscp_Failed
+} rscp_nodeStatus;
 
 typedef struct __attribute__ ((packed))
 {

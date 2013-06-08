@@ -129,24 +129,23 @@ rscp_networkMode_t rscp_networkMode = rscp_ModeUDP;
 
 rscp_payloadBuffer_t rscp_payloadBuffer;
 
-rscp_payloadBuffer_t*
-rscp_getPayloadBuffer() {
+rscp_payloadBuffer_t* rscp_getPayloadBuffer() {
   switch (rscp_networkMode) {
   case rscp_ModeRawEthernet:
     rscp_payloadBuffer.pos = rscp_payloadBuffer.start =
-        (((rscp_message_t *) &uip_buf[RSCP_RAWH_LEN])->payload);
-        break;
+    (((rscp_message_t *) &uip_buf[RSCP_RAWH_LEN])->payload);
+    break;
 
-        case rscp_ModeUDP:
-        default:
-        rscp_payloadBuffer.pos = rscp_payloadBuffer.start =
-        ((struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN +
-            UIP_IPUDPH_LEN])->message.payload;
-        break;
-      }
+  case rscp_ModeUDP:
+    default:
+    rscp_payloadBuffer.pos = rscp_payloadBuffer.start =
+    ((struct rscp_udp_message *) &uip_buf[UIP_LLH_LEN +
+        UIP_IPUDPH_LEN])->message.payload;
+    break;
+  }
 
-      return &rscp_payloadBuffer;
-    }
+  return &rscp_payloadBuffer;
+}
 
 void rscp_transmit(uint16_t msg_type, rscp_nodeAddress *dstAddress) {
   struct uip_eth_hdr *packet = (struct uip_eth_hdr *) &uip_buf;

@@ -682,10 +682,10 @@ CONF_RSCP_DEVICEURL="sautter.com/beteigeuze.xml"
 RSCP_ETHTYPE=17171
 RSCP_USE_UDP=y
 RSCP_UDP_PORT=17171
-# DEBUG_RSCP is not set
+DEBUG_RSCP=y
 # DEBUG_RSCP_MSG is not set
 # DEBUG_RSCP_PAYLOAD is not set
-# DEBUG_RSCP_CONF is not set
+DEBUG_RSCP_CONF=y
 # DEBUG_RSCP_IO is not set
 # DEBUG_RSCP_NET is not set
 
