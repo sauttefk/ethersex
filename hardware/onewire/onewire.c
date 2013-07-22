@@ -90,9 +90,6 @@ onewire_init(void)
   ow_names_restore();
 #endif
 
-#if ONEWIRE_POLLING_SUPPORT
-  ow_periodic();
-#endif
 }
 
 
@@ -710,7 +707,7 @@ ow_discover_sensor(void)
             }
             ow_polling_interval = 1;
 #ifdef DEBUG_OW_POLLING
-            if (i == OW_SENSORS_COUNT - 1)
+            if (i == OW_SENSORS_COUNT)
               OW_DEBUG_POLL("number of sensors exceeds list size of %d\n",
                            OW_SENSORS_COUNT);
 #endif /* DEBUG_OW_POLLING */

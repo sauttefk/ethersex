@@ -1,8 +1,10 @@
 source scripts/usart-config.sh
 source scripts/rfm12-config.sh
 source scripts/namedPinCopy.sh
+source scripts/avrdude_config.sh
 mainmenu_name "Ethersex Configuration"
 get_usart_count
+
 
 mainmenu_option next_comment
 comment "General Setup"
@@ -45,7 +47,7 @@ if [ "$ARCH_AVR" = "y" ]; then
 
 
 	# get the flash size according to the cpu type
-	FLASH_SIZE=$(( `echo -e "#include <avr/io.h>\nFLASHEND" | avr-cpp -mmcu=$MCU | sed '$!d'` + 1 ))
+	FLASH_SIZE=$((`echo -e "#include <avr/io.h>\nFLASHEND" | avr-cpp -mmcu=$MCU | sed '$!d'` + 1 ))
 
 	# set the default bootloader bytes according to cpu flash size
 	if [ "$BOOTLOADER_SIZE" = "" ] ; then
@@ -56,16 +58,11 @@ if [ "$ARCH_AVR" = "y" ]; then
 		if [ "$FLASH_SIZE" = 131072 ] ; then BOOTLOADER_SIZE=8192 ; fi
 	fi
 
-	if [ "$FLASH_SIZE" -gt 65535 ] ; then
-		bool 'Build a bootloader' BOOTLOADER_SUPPORT
-	else
-		dep_bool 'Build a bootloader' BOOTLOADER_SUPPORT "n"
-	fi
+	dep_bool 'Build a bootloader'     BOOTLOADER_SUPPORT "$(not $BOOTLOADER_JUMP)"  "$(if [ $FLASH_SIZE -gt 65535 ] ; then echo -ne "y"; else echo -ne "n"; fi)"
+	dep_bool "Enable bootloader jump" BOOTLOADER_JUMP    "$(not $BOOTLOADER_SUPPORT)"
 
-
-	bool "Enable bootloader jump" BOOTLOADER_JUMP
 	if [ "$BOOTLOADER_JUMP" = "y" -o "$BOOTLOADER_SUPPORT" = "y" ] ; then
-		int 'Bootloader Size in bytes' BOOTLOADER_SIZE ""
+		int 'Bootloader size in bytes' BOOTLOADER_SIZE ""
 	else
 		define_int BOOTLOADER_SIZE "$((BOOTLOADER_SIZE))"
 	fi
@@ -81,9 +78,10 @@ if [ "$ARCH_AVR" = "y" ]; then
 	source core/crc/config.in
 fi
 
-
+	bool "MBR support" MBR_SUPPORT
 
 	bool "Teensy build" TEENSY_SUPPORT
+
 	dep_bool "Use SPI Timeout" SPI_TIMEOUT $ARCH_AVR
 	dep_bool "Use Usart in SPI Mode" USART_SPI_SUPPORT $ARCH_AVR
     if [ "$USART_SPI_SUPPORT" = y ]; then
@@ -109,7 +107,7 @@ fi
 		int "UART Baudrate" DEBUG_BAUDRATE 115200
 		dep_bool 'Use SYSLOG instead UART' DEBUG_USE_SYSLOG $SYSLOG_SUPPORT $DEBUG
 		dep_bool 'Software Uart (Output only)' SOFT_UART_SUPPORT $DEBUG $ARCH_AVR
-		comment  '----- Debugging Flags -----'
+		comment  'Debugging Flags'
 		dep_bool 'Hooks' DEBUG_HOOK $DEBUG
 		dep_bool 'Reset Reason' DEBUG_RESET_REASON $DEBUG
 	endmenu
@@ -296,6 +294,7 @@ source protocols/udpstella/config.in
 source protocols/udpIO/config.in
 source protocols/udpcurtain/config.in
 source protocols/cw/config.in
+source protocols/sgc/config.in
 endmenu
 
 ###############################################################################
@@ -348,4 +347,11 @@ fi
 
 if [ "$UIP_SUPPORT" = "y" -a "$IPV6_SUPPORT" != "y" ]; then
   define_bool IPV4_SUPPORT y
+fi
+
+if [ "$HAS_AVRDUDE" = "y" ]; then
+  mainmenu_option next_comment
+    comment "AVRDUDE configuration"
+    source scripts/avrdude_config.in
+  endmenu
 fi

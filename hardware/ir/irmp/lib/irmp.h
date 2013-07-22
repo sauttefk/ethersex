@@ -1,9 +1,9 @@
 /*---------------------------------------------------------------------------------------------------------------------------------------------------
  * irmp.h
  *
- * Copyright (c) 2009-2012 Frank Meyer - frank(at)fli4l.de
+ * Copyright (c) 2009-2013 Frank Meyer - frank(at)fli4l.de
  *
- * $Id: irmp.h,v 1.80 2012/11/18 17:51:26 fm Exp $
+ * $Id: irmp.h,v 1.82 2013/04/09 11:55:39 fm Exp $
  *
  * ATMEGA88 @ 8 MHz
  *
@@ -70,6 +70,13 @@
 #  warning RUWIDO protocol disabled
 #  undef IRMP_SUPPORT_RUWIDO_PROTOCOL
 #  define IRMP_SUPPORT_RUWIDO_PROTOCOL          0
+#endif
+
+#if IRMP_SUPPORT_RC6_PROTOCOL == 1 && IRMP_SUPPORT_ROOMBA_PROTOCOL == 1
+#  warning RC6 protocol conflicts wih ROOMBA, please enable only one of both protocols
+#  warning ROOMBA protocol disabled
+#  undef IRMP_SUPPORT_ROOMBA_PROTOCOL
+#  define IRMP_SUPPORT_ROOMBA_PROTOCOL          0
 #endif
 
 #if IRMP_SUPPORT_SIEMENS_PROTOCOL == 1 && F_INTERRUPTS < 15000

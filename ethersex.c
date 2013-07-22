@@ -215,7 +215,11 @@ main (void)
     if (sd_active_partition == NULL)
     {
       if (!sd_try_init())
+      {
+#ifdef VFS_SD_SUPPORT
         vfs_sd_try_open_rootnode();
+#endif
+      }
       wdt_kick();
     }
 #endif
@@ -223,8 +227,10 @@ main (void)
 #ifdef BOOTLOADER_JUMP
     if (status.request_bootloader)
     {
+#ifdef MBR_SUPPORT
       mbr_config.bootloader = 1;
       write_mbr();
+#endif
 #ifdef CLOCK_CRYSTAL_SUPPORT
       TC2_INT_OVERFLOW_OFF;
 #endif

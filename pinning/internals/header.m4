@@ -156,6 +156,15 @@ define(`RFM12_ASK_SENSE_USE_INT', `dnl
 #define RFM12_ASKINT_VECTOR INT$1`_vect'
 ')
 
+define(`RFM12_FS20_USE_INT', `dnl
+/* rfm12 module interrupt line */
+#define RFM12_FS20INT_PIN INT$1
+#define RFM12_FS20INT_ISC _ISC($1,0)
+#define RFM12_FS20INT_ISCMASK (_ISC($1,0) | _ISC($1,1))
+#define RFM12_FS20INT_VECTOR INT$1`_vect'
+pin(RFM12_FS20IN, format(PD%d,eval(2+$1)), INPUT)
+')
+
 define(`USB_USE_INT', `dnl
 /* usb  interrupt line */
 #define USB_INT_PIN INT$1
@@ -336,6 +345,9 @@ ifdef(`conf_SOFT_SPI', `', `dnl
   ifdef(`conf_ENC28J60', `define(need_spi, 1)')dnl
   ifdef(`conf_DATAFLASH', `define(need_spi, 1)')dnl
   ifdef(`conf_SD_READER', `define(need_spi, 1)')dnl
+  ifdef(`conf_USTREAM', `define(need_spi, 1)')dnl
+  ifdef(`conf_SER_RAM_23K256', `define(need_spi, 1)')dnl
+  ifdef(`conf_S1D15G10', `define(need_spi, 1)')dnl
 ')
 
 define(`SHT_VOLTAGE_COMPENSATION', `dnl

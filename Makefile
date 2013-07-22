@@ -88,6 +88,7 @@ SUBDIRS += protocols/udpIO
 SUBDIRS += protocols/udpstella
 SUBDIRS += protocols/udpcurtain
 SUBDIRS += protocols/cw
+SUBDIRS += protocols/sgc
 SUBDIRS += services/clock
 SUBDIRS += services/cron
 SUBDIRS += services/dyndns
@@ -222,11 +223,19 @@ y_META_SRC += meta.m4
 $(ECMD_PARSER_SUPPORT)_META_SRC += protocols/ecmd/ecmd_defs.m4 ${named_pin_simple_files}
 y_META_SRC += $(y_NP_SIMPLE_META_SRC)
 
+meta.defines: autoconf.h pinning.c
+	scripts/m4-defines > $@.tmp
+	grep -e "^#define [A-Z].*_PIN " pinning.c  | $(SED) -e "s/^#define \([^ 	]*\)_PIN.*/-Dpin_\1/;s/[()]/_/g" >> $@.tmp
+	$(SED) -e ':a' -e 'N' -e '$$!ba' -e 's/\n/ /g' $@.tmp > $@
+	$(RM) $@.tmp
+
+$(y_META_SRC): meta.defines
+
 meta.c: $(y_META_SRC)
-	$(M4) `scripts/m4-defines` $^ > $@
+	$(M4) `cat meta.defines` $^ > $@
 
 meta.h: scripts/meta_header_magic.m4 meta.m4
-	$(M4) `scripts/m4-defines` $^ > $@
+	$(M4) `cat meta.defines` $^ > $@
 
 ##############################################################################
 
@@ -346,7 +355,8 @@ endif
 
 ##############################################################################
 ### Special case for MacOS X and FreeBSD
-CONFIG_SHELL := $(shell if [ x"`uname`" = x"Darwin" ] ; then echo /opt/local/bin/bash; \
+CONFIG_SHELL := $(shell if [ x"`uname`" = x"Darwin" ] && [ -x /opt/local/bin/bash ] ; then echo /opt/local/bin/bash; \
+          elif [ x"`uname`" = x"Darwin" ] && [ -x /usr/local/bin/bash ] ; then echo /usr/local/bin/bash; \
           elif [ x"`uname`" = x"FreeBSD" ]; then echo /usr/local/bin/bash; \
           elif [ -x "$$BASH" ]; then echo $$BASH; \
           elif [ -x /bin/bash ]; then echo /bin/bash; \
@@ -384,7 +394,7 @@ clean:
 		$(patsubst %.o,%.dep,${OBJECTS}) \
 		$(patsubst %.o,%.E,${OBJECTS}) \
 		$(patsubst %.o,%.s,${OBJECTS}) network.dep
-	$(RM) meta.c meta.h meta.m4
+	$(RM) meta.c meta.h meta.m4 meta.defines
 	echo "Cleaning completed"
 
 fullclean: clean
@@ -450,5 +460,6 @@ indent:
 
 .PHONY: indent
 
+include $(TOPDIR)/scripts/avrdude.mk
 
 include $(TOPDIR)/scripts/depend.mk

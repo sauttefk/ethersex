@@ -71,9 +71,6 @@
 /* rc5 support */
 #define RC5_QUEUE_LENGTH 10
 
-/* bootloader config */
-#define CONF_BOOTLOAD_DELAY 15000  /* five minutes */
-
 /* rfm12 config */
 #define RFM12_FREQ_433920	433920
 #define RFM12_FREQ_868300	868300
@@ -117,7 +114,7 @@
 #  define set_CONF_ETHERSEX_MAC(ip)		set_CONF_ENC_MAC(ip)
 #  define set_CONF_ETHERSEX_IP(ip)		set_CONF_ENC_IP(ip)
 #  define set_CONF_ETHERSEX_IP4_NETMASK(ip)	set_CONF_ENC_IP4_NETMASK(ip)
-#  define CONF_ETHERSEX_MAC		CONF_ENC_MAC
+#  define CONF_ETHERSEX_MAC			CONF_ENC_MAC
 
 #elif defined (TAP_SUPPORT)
 #  define set_CONF_ETHERSEX_MAC(ip)		set_CONF_TAP_MAC(ip)
@@ -149,26 +146,29 @@
    - ECMD without TEENSY (IP address configuration etc.)
    - BOOTP with to-EEPROM-feature
    - STELLA with eeprom load/write support */
-#if (defined(ECMD_PARSER_SUPPORT) && (!defined(TEENSY_SUPPORT)))  \
-  || (defined(BOOTP_SUPPORT) && defined(BOOTP_TO_EEPROM_SUPPORT)) \
-  || (defined(STELLA_SUPPORT) && !defined(TEENSY_SUPPORT))
+#if (defined(ECMD_PARSER_SUPPORT) && !defined(TEENSY_SUPPORT))   || \
+    (defined(BOOTP_SUPPORT) && defined(BOOTP_TO_EEPROM_SUPPORT)) || \
+    (defined(STELLA_SUPPORT) && !defined(TEENSY_SUPPORT))        || \
+    defined(JABBER_EEPROM_SUPPORT)
 #  define EEPROM_SUPPORT 1
 #endif
 
 
 /* Figure out whether we need CRC_SUPPORT: */
-#if defined(EEPROM_SUPPORT)			\
-  || defined(ONEWIRE_SUPPORT)			\
-  || defined(VFS_INLINE_SUPPORT)		\
-  || defined(TFTP_SUPPORT)
+#if defined(EEPROM_SUPPORT)     || \
+    defined(ONEWIRE_SUPPORT)    || \
+    defined(VFS_INLINE_SUPPORT) || \
+    defined(TFTP_SUPPORT)
 #  define CRC_SUPPORT 1
 #endif
 
-#if defined(VFS_SUPPORT) && defined(VFS_INLINE_SUPPORT)	  \
-  && !defined(VFS_SD_SUPPORT) && !defined(VFS_DF_SUPPORT) \
-  && !defined(VFS_EEPROM_SUPPORT)			  \
-  && !defined(VFS_EEPROM_RAW_SUPPORT)			  \
-  && !defined(VFS_DC3840_SUPPORT)
+#if defined(VFS_SUPPORT)             && \
+    defined(VFS_INLINE_SUPPORT)	     && \
+    !defined(VFS_SD_SUPPORT)         && \
+    !defined(VFS_DF_SUPPORT)         && \
+    !defined(VFS_EEPROM_SUPPORT)     && \
+    !defined(VFS_EEPROM_RAW_SUPPORT) && \
+    !defined(VFS_DC3840_SUPPORT)
 #  define VFS_TEENSY 1
 #endif
 

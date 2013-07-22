@@ -50,7 +50,7 @@ tftp_net_init(void)
   const char *filename = CONF_TFTP_IMAGE;
   set_CONF_TFTP_IP(&ip);
 
-  tftp_fire_tftpomatic(&ip, filename, 0);
+  tftp_fire_tftpomatic(&ip, filename, 1);
 #endif /* !IPV6_SUPPORT */
 #endif /* TFTPOMATIC_SUPPORT */
 }
@@ -100,7 +100,6 @@ tftp_net_main(void)
   /*
    * fire download request packet ...
    */
-  uint8_t tag_found = 0;
   uint16_t i = 0, l = 0;
   struct tftp_hdr *tftp_pk = uip_appdata;
 #ifdef TFTP_CRC_SUPPORT
@@ -114,49 +113,55 @@ tftp_net_main(void)
 #ifdef TFTP_CRC_SUPPORT
     if (uip_udp_conn->appstate.tftp.filename[i] == '%')
     {
-      if (uip_udp_conn->appstate.tftp.verify_crc)
+      /* append mac address */
+      if (uip_udp_conn->appstate.tftp.filename[i + 1] == 'M')
       {
-        switch (uip_udp_conn->appstate.tftp.filename[i + 1])
+        tftp_pk->u.raw[l++] = '-';
+        for(uint8_t k = 0; k < 6; k++)
+          l += byte2hex(uip_ethaddr.addr[k], &tftp_pk->u.raw[l]);
+      }
+      else
+      {
+        if (uip_udp_conn->appstate.tftp.verify_crc)
         {
-          /* append mac address */
-          case 'm':
-            tag_found = 1;
-            tftp_pk->u.raw[l++] = '-';
-            for(uint8_t k = 0; k < 6; k++)
-              l += byte2hex(uip_ethaddr.addr[k], &tftp_pk->u.raw[l]);
-            break;
-
-          /* append application crc */
-          case 'c':
+          switch (uip_udp_conn->appstate.tftp.filename[i + 1])
           {
-            tag_found = 1;
-            tftp_pk->u.raw[l++] = '-';
-            uint16_t crc = calc_application_crc();
-            l += byte2hex(crc >> 8, &tftp_pk->u.raw[l]);
-            l += byte2hex(crc &0x00ff, &tftp_pk->u.raw[l]);
-            break;
-          }
+            /* append mac address */
+            case 'm':
+              tftp_pk->u.raw[l++] = '-';
+              for(uint8_t k = 0; k < 6; k++)
+                l += byte2hex(uip_ethaddr.addr[k], &tftp_pk->u.raw[l]);
+              break;
 
-          case 'C':
-            tag_found = 1;
-            status.verify_tftp_crc_content = 1;
-            break;
+            /* append application crc */
+            case 'c':
+            {
+              tftp_pk->u.raw[l++] = '-';
+              uint16_t crc = calc_application_crc();
+              l += byte2hex(crc >> 8, &tftp_pk->u.raw[l]);
+              l += byte2hex(crc &0x00ff, &tftp_pk->u.raw[l]);
+              break;
+            }
+
+            case 'C':
+              status.verify_tftp_crc_content = 1;
+              break;
 
             /* append crc file extension */
-          case 'e':
-            tag_found = 1;
-            tftp_pk->u.raw[l++] = '.';
-            tftp_pk->u.raw[l++] = 'c';
-            tftp_pk->u.raw[l++] = 'r';
-            tftp_pk->u.raw[l++] = 'c';
+            case 'e':
+              tftp_pk->u.raw[l++] = '.';
+              tftp_pk->u.raw[l++] = 'c';
+              tftp_pk->u.raw[l++] = 'r';
+              tftp_pk->u.raw[l++] = 'c';
 
-            /* remove rest of filename */
-            while (uip_udp_conn->appstate.tftp.filename[i++]);
-            break;
+              /* remove rest of filename */
+              while (uip_udp_conn->appstate.tftp.filename[i++]);
+              break;
 
-          /* ignore unknown formatting tags */
-          default:
-            break;
+            /* ignore unknown formatting tags */
+            default:
+              break;
+          }
         }
       }
       i += 2;
@@ -174,12 +179,6 @@ tftp_net_main(void)
   tftp_pk->u.raw[l++] = 'e';
   tftp_pk->u.raw[l++] = 't';
   tftp_pk->u.raw[l++] = '\0';
-
-  /* no valid % tags in the filename to generate crc file */
-#ifdef TFTP_CRC_SUPPORT
-  if (uip_udp_conn->appstate.tftp.verify_crc && !tag_found)
-    uip_udp_conn->appstate.tftp.verify_crc = 0;
-#endif
 
   uip_udp_send(l + 9);
 

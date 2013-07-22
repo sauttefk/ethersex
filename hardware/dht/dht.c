@@ -31,7 +31,7 @@
 #include "dht.h"
 
 #ifdef DEBUG_DHT
-#define DHT_DEBUG(s, args...) printf_P(PSTR("D: DHT " s "\n"), ## args)
+#define DHT_DEBUG(s, args...) debug_printf("DHT " s "\n", ## args)
 #else
 #define DHT_DEBUG(a...)
 #endif
@@ -106,11 +106,15 @@ static void
 dht_read(void)
 {
   PIN_SET(DHT);
-  _delay_us(40);
+  _delay_us(30);
   DDR_CONFIG_IN(DHT);
 
-  /* read in timings */
-  uint8_t last_state = DHT_PIN;
+  /* Read in timingss, which takes approx. 4,5 milliseconds.
+   * We do not disable interrupts, because a failed read is outweighed
+   * by a non-serviced interrupt. Please never enclose the for-loop
+   * with an ATOMIC_BLOCK! */
+
+  uint8_t last_state = PIN_BV(DHT);
   uint8_t j = 0;
   uint8_t data[5];
   for (uint8_t i = 0; i < MAXTIMINGS; i++)
@@ -122,7 +126,7 @@ dht_read(void)
       _delay_us(5);
       if (++counter == 20)
       {
-        DHT_DEBUG("read timeout");
+        DHT_DEBUG("read timeout, edge=%u", i);
         return;                 /* timeout in conversation */
       }
     }
@@ -143,13 +147,14 @@ dht_read(void)
   if ((j < 40) ||
       (data[4] != ((data[0] + data[1] + data[2] + data[3]) & 0xFF)))
   {
-    debug_printf("DHT: read failed\n");
+    DHT_DEBUG("read failed, bits=%u, %02X %02X %02X %02X %02X",
+              j, data[0], data[1], data[2], data[3], data[4]);
     return;
   }
 
   int16_t t;
 #if DHT_TYPE == DHT_TYPE_11
-  t = (int8_t) data[2];
+  t = data[2];
   t *= 10;
   dht_global.temp = t;
   t = data[0];
@@ -157,8 +162,11 @@ dht_read(void)
   dht_global.humid = t;
 #elif DHT_TYPE == DHT_TYPE_22
   t = data[2] << 8 | data[3];
-  if (data[2] & 0x80)
+  if (t & 0x8000)
+  {
+    t &= ~0x8000;
     t = -t;
+  }
   dht_global.temp = t;
   t = data[0] << 8 | data[1];
   dht_global.humid = t;
@@ -171,7 +179,7 @@ dht_init(void)
 {
   DDR_CONFIG_IN(DHT);
 
-  dht_global.polling_delay = DHT_POLLING_INTERVAL * HZ / 2;
+  dht_global.polling_delay = DHT_POLLING_INTERVAL * HZ;
 }
 
 void
@@ -181,7 +189,7 @@ dht_periodic(void)
   {
     /* read sensor data */
     dht_read();
-    dht_global.polling_delay = DHT_POLLING_INTERVAL * HZ / 2;
+    dht_global.polling_delay = DHT_POLLING_INTERVAL * HZ;
   }
   else if (--dht_global.polling_delay == 0)
   {
@@ -193,5 +201,5 @@ dht_periodic(void)
   -- Ethersex META --
   header(hardware/dht/dht.h)
   init(dht_init)
-  timer(2,dht_periodic())
+  timer(1,dht_periodic())
 */

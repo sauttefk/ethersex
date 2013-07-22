@@ -4,7 +4,7 @@
  * for additional information please
  * see http://www.mikrocontroller.net/articles/IRMP
  *
- * Copyright (c) 2010-12 by Erik Kunze <ethersex@erik-kunze.de>
+ * Copyright (c) 2010-13 by Erik Kunze <ethersex@erik-kunze.de>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License (either version 2 or
@@ -67,6 +67,9 @@ typedef enum
   IRMP_PROTO_THOMSON,           /* Thomson */
   IRMP_PROTO_BOSE,              /* Bose */
   IRMP_PROTO_A1TVBOX,           /* A1 TV-Box */
+  IRMP_PROTO_ORTEK,             /* ORTEK - Hama */
+  IRMP_PROTO_TELEFUNKEN,        /* Telefunken (1560) */
+  IRMP_PROTO_ROOMBA,            /* iRobot Roomba vacuum cleaner */
 } irmp_prot_e;
 
 typedef struct
@@ -83,7 +86,7 @@ extern const PGM_P const irmp_proto_names[] PROGMEM;
 
 /* prototypes */
 void irmp_init(void);
-uint8_t irmp_read(irmp_data_t *);
+irmp_data_t * irmp_read(void);
 void irmp_write(irmp_data_t *);
 void irmp_process(void);
 

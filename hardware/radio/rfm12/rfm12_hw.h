@@ -41,6 +41,7 @@
 #	define RFM12_BAND_868 0x20
 #	define RFM12_BAND_915 0x30
 #	define RFM12_XTAL_12PF 0x07
+#	define RFM12_XTAL_135PF 0x0A
 
 /*
 	2. Power Management Command
@@ -141,6 +142,7 @@
 	1 0 1 134
 	1 1 0 67
 	1 1 1 reserved
+
 	Bits 4-3 (g1 to g0): LNA gain select:
 	g1 g0 relative to maximum [dB]
 	0 0 0
