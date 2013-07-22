@@ -31,6 +31,10 @@
 #include "core/global.h"
 #include "protocols/uip/uip.h"
 
+#ifdef ETHERNET_SUPPORT
+  static const char conf_mac[] PROGMEM = CONF_ETHERSEX_MAC;
+#endif
+
 #define IPADDR_LEN sizeof(uip_ipaddr_t)
 
 #ifdef STELLA_SUPPORT
@@ -73,26 +77,20 @@ struct eeprom_config_t
 {
 #ifdef ETHERNET_SUPPORT
   uint8_t mac[6];
-#endif
-
-#if (defined(IPV4_SUPPORT) && !defined(BOOTP_SUPPORT)) || defined(IPV6_STATIC_SUPPORT)
   uint8_t ip[IPADDR_LEN];
-#endif
-
-#ifdef IPV4_SUPPORT
   uint8_t netmask[IPADDR_LEN];
-#endif
-
   uint8_t gateway[IPADDR_LEN];
-
-#ifdef DNS_SUPPORT
   uint8_t dns_server[IPADDR_LEN];
-#endif
-
-#ifdef NTP_SUPPORT
   uint8_t ntp_server[IPADDR_LEN];
+  uint8_t syslog_server[IPADDR_LEN];
 #endif
+  uint_farptr_t applicationsize;
+  uint8_t status;
+  uint8_t crc;
+};
 
+struct eeprom_module_config_t
+{
 #ifdef PAM_SINGLE_USER_EEPROM_SUPPORT
   char pam_username[16];
   char pam_password[16];
