@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (c) 2013 by Frank Sautter <ethersix@sautter.com>
  *
  * This program is free software; you can redistribute it and/or modify it
