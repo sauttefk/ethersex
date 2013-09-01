@@ -54,13 +54,12 @@
 struct pport_buffer pport_recv_buffer;
 uint8_t pport_delayed_ack;
 #ifdef DEBUG_PPORT
-//     uint32_t pport_rx_overflow;
-     uint32_t pport_rx_bytes;
-     uint32_t pport_rx_bufferfull;
-     uint32_t pport_eth_retransmit;
+uint32_t pport_rx_bytes;
+uint32_t pport_rx_bufferfull;
+uint32_t pport_eth_retransmit;
 #endif
 #if PPORT_FLUSH > 0
-     uint8_t pport_lf;
+uint8_t pport_lf;
 #endif
 
 
