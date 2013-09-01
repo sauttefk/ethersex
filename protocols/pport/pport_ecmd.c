@@ -35,10 +35,13 @@ int16_t
 parse_cmd_pport_stats(char *cmd, char *output, uint16_t len)
 {
   int16_t chars = snprintf_P(output, len,
-                             PSTR("rx bytes=%u, bf=%u, rt=%u"),
+                             PSTR("rx by=%u, bf=%u, rt=%u, bsy=%u, stb=%u"),
                              pport_rx_bytes,
                              pport_rx_bufferfull,
-                             pport_eth_retransmit);
+                             pport_eth_retransmit,
+                             PIN_HIGH(PPORT_BUSY),
+                             PIN_HIGH(PPORT_STROBE)
+);
   return ECMD_FINAL(chars);
 }
 

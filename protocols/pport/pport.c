@@ -109,7 +109,9 @@ ISR(PPORT_VECTOR)
     pport_lf = 1;
 #endif
 
+#ifdef DEBUG_PPORT
   pport_rx_bytes++;
+#endif
 
   if (pport_recv_buffer.len < PPORT_BUFFER_LEN - 1)
   {
